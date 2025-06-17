@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Gestione PCA - CHRYSAS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-color: #3b82f6;
+            --border-color: #e2e8f0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+        }
+
+        .sidebar-link.active {
+            background-color: #eff6ff;
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+        
+        .sidebar-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .sidebar-link:hover {
+            background-color: #f5f5f5;
+        }
+
+        .form-section {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .accordion-header { cursor: pointer; user-select: none; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out; }
+        .accordion-icon { transition: transform 0.3s ease-in-out; }
+        .open .accordion-icon { transform: rotate(180deg); }
+        .open .accordion-content { max-height: 1000px; }
+
+        .form-label { @apply text-xs font-semibold text-gray-600 uppercase tracking-wider; }
+        .form-input, .form-select { @apply mt-1 p-2 border border-gray-300 rounded-md w-full shadow-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-500; }
+
+        .toast {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+
+        .toast.show { opacity: 1; bottom: 40px; }
+        
+        .modal-overlay { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay.flex { display: flex; }
+        .modal-content { transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal-overlay.opacity-100 .modal-content { transform: scale(1); }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar -->
+        <aside class="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+            <div class="h-16 flex items-center justify-center border-b border-gray-200">
+                <h1 class="text-xl font-bold text-blue-800">Gestione PCA</h1>
+            </div>
+            <nav class="flex-grow px-4 py-6">
+                <a href="#" data-tab="dashboard" class="sidebar-link active flex items-center px-4 py-2 text-gray-700 rounded-md">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    Dashboard
+                </a>
+                <a href="#" data-tab="lista-pca" class="sidebar-link flex items-center px-4 py-2 mt-2 text-gray-700 rounded-md">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    Lista PCA
+                </a>
+                <a href="#" data-tab="nuovo-pca" class="sidebar-link flex items-center px-4 py-2 mt-2 text-gray-700 rounded-md">
+                     <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Nuovo PCA
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+                 <h2 id="page-title" class="text-xl font-semibold text-gray-800">Dashboard</h2>
+                <div class="text-right">
+                    <p class="font-semibold text-gray-700">CHRYSAS S.c. a r.l.</p>
+                    <span id="current-date" class="text-sm text-gray-500"></span>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+                            <div class="bg-blue-100 text-blue-600 rounded-full p-3 mr-4"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></div>
+                            <div><h3 class="text-sm font-medium text-gray-500">PCA Compilati</h3><p id="total-pca" class="mt-1 text-3xl font-semibold text-gray-900"></p></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+                            <div class="bg-red-100 text-red-600 rounded-full p-3 mr-4"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                            <div><h3 class="text-sm font-medium text-gray-500">NC Aperte</h3><p id="open-nc" class="mt-1 text-3xl font-semibold text-red-600"></p></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+                           <div class="bg-yellow-100 text-yellow-600 rounded-full p-3 mr-4"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                            <div><h3 class="text-sm font-medium text-gray-500">Controlli Totali</h3><p id="total-checks" class="mt-1 text-3xl font-semibold text-gray-900"></p></div>
+                        </div>
+                         <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+                            <div class="bg-green-100 text-green-600 rounded-full p-3 mr-4"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg></div>
+                            <div><h3 class="text-sm font-medium text-gray-500">Conformità Media</h3><p id="avg-compliance" class="mt-1 text-3xl font-semibold text-green-600"></p></div>
+                        </div>
+                    </div>
+                    <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Non Conformità per Aspetto Ambientale</h3>
+                        <div class="relative h-96 w-full">
+                            <canvas id="ncChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista PCA Tab -->
+                <div id="lista-pca" class="tab-content hidden">
+                     <div class="form-section">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scheda N°</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WBS</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pca-list-body" class="divide-y divide-gray-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Nuovo PCA Tab -->
+                <div id="nuovo-pca" class="tab-content hidden">
+                    <form id="new-pca-form">
+                        <div class="form-section">
+                            <h2 class="text-xl font-bold mb-4">1. Dati Generali del Controllo</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div><label for="pca-id" class="form-label">Scheda N°</label><input type="number" id="pca-id" name="id" class="form-input" required></div>
+                                <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" class="form-input" required></div>
+                                <div><label for="pca-wbs" class="form-label">WBS / Area</label><input type="text" id="pca-wbs" name="wbs" class="form-input" placeholder="Es. AS09-MU50" required></div>
+                                <div class="lg:col-span-3"><label for="pca-activities" class="form-label">Lavorazioni in Corso</label><input type="text" id="pca-activities" name="activities" class="form-input" required></div>
+                                <div class="lg:col-span-3"><label for="pca-inspector" class="form-label">Compilato da</label><input type="text" id="pca-inspector" name="inspector" placeholder="Nome e Funzione" class="form-input" required></div>
+                            </div>
+                        </div>
+                        
+                        <div id="check-sections-container" class="space-y-4"></div>
+
+                        <div class="flex justify-end gap-4 mt-8">
+                            <button type="reset" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-semibold">Annulla</button>
+                            <button type="submit" class="px-6 py-3 bg-blue-700 text-white rounded-md hover:bg-blue-800 font-semibold">Salva PCA</button>
+                        </div>
+                    </form>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast bg-green-500"></div>
+
+    <div id="modal-container" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4 z-50">
+        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="p-5 border-b flex justify-between items-center">
+                <h2 id="modal-title" class="text-xl font-bold">Dettaglio PCA</h2>
+                <button id="modal-close" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">×</button>
+            </div>
+            <div id="modal-body" class="p-6 overflow-y-auto"></div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const backend = {
+            pca_reports: [
+                { id: 88, date: "2025-05-15", wbs: "AS09-MU50", activities: "Cantierizzazione e Armatura", inspector: "Dott. Filippo Fichera", checks: { "A. Emissioni in Atmosfera": [{ item: "Le piste di cantiere sono state bagnate a sufficienza?", result: "NC"}, { item: "L'impianto lavaruote è funzionante e utilizzato?", result: "NC"}], "B. Gestione Rifiuti": [{ item: "Il DTR è identificato, delimitato e ordinato?", result: "C"}, { item: "I rifiuti sono separati per CER e con corretta cartellonistica?", result: "C"}] }, notes: { "A. Emissioni in Atmosfera": "Bagnatura insufficiente, impianto lavaruote non funzionante.", "B. Gestione Rifiuti": "" } },
+                { id: 89, date: "2025-05-22", wbs: "GA01-PK12", activities: "Scavo e smarino", inspector: "Mario Rossi", checks: { "A. Emissioni in Atmosfera": [{ item: "Le piste di cantiere sono state bagnate a sufficienza?", result: "C"}, { item: "L'impianto lavaruote è funzionante e utilizzato?", result: "C"}], "B. Gestione Rifiuti": [{ item: "Il DTR è identificato, delimitato e ordinato?", result: "C"}, { item: "I rifiuti sono separati per CER e con corretta cartellonistica?", result: "C"}] }, notes: { "A. Emissioni in Atmosfera": "", "B. Gestione Rifiuti": "" } },
+            ],
+            async getReports() { return new Promise(resolve => setTimeout(() => resolve(this.pca_reports), 200)); },
+            async getReportById(id) { return new Promise(resolve => setTimeout(() => resolve(this.pca_reports.find(r => r.id === id)), 100)); },
+            async saveReport(newReport) {
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        if (this.pca_reports.find(r => r.id === newReport.id)) { reject('ID Scheda già esistente.'); return; }
+                        this.pca_reports.push(newReport);
+                        resolve(newReport);
+                    }, 500);
+                });
+            },
+            async getDashboardStats() {
+                const reports = await this.getReports();
+                let openNc = 0;
+                let totalChecks = 0;
+                let compliantChecks = 0;
+                let ncByAspect = {};
+                reports.forEach(report => {
+                    for (const aspect in report.checks) {
+                        const aspectChecks = report.checks[aspect];
+                        aspectChecks.forEach(check => {
+                            if (check.result !== 'NA') totalChecks++;
+                            if (check.result === 'C') compliantChecks++;
+                            if (check.result === 'NC') {
+                                openNc++;
+                                ncByAspect[aspect] = (ncByAspect[aspect] || 0) + 1;
+                            }
+                        });
+                    }
+                });
+                const avgCompliance = totalChecks > 0 ? `${((compliantChecks / totalChecks) * 100).toFixed(0)}%` : 'N.D.';
+                return { totalPca: reports.length, openNc, totalChecks, avgCompliance, ncByAspect };
+            }
+        };
+
+        const checkTemplates = [
+            { title: "A. Emissioni in Atmosfera", icon: "💨", items: ["Le piste di cantiere sono state bagnate a sufficienza?", "I mezzi in transito rispettano i limiti di velocità?", "I mezzi in uscita utilizzano il telo di copertura?", "L'impianto lavaruote è funzionante e utilizzato?", "I cumuli di materiali sono coperti o bagnati?"] },
+            { title: "B. Gestione Rifiuti", icon: "🗑️", items: ["Il DTR è identificato, delimitato e ordinato?", "I rifiuti sono separati per CER e con corretta cartellonistica?", "I rifiuti pericolosi sono stoccati in modo sicuro?", "La documentazione di trasporto (FIR) è disponibile e corretta?"] },
+            { title: "C. Tutela Suolo e Acque", icon: "💧", items: ["Oli e carburanti sono stoccati su bacini di contenimento?", "Il kit di emergenza ambientale è presente e completo?", "Sono visibili sversamenti o macchie sul suolo?", "Le vasche di lavaggio betoniere sono a tenuta?"] },
+            { title: "D. Rumore e Vibrazioni", icon: "🔊", items: ["Le attività rumorose rispettano gli orari autorizzati?", "Le barriere acustiche (se previste) sono installate correttamente?"] }
+        ];
+
+        const pageTitle = document.getElementById('page-title');
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const newPcaForm = document.getElementById('new-pca-form');
+        const toast = document.getElementById('toast');
+        const modalContainer = document.getElementById('modal-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalClose = document.getElementById('modal-close');
+
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.className = `toast ${isError ? 'bg-red-500' : 'bg-green-700'} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetTab = e.target.closest('a').dataset.tab;
+                pageTitle.textContent = e.target.closest('a').textContent.trim();
+                sidebarLinks.forEach(l => l.classList.remove('active'));
+                e.target.closest('a').classList.add('active');
+                tabContents.forEach(content => content.id === targetTab ? content.classList.remove('hidden') : content.classList.add('hidden'));
+                
+                if (targetTab === 'dashboard') loadDashboard();
+                if (targetTab === 'lista-pca') loadPcaList();
+            });
+        });
+
+        let ncChart = null;
+        async function loadDashboard() {
+            const stats = await backend.getDashboardStats();
+            document.getElementById('total-pca').textContent = stats.totalPca;
+            document.getElementById('open-nc').textContent = stats.openNc;
+            document.getElementById('total-checks').textContent = stats.totalChecks;
+            document.getElementById('avg-compliance').textContent = stats.avgCompliance;
+            const ctx = document.getElementById('ncChart').getContext('2d');
+            const chartData = {
+                labels: Object.keys(stats.ncByAspect).map(l => l.substring(l.indexOf('.') + 1).trim()),
+                datasets: [{ data: Object.values(stats.ncByAspect), backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }]
+            };
+            if (ncChart) ncChart.destroy();
+            ncChart = new Chart(ctx, { type: 'bar', data: chartData, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } } });
+        }
+
+        async function loadPcaList() {
+            const reports = await backend.getReports();
+            const listBody = document.getElementById('pca-list-body');
+            listBody.innerHTML = '';
+            if (reports.length === 0) { listBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Nessun PCA compilato.</td></tr>`; return; }
+            reports.sort((a,b) => b.id - a.id).forEach(report => {
+                const ncCount = Object.values(report.checks).flat().filter(c => c.result === 'NC').length;
+                const statusClass = ncCount > 0 ? 'text-red-600 font-semibold' : 'text-green-600';
+                const statusText = ncCount > 0 ? `${ncCount} NC Aperte` : 'Conforme';
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `<td class="py-3 px-4 text-sm font-medium text-gray-900">${report.id}</td><td class="py-3 px-4 text-sm text-gray-500">${new Date(report.date).toLocaleDateString('it-IT')}</td><td class="py-3 px-4 text-sm text-gray-500">${report.wbs}</td><td class="py-3 px-4 text-sm ${statusClass}">${statusText}</td><td class="py-3 px-4 text-sm"><button data-id="${report.id}" class="view-pca-btn text-blue-600 hover:underline">Visualizza</button></td>`;
+                listBody.appendChild(row);
+            });
+        }
+        
+        document.getElementById('pca-list-body').addEventListener('click', async e => {
+            if (e.target.classList.contains('view-pca-btn')) {
+                const reportId = parseInt(e.target.dataset.id);
+                const report = await backend.getReportById(reportId);
+                showPcaModal(report);
+            }
+        });
+
+        function showPcaModal(report) {
+            modalTitle.textContent = `Dettaglio PCA N° ${report.id}`;
+            let modalBodyHtml = `<div class="space-y-4">`;
+            for(const aspect in report.checks) {
+                modalBodyHtml += `<div class="form-section !p-4"><h4 class="font-bold text-gray-800 mb-2">${aspect}</h4><ul>`;
+                report.checks[aspect].forEach(check => {
+                     const statusIcon = check.result === 'C' ? '✔️' : (check.result === 'NC' ? '❌' : '➖');
+                     modalBodyHtml += `<li class="text-sm py-1">${statusIcon} ${check.item}</li>`;
+                });
+                if(report.notes[aspect]) {
+                    modalBodyHtml += `<li class="text-sm mt-2 p-2 bg-gray-100 rounded"><strong>Note:</strong> ${report.notes[aspect]}</li>`;
+                }
+                modalBodyHtml += `</ul></div>`;
+            }
+            modalBodyHtml += `</div>`;
+            modalBody.innerHTML = modalBodyHtml;
+            modalContainer.classList.add('flex');
+            setTimeout(() => modalContainer.classList.add('opacity-100'), 10);
+        }
+        
+        modalClose.addEventListener('click', () => {
+             modalContainer.classList.remove('opacity-100');
+            setTimeout(() => modalContainer.classList.remove('flex'), 300);
+        });
+
+        function createCheckSection(template) {
+            const section = document.createElement('div');
+            section.className = 'form-section accordion-section';
+            section.innerHTML = `
+                <div class="accordion-header flex justify-between items-center p-4 bg-gray-50 rounded-t-md border">
+                    <h3 class="text-lg font-semibold flex items-center">${template.icon} <span class="ml-3">${template.title}</span></h3>
+                    <span class="accordion-icon text-2xl transform transition-transform duration-300">+</span>
+                </div>
+                <div class="accordion-content p-4 border border-t-0 rounded-b-md space-y-4">
+                    ${template.items.map((item, index) => `
+                        <div class="check-item grid grid-cols-1 md:grid-cols-3 gap-4 items-center border-b pb-2">
+                            <label class="form-label md:col-span-2">${item}</label>
+                            <select name="check_${template.title}_${index}" class="form-select">
+                                <option value="C">C</option><option value="NC">NC</option><option value="NA">N.A.</option>
+                            </select>
+                        </div>
+                    `).join('')}
+                    <textarea name="note_${template.title}" class="form-input mt-4" placeholder="Note e azioni correttive..."></textarea>
+                </div>`;
+            return section;
+        }
+
+        const checkSectionsContainer = document.getElementById('check-sections-container');
+        checkTemplates.forEach(template => checkSectionsContainer.appendChild(createCheckSection(template)));
+
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const section = header.parentElement;
+                section.classList.toggle('open');
+            });
+        });
+        
+        newPcaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(newPcaForm);
+            const newReport = {
+                id: parseInt(formData.get('id')), date: formData.get('date'), wbs: formData.get('wbs'), activities: formData.get('activities'), inspector: formData.get('inspector'),
+                checks: {}, notes: {}
+            };
+            checkTemplates.forEach(template => {
+                const checks = [];
+                template.items.forEach((item, index) => {
+                    checks.push({ item: item, result: formData.get(`check_${template.title}_${index}`) });
+                });
+                newReport.checks[template.title] = checks;
+                newReport.notes[template.title] = formData.get(`note_${template.title}`);
+            });
+
+            try {
+                await backend.saveReport(newReport);
+                showToast('Scheda PCA salvata con successo!');
+                newPcaForm.reset();
+                document.querySelector('.sidebar-link[data-tab="lista-pca"]').click();
+            } catch (error) {
+                showToast(error, true);
+            }
+        });
+        
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        loadDashboard();
+    });
+    </script>
+</body>
+</html>
