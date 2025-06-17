@@ -10,74 +10,92 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-bg: #f8fafc; --sidebar-bg: #ffffff; --header-bg: #ffffff;
-            --card-bg: #ffffff; --text-primary: #1e293b; --text-secondary: #64748b;
-            --accent-color: #3b82f6; --border-color: #e2e8f0; --action-btn-hover: #f5f5f5;
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-link.active { @apply bg-blue-600 text-white font-semibold; }
+        .toast {
+            position: fixed; bottom: -100px; left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+            z-index: 1000;
         }
-        .dark:root {
-            --primary-bg: #111827; --sidebar-bg: #1f2937; --header-bg: #1f2937;
-            --card-bg: #1f2937; --text-primary: #f9fafb; --text-secondary: #9ca3af;
-            --accent-color: #60a5fa; --border-color: #374151; --action-btn-hover: #374151;
-        }
-        body { font-family: 'Inter', sans-serif; background-color: var(--primary-bg); color: var(--text-primary); transition: background-color 0.3s, color 0.3s; }
-        .sidebar, .header, .card, .form-section, .modal-content, .control-card { background-color: var(--card-bg); border-color: var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
-        .sidebar-link.active { background-color: var(--accent-color); color: white; font-weight: 600; }
-        .sidebar-link { transition: all 0.2s ease-in-out; }
-        .sidebar-link:hover { background-color: var(--action-btn-hover); }
-        .form-input, .form-select, .form-textarea { background-color: var(--primary-bg); border-color: var(--border-color); }
-        .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 8px; color: white; z-index: 1000; opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
         .toast.show { opacity: 1; bottom: 40px; }
-        .image-preview { width: 80px; height: 80px; object-fit: cover; border-radius: 0.25rem; border: 2px solid var(--border-color); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        @media print {
+            body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact; color-adjust: exact; }
+            body > *:not(#print-area) { display: none !important; }
+            #print-area { display: block !important; }
+            @page { size: A4; margin: 1.5cm; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900">
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-200 transition-colors duration-300">
+
     <div class="flex h-screen">
-        <aside class="w-64 flex-shrink-0 sidebar border-r flex flex-col">
-            <div class="h-16 flex items-center justify-center border-b"><h1 class="text-xl font-bold text-blue-600 dark:text-blue-400">Gestione PCA</h1></div>
+        <!-- Sidebar -->
+        <aside class="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+            <!-- LOGO CHRYSAS NELLA SIDEBAR -->
+            <div class="h-16 flex items-center justify-center px-6 border-b border-slate-200 dark:border-slate-700">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOYAAABDCAMAAAA4eT/AAAAA/FBMVEU0NztDR09DSVBDSVBE SlJHS1RHTVdHTVdJT1hKT1hLUFlLUFlMVl1NV15PV2BRWGFSWWJVXWZYXmhaY2tdaG9fam9gbHFhb3Jkb3NlcHRmcnVncnVwc3lzdHl1eXx2en55fIB6fYF8gIJ+goV/g4eAhoeChoeDh4qEh4qFiIuJipuMj5yOkJ6QkZ+SlqGTlqGUmKaWmKeanaecoKijaKujampmaaugpKyjpa2lqK+mrLGsrrOwtrqzuL22vL+4vcC5v8G8wsfAycvFzM/HzNDJ0NXK0dbL0tfN1d3P1t/Q2OHR2eLS2uPU3ebW3ufY4OrZ4evb4+zb5O3d5e7g5+/i6vLl7PPq7/Xt8/j3+fv5+/z7/P3///8mB8oTAAAAB3RSTlMAIEAwYKDw4PBQjAABaElEQVR42uWc6V8SQRSFb9qgLTZtK9tGUbBJG1k2NpsuNg11SbtLd9p2u+/7+2bkzYy4eJATJ+f5/QNwZubO3JlDZs6ZkCwLgG3vQ+S9f5gLdLPde5FEIpH4a5IICIgI+oJ5/XJ6k/VzKVSyL+f1V5OEKCQSX78Z+vP1m40Ie5L5/GbjQjby+s1GAv18/WYjgX6+frORwD5fvykIpUovb39kEolE/j9JSA0SiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJ/E8i2t99tB29f270b28vEolE/h+SfH5j/a/Pz2/Mn/2+gX89v0gkEolEIpH4dZKEHw9/PJBIJBKJRAbIgyhSRGQRkUVE3QhB1EQkEBHRRkS7O9xERJ8y/9z/5+b/p+c/RkSyIqLYY+N8IqIlIuexMRqIqBGx4TG3QkS+x8bZROT4Gk1ENIvI8TWayqH9T89/zGkK9j02SiQSSQ4L8j1Z7A+SAiSBB5k3rP6+Yc03LMMiK7KgyIos3DAsA4fhy0/xZ/l3C/P/3/z/dwz/y/y/W1iWhcM0rENZ1hVlWVeVZVV1XVVdV5XVVe2p3d/Q/d2PjD+d+M9uHl4v9/0L/f/t/z//9z/3/5l9+M32x/e/Y9s8EIpFI/B6S8JOTk1J/8P10IpFIJBLpB+R6KVSKKaQ8p5RyX5RckYpcVC5K5aIKR1HlSflJOSmXJbUa1WpUS9U+qf1S+6UWkZpS46VmqbZa21fbULe121t6t3f4+/gZ/Uz/pmGmYZlhWBYOxzBsw0P7H9//+gZ+/2L64f33k0Qikcj/P0mGz/afn39+/vN6IpFIJH4PJHkf24/9x+v9RkSiiMgiosuIKBGRAYkiIhJFRJ9n+Hsi8sE/8/d/Pz/3j/0/EZEHRKRYFhZ5URRFURSFoihK4iiO41geJbC+VlZWNlhYG11tXFzc3Nra2tjY+PjE5OTk9PTi0uLS4vLq6urq2tra2t7e3t7e4eHh7u7u7u7h/vHh6en+4eHh6eHx4en+4en+4en+4en+4dH8x8NPhicmJ4Yn+4YnxicmJwZHJ4cnJ4cm88uJifHJyYnx/JIkIpH49STh54eHxx+/PJ5IJBKJ/ANJrCjKiqIs3GkZln9+r89vJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBL/D8kfH45P9veJRCKR+HWS8Of+v3t4eHjy+eTw++v9e8i/IpH49ZLkf7r37+4f7h7uHh6ev3t8uHu4//jPz/cPDz/u/+HhyZ63H5/cf/j1/u9/9f7vH95+3f/w+/e//r3/9W/3H/91/9/9f/9t/9/9//322/2//f/77+e/7b/7/9+/t//9/+f7+e83kUgkEolEIv9Lkn75/Pb+x+f93+9vJBL5/yX5/Mfj8R+ffn++kUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFI/D5JkpWd7R/Wn+3/fN9g/y//b//2/x+9/5H4F+T/+yR8/pX3v7L+9xfb319rf32v/e+v8H9/j/j794pEIpFIJBKJ/C2S/u0vGvj5f89/ff77C9rfX/D71+uJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJ/EWS8G3/Tybh/2n+T+Z/IpFIJBJ/jSQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSia+QJKR+YhKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJP4FkvR/P379R/P7jyST+PWSJP1/NP/p85/PJBKJRP5vksmQ/1kkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKR+OqT9H82kUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEokvIUmSJP1fTJL+/wM/n0gkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgk/gWS8B/7j0QikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJ/N+SJKQ+3/8Xkv4P/3wCyYIk4f8vSP+HSf/HSfj/x8/4j33EIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEokvIQn/v5AkvEESiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKR+PWS/B8hCf/HSfi/kCS8iUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgk/i+SJP3/BwA/n0gkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKR+PWS8P8f+Y9EIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKR+BdI/x8hSf8XkvT/X0gS/i8kfT6RSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQkEolEIpFIJBKJRCKR+PWS/B8hCf/HSfg/Qfg/QpK+/wNFv0xGqG4GwgAAAABJRU5ErkJggg==" alt="Logo CHRYSAS" class="h-8">
+            </div>
             <nav id="sidebar-nav" class="flex-grow px-4 py-6"></nav>
         </aside>
+
+        <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="h-16 header border-b flex items-center justify-between px-6">
-                <h2 id="page-title" class="text-xl font-semibold text-gray-800 dark:text-gray-200"></h2>
-                <div class="flex items-center gap-4">
-                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400" aria-label="Toggle dark mode">
+            <header class="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 flex-shrink-0">
+                <h2 id="page-title" class="text-xl font-semibold"></h2>
+                <div class="flex items-center gap-6">
+                    <!-- LOGHI PARTNER NELL'HEADER -->
+                    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAACTCAMAAABqg3seAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAKeUExURQAAABQkPTs+QwwNDQAAABYoQD9ESCMsPiglJScnKBooMDU7SiAyQj1CRz1BRTs/RSQrNikrNScsNCMyPzE2OzpBSzNBQD5BQzhBSQ4WFj1DQzlBRTc+RzI5QDo/QjpARUBCQg8fJzQ8PyYtOCcsNScsNSYuNyMyPSgvOScwNy4xOSQuNCEtNSQrNSQrNiMwNy0wOCswOCMuNiQtNSIuNyIvNyAvNw0ZJyQrMh8qNCQrNiMtNCMtNiMuNiQtNiIsNh4oMygpJyUwOSkvOCMwOCAqMiMuMw4XKCcpKRslLSkvMw8YLhgfISMxNxcjLDA2OiQrMBkeKSMvNiQtMycsMyAuMyYtMyIwMiIsMiYtMiUtMyUzOCQxNCYyNSwzN0A/QSMyMiU0Nik3Oi04O0I/QUBBQUE+Pzs9Pj9AP0U/QUE/QEI/QEI+P0A+P0M/QEA/Pz9APz1APz5BPz5APj9APz1BPztBPzg/PzY+PzQ8PjM7Pjs+PzE3PjQ7PzU7PzY7Pjg7Pjs7Pjk7PjM5PjY6PjU6Pjs6Pjo6Pjc7Pzc6PzY6PzU5PzM5Pzg6Pzg5PzY5PzU5PzQ4PzM4PzI4PzA3PzE3PjA3PjA2PzI2PjE2PjE1PjA1Pjs3PkA4P0U5QEc6QUg7QUs8Q009RFM/RVs/Q2I/QGo/QGs/QHA/QHI/QHM/QHQ/QHU/QHY/QHY+QHZ9QHe8QHr8QH79QH/+QIAAAICAgP//AAAA//8A/wD/AP//AP8A//////8AAAAAAAAAAAAAAP//AP//AP8A/wD//wD/AP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwG9uQAAAQB0Uk5T////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AFP3ByUAAAJqSURBVHja7dwJQNtAFMbhl6bAAmBgZqAAYGBmIAA2MDAwMDAwMDDwmMDADMxeP8zCDMzADMwgzAhmhmEYhpkZhmEYhmEYhmEYhiEbZnZ69l+dPO1pT3va0572tKc97WlPe9rTnva0pz3taU972tOe9rSnPe1pT3va0572tKc97WlPe9rTnva0pz3taU972tOe9rS/z+wW/7v6P4xLgAsLMDmAwQUsTMBiAYYLMD2AwQMMTMDRAAwXMDAAwwUsTMDhAgYOMDiA4QJGDbA4gOECBg0wOIDhAoYOMCCA4QKGDRg0wOAAhg8YNcDgAIYPGDSgAX5ADzhAowYaYPAAhg8YNcDgAIYPGDSgAX5ADzhAowYaYPAAhg8YNcDCAwYNcDgAIYPGDQAA4YOMDgAIYPGDQAA4QOGDRg0wIABDhhAowYaYPAAhg8YNMDCAwYNcDgAIYPGDQAA4YOMDgAIYPGDQAA4QOGDRg0wIABDhhAowYaYPAAhg8YNcDCAwYNcDgAIYPGDQAA4YOMDgAIYPGDQAA4QOGDRg0wIABDhhAowYaYPAAhg8YNcDCAwYNcDgAIYPGDQAA4YOMDgAIYPGDQAA4QOGDRg0wIABDhhAowYaYPAAhg8YNMCgAQYMMHiA4QIGNMDhAgYOMDiAwQEMFzBowOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wOABDhh0wO_Tornike QafAragveli" alt="Loghi Partner" class="h-10">
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" aria-label="Toggle dark mode">
                         <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 7.072l.707-.707a1 1 0 10-1.414-1.414l-.707.707a1 1 0 101.414 1.414zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                     </button>
                     <div class="text-right">
-                        <p class="font-semibold text-gray-700 dark:text-gray-300">CHRYSAS S.c. a r.l.</p>
-                        <span id="current-date" class="text-sm text-gray-500 dark:text-gray-400"></span>
+                        <span id="current-date" class="text-sm text-slate-500 dark:text-slate-400"></span>
                     </div>
                 </div>
             </header>
             <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto p-6"></main>
         </div>
     </div>
-    <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+    <div id="toast" class="toast px-6 py-3 rounded-lg text-white font-medium shadow-lg" role="alert" aria-live="polite"></div>
     <div id="print-area" class="hidden"></div>
-</body>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_v5',
+            STORAGE_KEY: 'pca_app_data_v9', // Versione aggiornata per i radio button
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
-                { id: 'lista-pca', label: 'Lista PCA', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>' },
-                { id: 'nuovo-pca', label: 'Nuovo PCA', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>' },
+                { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>' },
+                { id: 'nuovo-pca', label: 'Esegui Controllo', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>' },
                 { id: 'impostazioni', label: 'Impostazioni', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' }
             ],
-            CHECK_TEMPLATES: [
-                { id: "atmosfera", title: "A. Emissioni in Atmosfera", icon: "💨", items: ["Le piste di cantiere sono state bagnate a sufficienza?", "I mezzi in transito rispettano i limiti di velocità?", "I mezzi in uscita utilizzano il telo di copertura?", "L'impianto lavaruote è funzionante e utilizzato?", "I cumuli di materiali sono coperti o bagnati?"] },
-                { id: "rifiuti", title: "B. Gestione Rifiuti", icon: "🗑️", items: ["Il DTR è identificato, delimitato e ordinato?", "I rifiuti sono separati per CER e con corretta cartellonistica?", "I rifiuti pericolosi sono stoccati in modo sicuro?", "La documentazione di trasporto (FIR) è disponibile e corretta?"] },
-                { id: "suolo", title: "C. Tutela Suolo e Acque", icon: "💧", items: ["Oli e carburanti sono stoccati su bacini di contenimento?", "Il kit di emergenza ambientale è presente e completo?", "Sono visibili sversamenti o macchie sul suolo?", "Le vasche di lavaggio betoniere sono a tenuta?"] },
-                { id: "rumore", title: "D. Rumore e Vibrazioni", icon: "🔊", items: ["Le attività rumorose rispettano gli orari autorizzati?", "Le barriere acustiche (se previste) sono installate correttamente?"] }
-            ]
+            CHECK_TEMPLATES_PERIODIC: [
+                { id: "atmosfera", title: "A. Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Le piste di cantiere sono state bagnate a sufficienza?", "I mezzi in transito rispettano i limiti di velocità?", "I mezzi in uscita utilizzano il telo di copertura?", "L'impianto lavaruote è funzionante e utilizzato?", "I cumuli di materiali sono coperti o bagnati?"] },
+                { id: "rifiuti", title: "B. Gestione Rifiuti", icon: "🗑️", significativita: "ALTA", items: ["Il DTR è identificato, delimitato e ordinato?", "I rifiuti sono separati per CER e con corretta cartellonistica?", "I rifiuti pericolosi sono stoccati in modo sicuro?", "La documentazione di trasporto (FIR) è disponibile e corretta?"] },
+                { id: "suolo", title: "C. Tutela Suolo e Acque", icon: "💧", significativita: "MEDIA", items: ["Oli e carburanti sono stoccati su bacini di contenimento?", "Il kit di emergenza ambientale è presente e completo?", "Sono visibili sversamenti o macchie sul suolo?", "Le vasche di lavaggio betoniere sono a tenuta?"] },
+                { id: "rumore", title: "D. Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Le attività rumorose rispettano gli orari autorizzati?", "Le barriere acustiche (se previste) sono installate correttamente?"] }
+            ],
+            CHECK_TEMPLATES_PRELIMINARE: [
+                { id: "stato_luoghi", title: "Verifica Stato dei Luoghi (Punto Zero)", icon: "📍", items: ["Analisi vincoli specifici e servitù completata", "Mappatura recettori sensibili eseguita (corpi idrici, abitazioni)", "Stato della vegetazione documentato", "Verificata assenza di rifiuti o materiali abbandonati preesistenti", "Verificata assenza di evidenze di contaminazione pregressa (macchie, odori)"] }
+            ],
+            CHECK_TEMPLATES_FINALE: [
+                { id: "ripristino", title: "Verifica Ripristino Finale", icon: "✅", items: ["Area riconsegnata come da verbale di ispezione preliminare", "Completa rimozione di rifiuti, attrezzature e installazioni temporanee", "Opere di ripristino ambientale (rinverdimenti, etc.) eseguite correttamente", "Assenza di impatti residui visibili (es. sversamenti)"] }
+            ],
         },
-        state: { isSaving: false, tempPhotos: {} },
+
+        state: {
+            isSaving: false,
+            tempPhotos: {},
+            activeChart: null,
+        },
         dom: {},
 
         init() {
@@ -87,132 +105,330 @@ document.addEventListener('DOMContentLoaded', () => {
                 toast: document.getElementById('toast'), printArea: document.getElementById('print-area'),
                 theme: { toggleBtn: document.getElementById('theme-toggle'), darkIcon: document.getElementById('theme-toggle-dark-icon'), lightIcon: document.getElementById('theme-toggle-light-icon'), }
             };
-
             this.ui.renderNav();
-            this.handlers.attachNavListeners();
-            this.dom.theme.toggleBtn.addEventListener('click', () => this.ui.applyTheme(!document.documentElement.classList.contains('dark')));
-            this.dom.currentDate.textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            this.ui.applyTheme(localStorage.getItem('theme') === 'dark');
+            this.handlers.attachGlobalListeners();
+            this.ui.applyTheme(localStorage.getItem('theme') === 'dark', true);
             this.ui.showTab('dashboard');
         },
         
         store: {
-            getAll:() => JSON.parse(localStorage.getItem(App.config.STORAGE_KEY) || '[]'),
-            saveAll:(reports) => localStorage.setItem(App.config.STORAGE_KEY, JSON.stringify(reports)),
-            getById:(id) => App.store.getAll().find(r => r.id === id),
-            save(newReport){ const reports=this.getAll(); if(reports.some(r => r.id===newReport.id)){throw new Error(`ID Scheda ${newReport.id} già esistente.`);} reports.push(newReport); this.saveAll(reports);},
-            delete:(id) => App.store.saveAll(App.store.getAll().filter(r => r.id !== id)),
+            getAll: () => JSON.parse(localStorage.getItem(App.config.STORAGE_KEY) || '[]'),
+            saveAll: (reports) => localStorage.setItem(App.config.STORAGE_KEY, JSON.stringify(reports)),
+            getById: (id) => App.store.getAll().find(r => r.id === id),
+            save(newReport) { const reports = this.getAll(); if (reports.some(r => r.id === newReport.id)) { throw new Error(`ID Scheda ${newReport.id} già esistente.`); } reports.push(newReport); this.saveAll(reports); },
+            delete: (id) => App.store.saveAll(App.store.getAll().filter(r => r.id !== id)),
+            getNextId: () => (App.store.getAll().reduce((max, r) => Math.max(max, r.id), 0) + 1),
             getDashboardStats() {
                 const reports = this.getAll();
                 let openNc = 0, totalChecks = 0, compliantChecks = 0;
                 const ncByAspect = {};
+
                 reports.forEach(report => {
-                    Object.entries(report.checks).forEach(([aspectTitle, checks]) => {
-                        checks.forEach(check => {
-                            if (check.result !== 'NA') totalChecks++;
-                            if (check.result === 'C') compliantChecks++;
-                            if (check.result === 'NC') {
-                                openNc++;
-                                ncByAspect[aspectTitle] = (ncByAspect[aspectTitle] || 0) + 1;
-                            }
+                    if (report.type === 'periodico' && report.checks) {
+                        Object.entries(report.checks).forEach(([aspectId, checks]) => {
+                            const template = App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === aspectId);
+                            if (!template) return;
+                            
+                            checks.forEach(check => {
+                                if (check.result !== 'NA') totalChecks++;
+                                if (check.result === 'C') compliantChecks++;
+                                if (check.result === 'NC') {
+                                    openNc++;
+                                    ncByAspect[template.title] = (ncByAspect[template.title] || 0) + 1;
+                                }
+                            });
                         });
-                    });
+                    }
                 });
+
                 const avgCompliance = totalChecks > 0 ? `${((compliantChecks / totalChecks) * 100).toFixed(0)}%` : 'N.D.';
                 return { totalPca: reports.length, openNc, totalChecks, avgCompliance, ncByAspect };
             },
-            getNextId:() => (App.store.getAll().reduce((max, r) => Math.max(max, r.id), 0) + 1),
         },
         
         ui: {
-            showToast(message, type = 'success') { const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' }; App.dom.toast.textContent = message; App.dom.toast.className = `toast ${colors[type]} show`; setTimeout(() => App.dom.toast.classList.remove('show'), 4000); },
-            showTab(tabId) {
-                const tab = App.config.TABS.find(t => t.id === tabId);
-                App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => { const isActive = link.dataset.tabId === tabId; link.classList.toggle('active', isActive); link.classList.toggle('text-white', isActive); });
-                App.dom.pageTitle.textContent = tab?.label;
-                const renderFunction = this[`render_${tabId.replace('-', '')}`];
-                if (renderFunction) {
-                    renderFunction.call(this);
-                }
+            renderMap: { 'dashboard': 'renderDashboard', 'lista-pca': 'renderListaPca', 'nuovo-pca': 'renderNuovoPca', 'impostazioni': 'renderImpostazioni' },
+            
+            showToast(message, type = 'success') { const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' }; App.dom.toast.textContent = message; App.dom.toast.className = `toast px-6 py-3 rounded-lg text-white font-medium shadow-lg ${colors[type]} show`; setTimeout(() => App.dom.toast.classList.remove('show'), 4000); },
+            showTab(tabId) { const tab = App.config.TABS.find(t => t.id === tabId); if (!tab) return; App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => { link.classList.toggle('active', link.dataset.tabId === tabId); }); App.dom.pageTitle.textContent = tab.label; const renderFunctionName = this.renderMap[tabId]; if (this[renderFunctionName]) { this[renderFunctionName](); } },
+            renderNav() { App.dom.sidebarNav.innerHTML = App.config.TABS.map(t => `<a href="#" data-tab-id="${t.id}" class="sidebar-link flex items-center px-4 py-3 mt-2 text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200">${t.icon} ${t.label}</a>`).join(''); },
+            renderDashboard() { const stats = App.store.getDashboardStats(); App.dom.mainContent.innerHTML = App.templates.dashboard(stats); const ctx = document.getElementById('ncChart')?.getContext('2d'); if (!ctx) return; if (App.state.activeChart) App.state.activeChart.destroy(); App.state.activeChart = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(stats.ncByAspect).map(l => l.substring(l.indexOf('.') + 1).trim()), datasets: [{ data: Object.values(stats.ncByAspect), backgroundColor: 'rgba(59, 130, 246, 0.7)' }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } } }); },
+            renderImpostazioni() { App.dom.mainContent.innerHTML = App.templates.settings(); App.handlers.attachSettingsListeners(); },
+            renderListaPca() {
+                const reports = App.store.getAll().sort((a, b) => b.id - a.id);
+                App.dom.mainContent.innerHTML = App.templates.pcaList(reports);
+                App.handlers.attachPcaListListeners();
             },
-            renderNav() { App.dom.sidebarNav.innerHTML = App.config.TABS.map(t => `<a href="#" data-tab-id="${t.id}" class="sidebar-link flex items-center px-4 py-2 mt-2 text-gray-700 dark:text-gray-200 rounded-md">${t.icon} ${t.label}</a>`).join(''); },
-            render_dashboard() {
-                const stats = App.store.getDashboardStats();
-                App.dom.mainContent.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"><div class="card p-6 rounded-lg shadow-md flex items-center"><div><h3 class="text-sm font-medium text-secondary">PCA Compilati</h3><p class="mt-1 text-3xl font-semibold">${stats.totalPca}</p></div></div><div class="card p-6 rounded-lg shadow-md flex items-center"><div><h3 class="text-sm font-medium text-secondary">NC Aperte</h3><p class="mt-1 text-3xl font-semibold text-red-500">${stats.openNc}</p></div></div><div class="card p-6 rounded-lg shadow-md flex items-center"><div><h3 class="text-sm font-medium text-secondary">Controlli Totali</h3><p class="mt-1 text-3xl font-semibold">${stats.totalChecks}</p></div></div><div class="card p-6 rounded-lg shadow-md flex items-center"><div><h3 class="text-sm font-medium text-secondary">Conformità Media</h3><p class="mt-1 text-3xl font-semibold text-green-500">${stats.avgCompliance}</p></div></div></div><div class="mt-8 card p-6 rounded-lg shadow-md"><h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto Ambientale</h3><div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div></div>`;
-                const ctx = App.dom.mainContent.querySelector('#ncChart').getContext('2d');
-                if (window.ncChart) { window.ncChart.destroy(); }
-                window.ncChart = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(stats.ncByAspect).map(l => l.substring(l.indexOf('.') + 1).trim()), datasets: [{ data: Object.values(stats.ncByAspect), backgroundColor: 'rgba(59, 130, 246, 0.7)' }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } } });
+            
+            renderNuovoPca() {
+                const nextId = App.store.getNextId();
+                const today = new Date().toISOString().slice(0, 10);
+                App.dom.mainContent.innerHTML = App.templates.newPcaForm({ nextId, today });
+                App.handlers.attachNewPcaFormListeners();
+                this.updateChecklistVisibility('periodico');
             },
-            render_listapca() {
-                const reports = App.store.getAll().sort((a,b) => b.id-a.id);
-                let content = `<div class="form-section"><div class="overflow-x-auto"><table class="min-w-full bg-transparent"><thead class="bg-gray-50 dark:bg-gray-700"><tr><th class="p-3 text-left text-xs font-medium uppercase">ID</th><th class="p-3 text-left text-xs font-medium uppercase">Data</th><th class="p-3 text-left text-xs font-medium uppercase">WBS</th><th class="p-3 text-left text-xs font-medium uppercase">Stato</th><th class="p-3 text-left text-xs font-medium uppercase">Azioni</th></tr></thead><tbody class="divide-y divide-gray-200 dark:divide-gray-700">`;
-                if(reports.length === 0){ content+=`<tr><td colspan="5" class="p-8 text-center text-secondary">Nessun PCA compilato.</td></tr>`; } 
-                else { reports.forEach(report => { const ncCount = Object.values(report.checks).flat().filter(c=>c.result==='NC').length; content+=`<tr class="hover:bg-gray-50 dark:hover:bg-gray-800"><td class="p-3 font-medium">${report.id}</td><td class="p-3">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td><td class="p-3">${report.wbs}</td><td class="p-3 ${ncCount>0?'text-red-500 font-semibold':'text-green-500'}">${ncCount>0?`${ncCount} NC Aperte`:'Conforme'}</td><td class="p-3"><div class="flex items-center gap-4"><button data-id="${report.id}" class="print-pca-btn text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Stampa PCA"><svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button><button data-id="${report.id}" class="delete-pca-btn text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500" title="Elimina PCA"><svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></td></tr>`; }); }
-                content+=`</tbody></table></div></div>`; App.dom.mainContent.innerHTML = content; App.handlers.attachPcaListListeners();
+            
+            updateChecklistVisibility(type) {
+                document.getElementById('checklist-periodico').style.display = type === 'periodico' ? 'block' : 'none';
+                document.getElementById('checklist-preliminare').style.display = type === 'preliminare' ? 'block' : 'none';
+                document.getElementById('checklist-finale').style.display = type === 'finale' ? 'block' : 'none';
             },
-            render_nuovopca() { const nextId = App.store.getNextId(); const today = new Date().toISOString().slice(0, 10); App.dom.mainContent.innerHTML = `<form id="new-pca-form" novalidate><div class="form-section p-6 rounded-lg mb-6"><h2 class="text-2xl font-bold mb-6 border-b pb-4 dark:border-gray-700">1. Dati Generali</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div><label for="pca-id" class="text-sm font-medium">Scheda N°</label><input type="number" id="pca-id" name="id" class="form-input mt-1 w-full" value="${nextId}" required></div><div><label for="pca-date" class="text-sm font-medium">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input mt-1 w-full" required></div><div><label for="pca-wbs" class="text-sm font-medium">WBS/Area</label><input type="text" id="pca-wbs" name="wbs" class="form-input mt-1 w-full" placeholder="Es. AS09-MU50" required></div><div class="md:col-span-2"><label for="pca-activities" class="text-sm font-medium">Lavorazioni</label><input type="text" id="pca-activities" name="activities" class="form-input mt-1 w-full" required></div><div><label for="pca-inspector" class="text-sm font-medium">Compilatore</label><input type="text" id="pca-inspector" name="inspector" class="form-input mt-1 w-full" placeholder="Nome e Funzione" required></div></div></div><h2 class="text-2xl font-bold mb-6 mt-10 border-b pb-4 dark:border-gray-700">2. Controlli</h2><div class="space-y-6">${App.config.CHECK_TEMPLATES.map(t=>`<div class="control-card border rounded-lg p-6 shadow-sm"><h3 class="text-xl font-semibold mb-4">${t.icon} ${t.title}</h3><div class="space-y-4 mb-6">${t.items.map((item,idx)=>`<div class="check-item flex justify-between items-center border-b dark:border-gray-700 py-2"><label class="mr-4">${item}</label><select name="check_${t.id}_${idx}" class="form-select w-24"><option value="C">C</option><option value="NC">NC</option><option value="NA" selected>N.A.</option></select></div>`).join('')}</div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-4"><div><label class="text-sm font-medium mb-2 block">Osservazioni</label><textarea name="observation_${t.id}" class="form-textarea w-full h-24"></textarea></div><div><label class="text-sm font-medium mb-2 block">Foto</label><div class="flex items-center gap-4"><div id="preview_${t.id}" class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center text-gray-400"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div><input type="file" accept="image/*" class="photo-input hidden" data-template-id="${t.id}"><button type="button" class="add-photo-btn px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-md text-sm font-semibold">Aggiungi</button></div></div></div></div>`).join('')}</div><div class="flex justify-end gap-4 mt-8"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-700 text-white rounded-md hover:bg-blue-800 font-semibold">Salva PCA</button></div></form>`; App.handlers.attachNewPcaFormListeners(); },
-            render_impostazioni() { App.dom.mainContent.innerHTML=`<div class="space-y-8"><div class="form-section"><h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2><p class="text-secondary mb-4">Salva una copia di tutti i tuoi PCA o ripristina da un backup.</p><div class="flex gap-4"><button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button><button id="import-btn" class="px-5 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 font-semibold">Importa Dati</button><input type="file" id="import-file" class="hidden" accept=".json"></div></div></div>`; App.handlers.attachSettingsListeners(); },
-            prepareAndPrintReport(reportId){const report=App.store.getById(reportId);if(!report)return;const printContent=`<div style="font-family:sans-serif;color:black;"><h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Rapporto di Controllo Ambientale</h1><p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">PCA N° ${report.id}</p><table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Lavorazioni</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector}</td></tr></tbody></table>${App.config.CHECK_TEMPLATES.map(template => { const reportSectionTitle = template.title; const reportSectionId = template.id; const observationsText = report.observations[reportSectionId] || 'Nessuna'; const photoSrc = report.photos[reportSectionId]; return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;"><h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${reportSectionTitle}</h2><table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>${report.checks[reportSectionTitle].map(item=>`<tr><td style="padding:0.3rem 0;">${item.item}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;">${item.result}</td></tr>`).join('')}</tbody></table>${(observationsText !== 'Nessuna' || photoSrc) ? `<div style="background-color:#f3f4f6;padding:1rem;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;margin-bottom:1rem;">${observationsText}</p>${photoSrc ? `<h3 style="font-weight:bold;margin-bottom:0.5rem;">Foto</h3><img src="${photoSrc}" style="width:80%;max-width:400px;border-radius:0.25rem;display:block;" alt="Foto per ${reportSectionTitle}">` : ''}</div>` : ''}</div>`; }).join('')}</div>`; App.dom.printArea.innerHTML=printContent; window.print();},
-            applyTheme(isDark){document.documentElement.classList.toggle('dark',isDark);App.dom.theme.darkIcon.classList.toggle('hidden',!isDark);App.dom.theme.lightIcon.classList.toggle('hidden',isDark);localStorage.setItem('theme',isDark?'dark':'light')},
-            resetPcaForm:() => {App.state.tempPhotos={}; App.ui.render_nuovopca();},
+
+            applyTheme(isDark, isInitial = false) { document.documentElement.classList.toggle('dark', isDark); App.dom.theme.darkIcon.classList.toggle('hidden', !isDark); App.dom.theme.lightIcon.classList.toggle('hidden', isDark); if (!isInitial) { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } },
+            resetPcaForm: () => { App.state.tempPhotos = {}; App.ui.renderNuovoPca(); },
+
+            prepareAndPrintReport(reportId) {
+                const report = App.store.getById(reportId);
+                if (!report) return;
+                
+                let templates;
+                if(report.type === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+                else if(report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
+                else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+
+                App.dom.printArea.innerHTML = App.templates.printReport(report, templates);
+                window.print();
+            },
         },
         
         handlers: {
-            attachNavListeners() { App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => link.addEventListener('click', e => { e.preventDefault(); App.ui.showTab(e.currentTarget.dataset.tabId); })); },
-            attachPcaListListeners() { App.dom.mainContent.querySelectorAll('.print-pca-btn').forEach(b => b.addEventListener('click', (e) => App.ui.prepareAndPrintReport(parseInt(e.currentTarget.dataset.id)))); App.dom.mainContent.querySelectorAll('.delete-pca-btn').forEach(b => b.addEventListener('click', (e) => this.onDeletePca(parseInt(e.currentTarget.dataset.id)))); },
-            onDeletePca(reportId) { if (confirm(`Sei sicuro di voler eliminare il PCA N° ${reportId}?`)) { App.store.delete(reportId); App.ui.showToast(`PCA N° ${reportId} eliminato.`, 'info'); App.ui.render_listapca(); }},
-            attachNewPcaFormListeners() { const form = App.dom.mainContent.querySelector('#new-pca-form'); if(form) { form.addEventListener('submit', this.onNewPcaSubmit.bind(this)); form.querySelectorAll('.add-photo-btn').forEach(b => b.addEventListener('click', () => b.previousElementSibling.click())); form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', this.onPhotoUpload.bind(this))); form.querySelector('#cancel-pca-btn').addEventListener('click', () => App.ui.resetPcaForm()); } },
-            resizeImage: (file,maxSize) => new Promise((resolve,reject)=>{const reader=new FileReader;reader.onload=e=>{const img=new Image;img.onload=()=>{let{width,height}=img;if(width>height){if(width>maxSize){height*=maxSize/width;width=maxSize;}}else{if(height>maxSize){width*=maxSize/height;height=maxSize;}}const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;canvas.getContext('2d').drawImage(img,0,0,width,height);resolve(canvas.toDataURL('image/jpeg',.8))};img.onerror=reject;img.src=e.target.result};reader.onerror=reject;reader.readAsDataURL(file)}),
-            async onPhotoUpload(e) { const input = e.target; const templateId = input.dataset.templateId; const previewContainer = App.dom.mainContent.querySelector(`#preview_${templateId}`); const file = input.files[0]; if (!file) return; previewContainer.innerHTML = `<span class="text-xs">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="image-preview" alt="Anteprima">`; App.state.tempPhotos[templateId] = dataUrl; } catch (err) { App.ui.showToast('Errore nel caricamento della foto.', 'error'); previewContainer.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`; delete App.state.tempPhotos[templateId]; } },
+            attachGlobalListeners() { App.dom.sidebarNav.addEventListener('click', e => { const link = e.target.closest('.sidebar-link'); if (link) { e.preventDefault(); App.ui.showTab(link.dataset.tabId); } }); App.dom.theme.toggleBtn.addEventListener('click', () => App.ui.applyTheme(!document.documentElement.classList.contains('dark'))); App.dom.currentDate.textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); },
+            attachPcaListListeners() { App.dom.mainContent.addEventListener('click', (e) => { const printBtn = e.target.closest('.print-pca-btn'); const deleteBtn = e.target.closest('.delete-pca-btn'); if (printBtn) { App.ui.prepareAndPrintReport(parseInt(printBtn.dataset.id)); } if (deleteBtn) { this.onDeletePca(parseInt(deleteBtn.dataset.id)); } }); },
+            onDeletePca(reportId) { if (confirm(`Sei sicuro di voler eliminare il Controllo N° ${reportId}? L'azione è irreversibile.`)) { App.store.delete(reportId); App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info'); App.ui.renderListaPca(); } },
+            
+            attachNewPcaFormListeners() {
+                const form = document.getElementById('new-pca-form');
+                if (!form) return;
+                
+                form.addEventListener('submit', this.onNewPcaSubmit.bind(this));
+                form.addEventListener('click', (e) => { if (e.target.matches('.add-photo-btn')) { e.target.previousElementSibling.click(); } else if (e.target.matches('#cancel-pca-btn')) { App.ui.resetPcaForm(); } });
+                form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', this.onPhotoUpload.bind(this)));
+                
+                document.getElementById('pca-type')?.addEventListener('change', (e) => {
+                    App.ui.updateChecklistVisibility(e.target.value);
+                });
+            },
+            
             async onNewPcaSubmit(e) {
                 e.preventDefault();
                 if (App.state.isSaving) return;
+
                 App.state.isSaving = true;
-                const saveBtn = e.target.querySelector('#save-pca-btn');
-                saveBtn.disabled = true; saveBtn.textContent = 'Salvando...';
+                const saveBtn = document.getElementById('save-pca-btn');
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = `<span>Salvando...</span>`;
+
                 try {
-                    const requiredFields=Array.from(e.target.querySelectorAll('[required]')); let firstInvalid=null;
-                    requiredFields.forEach(f=>{f.classList.remove('border-red-500');if(!f.value.trim()){f.classList.add('border-red-500');if(!firstInvalid)firstInvalid=f;}});
-                    if(firstInvalid){firstInvalid.focus(); throw new Error('Compilare tutti i campi generali richiesti.');}
+                    const requiredFields = Array.from(e.target.querySelectorAll('[required]'));
+                    let firstInvalid = null;
+                    requiredFields.forEach(f => { f.classList.remove('border-red-500'); if (!f.value.trim()) { f.classList.add('border-red-500', 'dark:border-red-500'); if (!firstInvalid) firstInvalid = f; } });
+                    if (firstInvalid) { firstInvalid.focus(); throw new Error('Compilare tutti i campi generali richiesti.'); }
+
                     const formData = new FormData(e.target);
-                    const newReport = {id: parseInt(formData.get('id')),date:formData.get('date'),wbs:formData.get('wbs'),activities:formData.get('activities'),inspector:formData.get('inspector'),checks:{},observations:{},photos:{}};
-                    App.config.CHECK_TEMPLATES.forEach(t => {
-                        newReport.checks[t.title] = t.items.map((item, idx) => ({item:item,result:formData.get(`check_${t.id}_${idx}`)}));
-                        newReport.observations[t.id] = formData.get(`observation_${t.id}`);
-                        newReport.photos[t.id] = App.state.tempPhotos[t.id] || null;
+                    const reportType = formData.get('type');
+                    
+                    const newReport = {
+                        id: parseInt(formData.get('id')),
+                        type: reportType,
+                        date: formData.get('date'),
+                        wbs: formData.get('wbs'),
+                        activities: formData.get('activities'),
+                        inspector: formData.get('inspector'),
+                        checks: {}, observations: {}, photos: {}
+                    };
+                    
+                    let templates;
+                    if (reportType === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+                    else if (reportType === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
+                    else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+
+                    templates.forEach(template => {
+                        newReport.checks[template.id] = template.items.map((item, idx) => ({ item: item, result: formData.get(`check_${template.id}_${idx}`) }));
+                        newReport.observations[template.id] = formData.get(`observation_${template.id}`);
+                        newReport.photos[template.id] = App.state.tempPhotos[template.id] || null;
                     });
+                    
                     App.store.save(newReport);
-                    App.ui.showToast('Scheda PCA salvata con successo!');
+                    App.ui.showToast('Controllo salvato con successo!', 'success');
                     App.ui.resetPcaForm();
                     App.ui.showTab('lista-pca');
-                } catch(error) {
+
+                } catch (error) {
                     App.ui.showToast(error.message, 'error');
                 } finally {
                     App.state.isSaving = false;
                     saveBtn.disabled = false;
-                    saveBtn.textContent = 'Salva PCA';
+                    saveBtn.textContent = 'Salva Controllo';
                 }
             },
-            attachSettingsListeners() {
-                const exportBtn = App.dom.mainContent.querySelector('#export-btn'); const importBtn = App.dom.mainContent.querySelector('#import-btn'); const importFile = App.dom.mainContent.querySelector('#import-file');
-                if(exportBtn) exportBtn.addEventListener('click', this.exportData);
-                if(importBtn) importBtn.addEventListener('click', () => importFile.click());
-                if(importFile) importFile.addEventListener('change', this.importData);
-            },
-            exportData() { const data=App.store.getAll(); if(data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info'); const dataStr=JSON.stringify(data,null,2); const blob=new Blob([dataStr], {type: 'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`pca_backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); App.ui.showToast("Esportazione dati completata."); },
-            importData(e) { const file = e.target.files[0]; if (!file) return; if (confirm("Attenzione: i dati attuali verranno SOVRASCRITTI. Continuare?")) { const reader=new FileReader(); reader.onload=e=>{try{const data=JSON.parse(e.target.result); if(!Array.isArray(data)) throw new Error(); App.store.saveAll(data); App.ui.showToast("Dati importati con successo!"); App.ui.showTab('dashboard');}catch(err){App.ui.showToast("Errore: il file di backup non è valido.", 'error');}}; reader.readAsText(file); }},
+            
+            async onPhotoUpload(e) { const input = e.target; const templateId = input.dataset.templateId; const previewContainer = document.getElementById(`preview_${templateId}`); const file = input.files[0]; if (!file || !previewContainer) return; previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="w-20 h-20 object-cover rounded border-2 border-slate-300 dark:border-slate-600" alt="Anteprima">`; App.state.tempPhotos[templateId] = dataUrl; } catch (err) { console.error("Image resize error:", err); App.ui.showToast('Errore nel caricamento della foto.', 'error'); previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); delete App.state.tempPhotos[templateId]; } },
+            resizeImage: (file, maxSize) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { const img = new Image(); img.onload = () => { let { width, height } = img; if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.8)); }; img.onerror = reject; img.src = e.target.result; }; reader.onerror = reject; reader.readAsDataURL(file); }),
+            attachSettingsListeners() { document.getElementById('export-btn')?.addEventListener('click', this.exportData); document.getElementById('import-btn')?.addEventListener('click', () => document.getElementById('import-file').click()); document.getElementById('import-file')?.addEventListener('change', this.importData); },
+            exportData() { const data = App.store.getAll(); if (data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info'); const dataStr = JSON.stringify(data, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pca_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); App.ui.showToast("Esportazione dati completata.", 'success'); },
+            importData(e) { const file = e.target.files[0]; if (!file) return; if (confirm("ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?")) { const reader = new FileReader(); reader.onload = e => { try { const data = JSON.parse(e.target.result); if (!Array.isArray(data)) throw new Error("File non valido"); App.store.saveAll(data); App.ui.showToast("Dati importati con successo!", 'success'); App.ui.showTab('dashboard'); } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } }; reader.readAsText(file); } },
         },
-        
-        App.init();
-    });
+
+        templates: {
+            dashboard: (stats) => `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    ${['Controlli Totali', 'NC Aperte', 'Controlli Eseguiti', 'Conformità Media'].map((label, i) => `
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm flex items-center">
+                        <div>
+                            <h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${label}</h3>
+                            <p class="mt-1 text-3xl font-semibold ${i === 1 && stats.openNc > 0 ? 'text-red-500' : (i === 3 ? 'text-green-500' : '')}">${Object.values(stats)[i]}</p>
+                        </div>
+                    </div>`).join('')}
+                </div>
+                <div class="mt-8 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto Ambientale</h3>
+                    <div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div>
+                </div>`,
+            
+            pcaList: (reports) => `
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-transparent text-sm">
+                            <thead class="bg-slate-50 dark:bg-slate-700/50">
+                                <tr>
+                                    ${['ID', 'Data', 'Tipo Controllo', 'WBS/Area', 'Stato', 'Azioni'].map(h => `<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                ${reports.length === 0 ? `<tr><td colspan="6" class="p-8 text-center text-slate-500">Nessun controllo compilato. Inizia dalla sezione 'Esegui Controllo'.</td></tr>` : 
+                                reports.map(report => {
+                                    const ncCount = Object.values(report.checks || {}).flat().filter(c => c.result === 'NC').length;
+                                    const typeLabels = { 'periodico': 'Periodico', 'preliminare': 'Preliminare', 'finale': 'Finale' };
+                                    return `
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200">
+                                        <td class="p-3 font-medium">${report.id}</td>
+                                        <td class="p-3 whitespace-nowrap">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td>
+                                        <td class="p-3 font-medium">${typeLabels[report.type] || 'N.D.'}</td>
+                                        <td class="p-3">${report.wbs}</td>
+                                        <td class="p-3 font-semibold ${ncCount > 0 ? 'text-red-500' : 'text-green-500'}">${report.type !== 'periodico' ? '-' : (ncCount > 0 ? `${ncCount} NC Aperte` : 'Conforme')}</td>
+                                        <td class="p-3">
+                                            <div class="flex items-center gap-4">
+                                                <button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400" title="Stampa Verbale"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
+                                                <button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-500" title="Elimina Verbale"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                            </div>
+                                        </td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`,
+            
+            newPcaForm: ({ nextId, today }) => {
+                const renderChecklist = (templates, type) => `
+                <div id="checklist-${type}" class="space-y-6" style="display: none;">
+                    ${templates.map(t => {
+                        const significativitaBadge = t.significativita ? {
+                            'ALTA': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                            'MEDIA': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                            'BASSA': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        }[t.significativita] : '';
+                        return `
+                        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold">${t.icon} ${t.title}</h3>
+                                ${t.significativita ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${significativitaBadge}">SIGNIFICATIVITÀ ${t.significativita}</span>` : ''}
+                            </div>
+                            <div class="space-y-4 mb-6">
+                                ${t.items.map((item, idx) => {
+                                    const baseName = `check_${t.id}_${idx}`;
+                                    return `
+                                    <div class="check-item flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200 dark:border-slate-700 py-3 gap-3">
+                                        <label class="mr-4 text-sm flex-1">${item}</label>
+                                        <div class="flex items-center gap-x-5 text-sm flex-shrink-0">
+                                            <div class="flex items-center">
+                                                <input id="${baseName}_c" name="${baseName}" type="radio" value="C" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
+                                                <label for="${baseName}_c" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Sì</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
+                                                <label for="${baseName}_nc" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">No</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" checked>
+                                                <label for="${baseName}_na" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">N.A.</label>
+                                            </div>
+                                        </div>
+                                    </div>`
+                                }).join('')}
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-4">
+                                <div><label class="text-sm font-medium mb-2 block">Osservazioni e Misure Correttive</label><textarea name="observation_${t.id}" class="form-textarea" rows="3"></textarea></div>
+                                <div><label class="text-sm font-medium mb-2 block">Rilievo Fotografico</label><div class="flex items-center gap-4"><div id="preview_${t.id}" class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center text-slate-400">${App.templates.imagePlaceholderIcon()}</div><input type="file" accept="image/*" class="photo-input hidden" data-template-id="${t.id}"><button type="button" class="add-photo-btn px-4 py-2 bg-slate-200 dark:bg-slate-600 rounded-md text-sm font-semibold hover:bg-slate-300 dark:hover:bg-slate-500">Aggiungi</button></div></div>
+                            </div>
+                        </div>`
+                    }).join('')}
+                </div>`;
+                return `
+                <form id="new-pca-form" novalidate class="space-y-8">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali del Controllo</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
+                            <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
+                            <div><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select"><option value="periodico" selected>Periodico</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
+                            <div class="md:col-span-2"><label for="pca-wbs" class="form-label">WBS / Area</label><input type="text" id="pca-wbs" name="wbs" class="form-input" placeholder="Es. AS09-MU50" required></div>
+                            <div><label for="pca-inspector" class="form-label">Compilatore (RCO/Addetto)</label><input type="text" id="pca-inspector" name="inspector" class="form-input" placeholder="Nome e Funzione" required></div>
+                            <div class="md:col-span-3"><label for="pca-activities" class="form-label">Lavorazioni in corso / Oggetto del controllo</label><input type="text" id="pca-activities" name="activities" class="form-input" placeholder="Es. Scavi, gestione area, ispezione preliminare..." required></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2>
+                        ${renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC, 'periodico')}
+                        ${renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE, 'preliminare')}
+                        ${renderChecklist(App.config.CHECK_TEMPLATES_FINALE, 'finale')}
+                    </div>
+                    <div class="flex justify-end gap-4 pt-4"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">Salva Controllo</button></div>
+                </form>
+                <style> .form-label { @apply text-sm font-medium text-slate-600 dark:text-slate-300; } .form-input, .form-select, .form-textarea { @apply mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-900 text-sm; } </style>`
+            },
+            
+            imagePlaceholderIcon: () => `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
+            
+            settings: () => `
+                <div class="space-y-8 max-w-2xl">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2>
+                        <p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza di tutti i tuoi verbali su un file, o ripristina i dati da un backup precedente.</p>
+                        <div class="flex gap-4">
+                            <button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button>
+                            <button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button>
+                            <input type="file" id="import-file" class="hidden" accept=".json">
+                        </div>
+                    </div>
+                </div>`,
+            
+            printReport: (report, templates) => {
+                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
+                 return `
+                <div style="font-family:sans-serif;color:black;">
+                    <h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1>
+                    <p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p>
+                    <table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody>
+                        <tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs}</td></tr>
+                        <tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr>
+                        <tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Oggetto/Lavorazioni</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities}</td></tr>
+                        <tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector}</td></tr>
+                    </tbody></table>
+                    ${templates.map(t => {
+                        const checks = report.checks[t.id] || [];
+                        const observationsText = report.observations[t.id] || '';
+                        const photoSrc = report.photos[t.id];
+                        return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;"><h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${t.title}</h2><table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>${checks.map(item => `<tr><td style="padding:0.3rem 0;">${item.item}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;">${item.result}</td></tr>`).join('')}</tbody></table>${(observationsText.trim() !== '' || photoSrc) ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;margin-bottom:1rem;white-space:pre-wrap;">${observationsText || 'Nessuna'}</p>${photoSrc ? `<h3 style="font-weight:bold;margin-bottom:0.5rem;">Rilievo Fotografico</h3><img src="${photoSrc}" style="width:80%;max-width:400px;border-radius:0.25rem;display:block;" alt="Foto per ${t.title}">` : ''}</div>` : ''}</div>`;
+                    }).join('')}
+                </div>`
+            }
+        }
+    };
+
+    App.init();
+});
 </script>
-<style>
-@media print {
-    body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact; color-adjust: exact; }
-    body > *:not(#print-area) { display: none !important; }
-    #print-area { display: block !important; }
-    @page { size: A4; margin: 1.5cm; }
-}
-</style>
+
 </body>
 </html>
