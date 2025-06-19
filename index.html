@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Gestione PCA - CHRYSAS (Versione Migliorata)</title>
+    <title>App Gestione PCA - CHRYSAS (Versione Finale)</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,7 +36,12 @@
             body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact; color-adjust: exact; }
             body > *:not(#print-area) { display: none !important; }
             #print-area { display: block !important; }
-            @page { size: A4; margin: 1.5cm; }
+            @page { 
+                size: A4; 
+                margin: 1.5cm;
+                @top-center { content: none; }
+                @bottom-center { content: none; }
+            }
         }
         .form-input:invalid, .form-select:invalid, .form-textarea:invalid { border-color: #ef4444; }
         .hidden { display: none; }
@@ -47,7 +52,7 @@
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v5',
+            STORAGE_KEY: 'pca_app_data_idb_v6',
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
                 { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
@@ -215,7 +220,7 @@
                 else if (report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
                 else templates = App.config.CHECK_TEMPLATES_PERIODIC;
                 App.dom.printArea.innerHTML = App.templates.printReport(report, templates);
-                setTimeout(() => window.print(), 100); // Ritardo per consentire il rendering delle immagini
+                setTimeout(() => window.print(), 100);
             },
         },
 
@@ -341,7 +346,6 @@
                         if (!newReport.photos[templateId]) newReport.photos[templateId] = {};
                         newReport.photos[templateId][itemIndex] = App.state.tempPhotos[key];
                     }
-
                     const cerContainer = document.getElementById('cer-table-rows');
                     if (cerContainer) {
                         for (let i = 1; i <= this.cerRowCounter; i++) {
@@ -465,66 +469,104 @@
                 return `<form id="new-pca-form" novalidate class="space-y-8"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div><div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div><div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div></div><div id="wbs-section" class="mt-6 space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="pca-wbs-input" class="form-label">1. Inserisci Codice WBS</label><input type="text" id="pca-wbs-input" name="wbs-input" class="form-input" placeholder="Es. RI12, GA01..."></div><div><label for="pca-lavorazione-select" class="form-label">2. Seleziona Lavorazione</label><select id="pca-lavorazione-select" name="lavorazione" class="form-select" disabled><option value="">-- Prima inserisci WBS --</option></select></div></div><div><label for="pca-inspector-wbs" class="form-label">Compilatore</label><input type="text" id="pca-inspector-wbs" name="inspector-wbs" class="form-input" placeholder="Nome e Funzione"></div></div><div id="manual-section" class="mt-6 space-y-4" style="display: none;"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="wbs-manual" class="form-label">Area di Riferimento</label><input id="wbs-manual" name="wbs-manual" class="form-input" placeholder="Es. Campo Base, Area X..."></div><div><label for="inspector-manual" class="form-label">Compilatore</label><input id="inspector-manual" name="inspector-manual" class="form-input" placeholder="Nome e Funzione"></div></div><div><label for="activities-manual" class="form-label">Oggetto del controllo</label><textarea id="activities-manual" name="activities-manual" class="form-textarea" rows="2"></textarea></div></div></div><div><h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2><div id="checklist-container-periodico" class="space-y-6">${this.renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC)}</div><div id="checklist-container-preliminare" class="space-y-6" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE)}</div><div id="checklist-container-finale" class="space-y-6" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_FINALE)}</div></div><div class="flex justify-end gap-4 pt-4"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">Salva Controllo</button></div></form><style> .form-label { @apply text-sm font-medium text-slate-600 dark:text-slate-300; } .form-input, .form-select, .form-textarea { @apply mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-900 text-sm; } .form-checkbox { @apply rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500; }</style>`;
             },
             settings: () => `<div class="space-y-8 max-w-2xl"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2><p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza dei tuoi verbali su un file, o ripristina i dati da un backup precedente.</p><div class="flex gap-4"><button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button><button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button><input type="file" id="import-file" class="hidden" accept=".json"></div></div></div>`,
+            
             printReport(report, templates) {
                 const chrysasLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp';
                 const rtiLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp';
                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
-
+                
                 const renderExtras = (templateId, itemIndex) => {
                     const extraData = report.extras?.[templateId]?.[itemIndex];
                     if (!extraData || Object.keys(extraData).length === 0) return '';
-                    let html = '<div style="font-size:0.8rem; margin: 5px 0 5px 20px; padding: 8px; background-color:#f9f9f9; border-left: 2px solid #ddd;">';
+                    let html = '<div style="font-size: 9pt; margin: 6px 0 6px 20px; padding: 8px; background-color: #f8f8f8; border-left: 2px solid #ddd;">';
                     for (const [key, value] of Object.entries(extraData)) {
                        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                       html += `<span style="display:inline-block; min-width:120px;"><strong>${formattedKey}:</strong></span> ${value || 'N.D.'} <br>`;
+                       html += `<span style="display: inline-block; min-width: 140px;"><strong>${formattedKey}:</strong></span> ${value || 'N.D.'} <br>`;
                     }
                     html += '</div>';
                     return html;
                 };
+                
                  const renderPhoto = (templateId, itemIndex) => {
                     const photoSrc = report.photos?.[templateId]?.[itemIndex];
                     if (!photoSrc) return '';
-                    return `<div style="margin-top:0.5rem;margin-left:20px;"><h4 style="font-weight:bold;font-size:0.8rem;">Foto:</h4><img src="${photoSrc}" style="max-width:200px;border-radius:4px;display:block;" alt="Foto allegata"></div>`;
+                    return `<div style="margin-top: 8px; margin-left: 20px;"><h4 style="font-weight: bold; font-size: 9pt; margin-bottom: 4px;">Rilievo Fotografico:</h4><img src="${photoSrc}" style="max-width: 350px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata"></div>`;
                 };
 
-                let reportBody = `<h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1>
-                <p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p>
-                <table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Lavorazione/Oggetto</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector || 'N.D.'}</td></tr></tbody></table>
-                ${templates.map(t => {
-                    const checks = report.checks ? report.checks[t.id] : null;
-                    if (!checks || checks.length === 0) return '';
-                    const observationsText = report.observations ? (report.observations[t.id] || '') : '';
-                    let cerTableHtml = '';
-                    if(t.id === 'pca04' && report.cerData && report.cerData.length > 0) {
-                        cerTableHtml += '<h3 style="font-weight:bold;margin:1rem 0 0.5rem 0;">Dettaglio Rifiuti CER</h3><table style="width:100%; font-size:0.7rem; border-collapse:collapse;"><thead><tr style="background-color:#f3f4f6;">';
-                        const headers = ['CER/Prod.', 'Ubic.', 'Verbale', 'Rapp. Prova', 'Ident.', 'Delim.', 'In Prod.', 'In Carico'];
-                        headers.forEach(h => cerTableHtml += `<th style="border:1px solid #ccc; padding:4px;">${h}</th>`);
-                        cerTableHtml += '</tr></thead><tbody>';
-                        report.cerData.forEach(row => {
-                           cerTableHtml += `<tr>
-                                <td style="border:1px solid #ccc; padding:4px;">${row.produttore || ''}</td>
-                                <td style="border:1px solid #ccc; padding:4px;">${row.ubicazione || ''}</td>
-                                <td style="border:1px solid #ccc; padding:4px;">${row.verbale || ''}</td>
-                                <td style="border:1px solid #ccc; padding:4px;">${row.prova || ''}</td>
-                                <td style="border:1px solid #ccc; padding:4px; text-align:center;">${row.identificato || ''}</td>
-                                <td style="border:1px solid #ccc; padding:4px; text-align:center;">${row.delimitato || ''}</td>
-                                <td style="border:1px solid #ccc; padding:4px; text-align:center;">${row.produzione ? 'Sì' : 'No'}</td>
-                                <td style="border:1px solid #ccc; padding:4px; text-align:center;">${row.carico ? 'Sì' : 'No'}</td>
-                           </tr>`;
-                        });
-                        cerTableHtml += '</tbody></table>';
-                    }
-                    return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;">
-                        <h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${t.title}</h2>
-                        <table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>
-                        ${checks.map((item, idx) => `<tr><td style="padding:0.3rem 0; vertical-align:top;">${item.item}${renderExtras(t.id, idx)}${renderPhoto(t.id, idx)}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;vertical-align:top;">${item.result || 'N.D.'}</td></tr>`).join('')}
-                        </tbody></table>
-                        ${(observationsText.trim() !== '') ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;white-space:pre-wrap;">${observationsText}</p></div>` : ''}
-                        ${cerTableHtml}
-                    </div>`;
+                const reportBody = `
+                    <h1 style="text-align: center; font-size: 1.6rem; margin-bottom: 0.5rem; font-weight: bold; color: #000;">Piano Controllo Ambientale</h1>
+                    <p style="text-align: center; font-size: 1.2rem; margin-bottom: 2.5rem; color: #555;">Verbale N° ${report.id}</p>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 2.5rem; font-size: 10pt;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #999; font-weight: bold; background-color: #f2f2f2; width: 20%;">Data</td>
+                                <td style="padding: 8px; border: 1px solid #999; width: 30%;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td>
+                                <td style="padding: 8px; border: 1px solid #999; font-weight: bold; background-color: #f2f2f2; width: 20%;">WBS/Area</td>
+                                <td style="padding: 8px; border: 1px solid #999; width: 30%;">${report.wbs || 'N.A.'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #999; font-weight: bold; background-color: #f2f2f2;">Tipo Verbale</td>
+                                <td style="padding: 8px; border: 1px solid #999;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #999; font-weight: bold; background-color: #f2f2f2;">Lavorazione/Oggetto</td>
+                                <td style="padding: 8px; border: 1px solid #999;" colspan="3">${report.activities || 'N.A.'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #999; font-weight: bold; background-color: #f2f2f2;">Compilato da</td>
+                                <td style="padding: 8px; border: 1px solid #999;" colspan="3">${report.inspector || 'N.D.'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    ${templates.map(t => {
+                        const checks = report.checks ? report.checks[t.id] : null;
+                        if (!checks || checks.length === 0) return '';
+                        const observationsText = report.observations ? (report.observations[t.id] || '') : '';
+                        
+                        let cerTableHtml = '';
+                        if(t.id === 'pca04' && report.cerData && report.cerData.length > 0) {
+                            cerTableHtml += '<h3 style="font-weight:bold; font-size: 11pt; margin: 1.5rem 0 0.5rem 0;">Dettaglio Rifiuti CER</h3><table style="width:100%; font-size: 8pt; border-collapse:collapse;"><thead><tr style="background-color:#f2f2f2;">';
+                            const headers = ['CER/Prod.', 'Ubic.', 'Verbale', 'Rapp. Prova', 'Ident.', 'Delim.', 'In Prod.', 'In Carico'];
+                            headers.forEach(h => cerTableHtml += `<th style="border:1px solid #999; padding: 5px; text-align: left;">${h}</th>`);
+                            cerTableHtml += '</tr></thead><tbody>';
+                            report.cerData.forEach(row => {
+                               cerTableHtml += `<tr>
+                                    <td style="border:1px solid #999; padding: 5px;">${row.produttore || ''}</td>
+                                    <td style="border:1px solid #999; padding: 5px;">${row.ubicazione || ''}</td>
+                                    <td style="border:1px solid #999; padding: 5px;">${row.verbale || ''}</td>
+                                    <td style="border:1px solid #999; padding: 5px;">${row.prova || ''}</td>
+                                    <td style="border:1px solid #999; padding: 5px; text-align:center;">${row.identificato || ''}</td>
+                                    <td style="border:1px solid #999; padding: 5px; text-align:center;">${row.delimitato || ''}</td>
+                                    <td style="border:1px solid #999; padding: 5px; text-align:center;">${row.produzione ? 'Sì' : 'No'}</td>
+                                    <td style="border:1px solid #999; padding: 5px; text-align:center;">${row.carico ? 'Sì' : 'No'}</td>
+                               </tr>`;
+                            });
+                            cerTableHtml += '</tbody></table>';
+                        }
+
+                        return `<div style="margin-bottom: 2rem; page-break-inside: avoid;">
+                            <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem; color: #000;">
+                                <span style="font-size: 1.5rem; vertical-align: -0.2em; margin-right: 0.5rem;">${t.icon}</span>${t.title}
+                            </h2>
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;"><tbody>
+                            ${checks.map((item, idx) => `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 8px 0; vertical-align: top;">
+                                        ${item.item}
+                                        ${renderExtras(t.id, idx)}
+                                        ${renderPhoto(t.id, idx)}
+                                    </td>
+                                    <td style="padding: 8px 0; text-align: right; font-weight: bold; width: 80px; vertical-align: top;">${item.result || 'N.D.'}</td>
+                                </tr>`).join('')}
+                            </tbody></table>
+                            ${(observationsText.trim() !== '') ? `<div style="background-color: #f8f8f8; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 1rem; page-break-inside: avoid;"><h3 style="font-weight: bold; margin-bottom: 0.5rem; font-size: 11pt;">Osservazioni e Misure Correttive</h3><p style="font-size: 10pt; white-space: pre-wrap; margin: 0;">${observationsText}</p></div>` : ''}
+                            ${cerTableHtml}
+                        </div>`;
                 }).join('')}`;
 
-                return `<div style="font-family:sans-serif;color:black;">
+                return `<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; font-size: 10pt;">
                     <header>
                         <table style="width:100%; border-collapse: collapse;">
                             <tr>
@@ -536,12 +578,12 @@
                                 </td>
                             </tr>
                         </table>
-                        <hr style="margin-top: 1rem; margin-bottom: 1.5rem; border: 0; border-top: 1px solid #ccc;">
+                        <hr style="margin-top: 1rem; margin-bottom: 1.5rem; border: 0; border-top: 2px solid #000;">
                     </header>
                     
                     ${reportBody}
                     
-                    <footer style="margin-top: 3rem; text-align: center; font-size: 0.8rem; color: #888; border-top: 1px solid #ccc; padding-top: 1rem;">
+                    <footer style="margin-top: 3rem; text-align: center; font-size: 8pt; color: #888; border-top: 1px solid #ccc; padding-top: 1rem;">
                         Documento generato in data ${new Date().toLocaleDateString('it-IT')}
                     </footer>
                 </div>`;
