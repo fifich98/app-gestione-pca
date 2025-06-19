@@ -31,8 +31,8 @@
         .extra-content-wrapper.visible { max-height: 500px; }
         
         /* Stili per il Modal di Conferma */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1040; opacity: 0; transition: opacity 0.3s; }
-        .modal-overlay.visible { opacity: 1; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1040; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .modal-overlay.visible { opacity: 1; pointer-events: auto; }
         .modal-box { background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s; }
         .modal-overlay.visible .modal-box { transform: scale(1); }
         .dark .modal-box { background-color: #1e293b; /* slate-800 */ }
@@ -357,11 +357,7 @@
             async onDeletePca(reportId) {
                 await App.store.delete(reportId);
                 App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info');
-                App.ui.renderListaPca();
-                // Refresh dashboard if on it
-                if (document.getElementById('page-title').textContent === 'Dashboard') {
-                    App.ui.renderDashboard();
-                }
+                await App.ui.showTab('lista-pca');
             },
             attachNewPcaFormListeners() {
                 const form = document.getElementById('new-pca-form'); if (!form) return;
@@ -464,25 +460,23 @@
                         if (!newReport.photos[templateId]) newReport.photos[templateId] = {};
                         newReport.photos[templateId][itemIndex] = App.state.tempPhotos[key];
                     }
+
+                    // *** BUG FIX: Correctly iterate over DOM rows for CER data ***
                     const cerContainer = document.getElementById('cer-table-rows');
                     if (cerContainer) {
-                        for (let i = 1; i <= this.cerRowCounter; i++) {
-                             const rowData = {
-                                produttore: sanitize(formData.get(`cer_produttore_${i}`)),
-                                ubicazione: sanitize(formData.get(`cer_ubicazione_${i}`)),
-                                verbale: sanitize(formData.get(`cer_verbale_${i}`)),
-                                prova: sanitize(formData.get(`cer_prova_${i}`)),
-                                identificato: sanitize(formData.get(`cer_identificato_${i}`)),
-                                delimitato: sanitize(formData.get(`cer_delimitato_${i}`)),
-                                produzione: formData.has(`cer_produzione_${i}`),
-                                carico: formData.has(`cer_carico_${i}`),
-                            };
-                            if (Object.values(rowData).some(v => v)) {
+                        cerContainer.querySelectorAll('.cer-row').forEach(row => {
+                            const rowData = {};
+                            row.querySelectorAll('input, select').forEach(input => {
+                                const keyParts = input.name.split('_');
+                                const key = keyParts[1];
+                                rowData[key] = input.type === 'checkbox' ? input.checked : sanitize(input.value);
+                            });
+                             if (Object.values(rowData).some(v => v !== '' && v !== false)) {
                                 newReport.cerData.push(rowData);
                             }
-                        }
+                        });
                     }
-
+                    
                     await App.store.save(newReport);
                     App.ui.showToast('Controllo salvato con successo!', 'success');
                     App.ui.resetPcaForm();
@@ -501,20 +495,22 @@
 
                 const row = document.createElement('div');
                 row.className = 'cer-row grid grid-cols-2 md:grid-cols-9 gap-2 items-center';
+                const index = this.cerRowCounter;
                 row.innerHTML = `
-                    <input type="text" name="cer_produttore_${this.cerRowCounter}" placeholder="CER/Produttore" class="form-input text-xs col-span-2 md:col-span-1">
-                    <input type="text" name="cer_ubicazione_${this.cerRowCounter}" placeholder="Ubicazione" class="form-input text-xs col-span-2 md:col-span-1">
-                    <input type="text" name="cer_verbale_${this.cerRowCounter}" placeholder="Verbale N." class="form-input text-xs col-span-2 md:col-span-1">
-                    <input type="text" name="cer_prova_${this.cerRowCounter}" placeholder="Rapp. Prova N." class="form-input text-xs col-span-2 md:col-span-1">
-                    <select name="cer_identificato_${this.cerRowCounter}" class="form-select text-xs col-span-1"><option value="si">Sì</option><option value="no" selected>No</option></select>
-                    <select name="cer_delimitato_${this.cerRowCounter}" class="form-select text-xs col-span-1"><option value="si">Sì</option><option value="no" selected>No</option></select>
-                    <div class="flex items-center justify-center"><input type="checkbox" name="cer_produzione_${this.cerRowCounter}" class="form-checkbox h-4 w-4"></div>
-                    <div class="flex items-center justify-center"><input type="checkbox" name="cer_carico_${this.cerRowCounter}" class="form-checkbox h-4 w-4"></div>
+                    <input type="text" name="cer_produttore_${index}" placeholder="CER/Produttore" class="form-input text-xs col-span-2 md:col-span-1">
+                    <input type="text" name="cer_ubicazione_${index}" placeholder="Ubicazione" class="form-input text-xs col-span-2 md:col-span-1">
+                    <input type="text" name="cer_verbale_${index}" placeholder="Verbale N." class="form-input text-xs col-span-2 md:col-span-1">
+                    <input type="text" name="cer_prova_${index}" placeholder="Rapp. Prova N." class="form-input text-xs col-span-2 md:col-span-1">
+                    <select name="cer_identificato_${index}" class="form-select text-xs col-span-1"><option value="si">Sì</option><option value="no" selected>No</option></select>
+                    <select name="cer_delimitato_${index}" class="form-select text-xs col-span-1"><option value="si">Sì</option><option value="no" selected>No</option></select>
+                    <div class="flex items-center justify-center"><input type="checkbox" name="cer_produzione_${index}" class="form-checkbox h-4 w-4"></div>
+                    <div class="flex items-center justify-center"><input type="checkbox" name="cer_carico_${index}" class="form-checkbox h-4 w-4"></div>
                     <button type="button" class="cer-delete-row-btn text-red-500 hover:text-red-700 p-1 justify-self-center">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 `;
                 container.appendChild(row);
+                // *** BUG FIX: Attach listener to the new delete button ***
                 row.querySelector('.cer-delete-row-btn').addEventListener('click', () => row.remove());
             },
             async onPhotoUpload(e) { const input = e.target; const key = input.dataset.key; const previewContainer = document.getElementById(`preview_${key}`); const file = input.files[0]; if (!file || !previewContainer) return; previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover rounded" alt="Anteprima">`; App.state.tempPhotos[key] = dataUrl; } catch (err) { previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); delete App.state.tempPhotos[key]; App.ui.showToast("Errore nel caricamento foto.", "error"); } },
@@ -551,7 +547,7 @@
         },
         
         templates: {
-            dashboard: (stats, dueList) => {
+             dashboard: (stats, dueList) => {
                 let dueListHtml = '<p class="text-slate-500 dark:text-slate-400">Tutti i controlli sono aggiornati.</p>';
                 if (dueList.length > 0) {
                     dueListHtml = `<ul class="space-y-3">${dueList.map(item => `
@@ -836,4 +832,5 @@
     <div id="modal-overlay" class="modal-overlay"></div>
 </body>
 </html>
+
 
