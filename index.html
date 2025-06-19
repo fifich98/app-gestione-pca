@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Gestione PCA - CHRYSAS (Versione Funzionante)</title>
+    <title>App Gestione PCA - CHRYSAS (Versione Migliorata)</title>
     
     <!-- Stili e Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,18 +18,31 @@
     <!-- Stile CSS principale -->
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .sidebar-link { transition: background-color 0.2s, color 0.2s; }
         .sidebar-link.active { @apply bg-blue-600 text-white font-semibold; }
-        .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s; z-index: 1000; }
-        .toast.show { opacity: 1; bottom: 40px; }
+        .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s, transform 0.3s; z-index: 1000; }
+        .toast.show { opacity: 1; bottom: 40px; transform: translateX(-50%) scale(1); }
+        button, .sidebar-link { transition: transform 0.1s ease-in-out; }
+        button:hover:not(:disabled), .sidebar-link:hover { transform: scale(1.02); }
+        button:active:not(:disabled) { transform: scale(0.98); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Animazione per la comparsa dei contenuti */
+        .content-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Transizione per i campi condizionali */
+        .extra-content-wrapper { transition: all 0.3s ease-in-out; max-height: 0; overflow: hidden; }
+        .extra-content-wrapper.visible { max-height: 500px; /* Valore sufficientemente alto */ }
+
         @media print {
             body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact; color-adjust: exact; }
             body > *:not(#print-area) { display: none !important; }
             #print-area { display: block !important; }
             @page { size: A4; margin: 1.5cm; }
         }
-        /* Stile per campi non validi */
         .form-input:invalid, .form-select:invalid, .form-textarea:invalid { border-color: #ef4444; }
+        .hidden { display: none; }
     </style>
     
     <!-- Script principale dell'applicazione con `defer` -->
@@ -38,26 +51,25 @@
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v3',
+            STORAGE_KEY: 'pca_app_data_idb_v5', // Versione chiave aggiornata
             TABS: [
-                { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
-                { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>' },
-                { id: 'nuovo-pca', label: 'Esegui Controllo', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>' },
-                { id: 'impostazioni', label: 'Impostazioni', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' }
+                { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
+                { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
+                { id: 'nuovo-pca', label: 'Esegui Controllo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
+                { id: 'impostazioni', label: 'Impostazioni', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' }
             ],
-            CHECK_TEMPLATES_PERIODIC: [
+             CHECK_TEMPLATES_PERIODIC: [
                 { id: "pca01", title: "PCA 01: Scarichi Idrici ed Approvvigionamento", icon: "💧", significativita: "ALTA", items: ["Autorizzazione allo scarico acque reflue domestiche presente e valida?", "Autorizzazione allo scarico acque reflue industriali presente e valida?", "Rispetto delle prescrizioni contenute nelle autorizzazioni?", "Corretta gestione acque di lavorazione (es. scavo pali)?", "Kit di emergenza anti-sversamento presente e completo?", "Manutenzione impianti di depurazione/trattamento registrata?"] },
-                { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PPUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] },
+                { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] },
                 { id: "pca03", title: "PCA 03: Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Autorizzazioni per impianti (es. calcestruzzo) presenti e valide?", "Copertura mezzi per trasporto materiali polverulenti?", "Bagnatura piste e/o cumuli eseguita regolarmente?", "Velocità dei mezzi in cantiere limitata a 30 km/h?", "Impianto lavaruote funzionante ed utilizzato?"] },
                 { id: "pca04", title: "PCA 04: Rifiuti", icon: "🗑️", significativita: "ALTA", items: ["Deposito temporaneo (DTR) ordinato e pulito?", "Rifiuti separati per CER e con corretta cartellonistica?", "Stoccaggio rifiuti pericolosi conforme (aree, bacini)?", "Registro di carico/scarico aggiornato (entro 10gg)?", "Quarta copia FIR ricevuta entro 90 giorni?"] },
                 { id: "pca05", title: "PCA 05: Sostanze Pericolose ed Emergenze", icon: "☣️", significativita: "MEDIA", items: ["Schede di Sicurezza (SDS) disponibili e aggiornate?", "Stoccaggio sostanze su bacini di contenimento idonei?", "Aree di stoccaggio segnalate e adeguate?", "Personale formato per la gestione delle emergenze?"] },
-                { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?"] },
+                { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?", "Eseguita misurazione fonometrica periodica?"] },
                 { id: "pca07", title: "PCA 07: Suolo e Sottosuolo", icon: "🌱", significativita: "ALTA", items: ["Assenza di contaminazioni visive del suolo (macchie, sversamenti)?", "Corretto stoccaggio del terreno vegetale in cumuli separati?", "Utilizzo delle apposite vasche per lavaggio betoniere?", "Gestione corretta del calcestruzzo in esubero?"] },
-                { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] },
-                { id: "pca09", title: "PCA 09: Viabilità", icon: "🚚", significativita: "MEDIA", items: ["Flusso mezzi conforme al progetto della viabilità di cantiere?", "Rispetto delle ordinanze e disposizioni specifiche?", "Mezzi dotati di telo copricassone per materiali polverulenti?", "Mezzi in cantiere registrati e identificati?"] }
+                { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] }
             ],
-            WBS_DATA: { 'GA': { descrizione: 'Gallerie Artificiali', lavorazioni: ['Scavo di sbancamento', 'Posa armature e getti CLS', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti', 'Viabilità'] }, 'GN': { descrizione: 'Gallerie Naturali', lavorazioni: ['Scavo in naturale', 'Consolidamenti (spritz-beton, centine)', 'Rivestimenti e impermeabilizzazioni'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti', 'Vibrazioni'] }, 'AS': { descrizione: 'Opere in Sotterraneo', lavorazioni: ['Scavi e rivestimenti', 'Opere di sostegno e drenaggi'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Consumi'] }, 'TR': { descrizione: 'Trincee', lavorazioni: ['Scavi di trincea', 'Opere di sostegno (pali, diaframmi)', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Beni Culturali'] }, 'RI': { descrizione: 'Rilevati', lavorazioni: ['Formazione corpo del rilevato', 'Opere di sostegno', 'Sistemazioni idrauliche'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi', 'Viabilità'] }, 'VI': { descrizione: 'Viadotti', lavorazioni: ['Pali di fondazione e fondazioni', 'Elevazione pile e spalle', 'Varo impalcato e soletta'], aspetti: ['Rumore', 'Vibrazioni', 'Rifiuti', 'Sostanze Pericolose', 'Viabilità'] }, 'CB': { descrizione: 'Campo Base', lavorazioni: ['Installazione e gestione uffici/dormitori/mensa', 'Manutenzione aree e servizi'], aspetti: ['Acque', 'Rifiuti', 'Rumore', 'Consumi'] }, 'CO': { descrizione: 'Cantiere Operativo', lavorazione: ['Allestimento aree stoccaggio', 'Gestione impianto di betonaggio', 'Officina e manutenzione mezzi'], aspetti: ['Polveri', 'Rumore', 'Acque', 'Rifiuti', 'Sostanze Pericolose'] }, 'NV': { descrizione: 'Nuova Viabilità', lavorazioni: ['Scavi e rilevati per nuova viabilità', 'Formazione sottofondi e pavimentazioni', 'Opere idrauliche e finiture'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi', 'Viabilità'] }, 'FA': { descrizione: 'Fabbricati', lavorazioni: ['Scavi e fondazioni', 'Elevazione strutture', 'Finiture e impianti'], aspetti: ['Polveri', 'Rumore', 'Rifiuti', 'Consumi'] } },
-            ASPETTO_TO_PCA_ID_MAP: { 'Polveri': 'pca03', 'Rumore': 'pca06', 'Vibrazioni': 'pca06', 'Acque': 'pca01', 'Suolo': 'pca07', 'Rifiuti': 'pca04', 'Terre e Rocce': 'pca02', 'Sostanze Pericolose': 'pca05', 'Rifornimenti': 'pca05', 'Consumi': 'pca05', 'Beni Culturali': 'pca08', 'Viabilità': 'pca09' },
+            WBS_DATA: { 'GA': { descrizione: 'Gallerie Artificiali', lavorazioni: ['Scavo di sbancamento', 'Posa armature e getti CLS', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti'] }, 'GN': { descrizione: 'Gallerie Naturali', lavorazioni: ['Scavo in naturale', 'Consolidamenti (spritz-beton, centine)', 'Rivestimenti e impermeabilizzazioni'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti', 'Vibrazioni'] }, 'AS': { descrizione: 'Opere in Sotterraneo', lavorazioni: ['Scavi e rivestimenti', 'Opere di sostegno e drenaggi'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Consumi'] }, 'TR': { descrizione: 'Trincee', lavorazioni: ['Scavi di trincea', 'Opere di sostegno (pali, diaframmi)', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Beni Culturali'] }, 'RI': { descrizione: 'Rilevati', lavorazioni: ['Formazione corpo del rilevato', 'Opere di sostegno', 'Sistemazioni idrauliche'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'VI': { descrizione: 'Viadotti', lavorazioni: ['Pali di fondazione e fondazioni', 'Elevazione pile e spalle', 'Varo impalcato e soletta'], aspetti: ['Rumore', 'Vibrazioni', 'Rifiuti', 'Sostanze Pericolose'] }, 'CB': { descrizione: 'Campo Base', lavorazioni: ['Installazione e gestione uffici/dormitori/mensa', 'Manutenzione aree e servizi'], aspetti: ['Acque', 'Rifiuti', 'Rumore', 'Consumi'] }, 'CO': { descrizione: 'Cantiere Operativo', lavorazione: ['Allestimento aree stoccaggio', 'Gestione impianto di betonaggio', 'Officina e manutenzione mezzi'], aspetti: ['Polveri', 'Rumore', 'Acque', 'Rifiuti', 'Sostanze Pericolose'] }, 'NV': { descrizione: 'Nuova Viabilità', lavorazioni: ['Scavi e rilevati per nuova viabilità', 'Formazione sottofondi e pavimentazioni', 'Opere idrauliche e finiture'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'FA': { descrizione: 'Fabbricati', lavorazioni: ['Scavi e fondazioni', 'Elevazione strutture', 'Finiture e impianti'], aspetti: ['Polveri', 'Rumore', 'Rifiuti', 'Consumi'] } },
+            ASPETTO_TO_PCA_ID_MAP: { 'Polveri': 'pca03', 'Rumore': 'pca06', 'Vibrazioni': 'pca06', 'Acque': 'pca01', 'Suolo': 'pca07', 'Rifiuti': 'pca04', 'Terre e Rocce': 'pca02', 'Sostanze Pericolose': 'pca05', 'Rifornimenti': 'pca05', 'Consumi': 'pca05', 'Beni Culturali': 'pca08' },
             FREQUENCY_MAP: { 'ALTA': { text: 'FREQUENZA ALTA', schedule: '(es. settimanale)', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' }, 'MEDIA': { text: 'FREQUENZA MEDIA', schedule: '(es. quindicinale)', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300' }, 'BASSA': { text: 'FREQUENZA BASSA', schedule: '(es. mensile)', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' } },
             CHECK_TEMPLATES_PRELIMINARE: [{ id: "stato_luoghi", title: "Verifica Stato dei Luoghi (Punto Zero)", icon: "📍", items: ["Analisi vincoli specifici e servitù completata", "Mappatura recettori sensibili eseguita", "Stato della vegetazione documentato", "Verificata assenza di rifiuti preesistenti", "Verificata assenza di contaminazione pregressa"] }],
             CHECK_TEMPLATES_FINALE: [{ id: "ripristino", title: "Verifica Ripristino Finale", icon: "✅", items: ["Area riconsegnata come da verbale preliminare", "Completa rimozione rifiuti e attrezzature", "Opere di ripristino ambientale eseguite", "Assenza di impatti residui visibili"] }],
@@ -88,10 +100,12 @@
             async save(newReport) {
                 const reports = await this.getAll();
                 const reportId = parseInt(newReport.id);
-                if (reports.some(r => parseInt(r.id) === reportId)) {
-                    throw new Error(`ID Scheda ${reportId} già esistente.`);
+                const existingIndex = reports.findIndex(r => parseInt(r.id) === reportId);
+                if (existingIndex !== -1) {
+                    reports[existingIndex] = newReport; // Sovrascrive se l'ID esiste
+                } else {
+                    reports.push(newReport);
                 }
-                reports.push(newReport);
                 await this.saveAll(reports);
             },
             async delete(id) {
@@ -133,18 +147,26 @@
             showToast(message, type = 'success') {
                 const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
                 App.dom.toast.textContent = message;
-                App.dom.toast.className = `toast px-6 py-3 rounded-lg text-white font-medium shadow-lg ${colors[type]} show`;
-                setTimeout(() => App.dom.toast.classList.remove('show'), 4000);
+                App.dom.toast.className = `toast px-6 py-3 rounded-lg text-white font-medium shadow-lg ${colors[type]}`;
+                setTimeout(() => { App.dom.toast.classList.add('show'); }, 10); // leggero ritardo per animazione
+                setTimeout(() => { App.dom.toast.classList.remove('show'); }, 4000);
             },
             async showTab(tabId) {
                 const tab = App.config.TABS.find(t => t.id === tabId);
                 if (!tab) return;
                 App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => link.classList.toggle('active', link.dataset.tabId === tabId));
                 App.dom.pageTitle.textContent = tab.label;
+                
+                App.dom.mainContent.classList.remove('content-fade-in');
+                // Forza reflow per riavviare l'animazione
+                void App.dom.mainContent.offsetWidth;
+
                 const renderFunctionName = this.renderMap[tabId];
                 if (this[renderFunctionName]) await this[renderFunctionName]();
+                
+                App.dom.mainContent.classList.add('content-fade-in');
             },
-            renderNav() { App.dom.sidebarNav.innerHTML = App.config.TABS.map(t => `<a href="#" data-tab-id="${t.id}" class="sidebar-link flex items-center px-4 py-3 mt-2 text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200">${t.icon} ${t.label}</a>`).join(''); },
+            renderNav() { App.dom.sidebarNav.innerHTML = App.config.TABS.map(t => `<a href="#" data-tab-id="${t.id}" class="sidebar-link flex items-center px-4 py-3 mt-2 text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">${t.icon} ${t.label}</a>`).join(''); },
             renderDashboard() {
                 const stats = App.store.getDashboardStats();
                 App.dom.mainContent.innerHTML = App.templates.dashboard(stats);
@@ -189,7 +211,7 @@
                 App.dom.theme.lightIcon.classList.toggle('hidden', isDark);
                 if (!isInitial) localStorage.setItem('theme', isDark ? 'dark' : 'light');
             },
-            resetPcaForm: () => { App.state.tempPhotos = {}; App.ui.renderNuovoPca(); },
+            resetPcaForm: () => { App.state.tempPhotos = {}; App.handlers.cerRowCounter = 0; App.ui.renderNuovoPca(); },
             async prepareAndPrintReport(reportId) {
                 const report = await App.store.getById(reportId);
                 if (!report) return App.ui.showToast("Report non trovato", "error");
@@ -203,6 +225,7 @@
         },
 
         handlers: {
+            cerRowCounter: 0,
             attachGlobalListeners() {
                 App.dom.sidebarNav.addEventListener('click', e => { if (e.target.closest('.sidebar-link')) { e.preventDefault(); App.ui.showTab(e.target.closest('.sidebar-link').dataset.tabId); } });
                 App.dom.theme.toggleBtn.addEventListener('click', () => App.ui.applyTheme(!document.documentElement.classList.contains('dark')));
@@ -227,14 +250,32 @@
             attachNewPcaFormListeners() {
                 const form = document.getElementById('new-pca-form'); if (!form) return;
                 form.addEventListener('submit', (e) => this.onNewPcaSubmit(e));
-                form.addEventListener('click', (e) => { if (e.target.matches('.add-photo-btn')) e.target.previousElementSibling.click(); if (e.target.matches('#cancel-pca-btn')) App.ui.resetPcaForm(); });
+                form.addEventListener('click', (e) => { 
+                    if (e.target.matches('.add-photo-btn')) e.target.previousElementSibling.click(); 
+                    if (e.target.matches('#cancel-pca-btn')) App.ui.resetPcaForm();
+                    if (e.target.id === 'add-cer-row-btn') this.addCerRow();
+                });
                 form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', (e) => this.onPhotoUpload(e)));
+                form.addEventListener('change', (e) => {
+                    if (e.target.type === 'radio' && e.target.name.startsWith('check_')) {
+                        const extraContentId = `extra_content_wrapper_${e.target.name}`;
+                        const extraContentEl = document.getElementById(extraContentId);
+                        if (extraContentEl) {
+                            const isYes = e.target.value === 'C';
+                            extraContentEl.classList.toggle('visible', isYes);
+                            extraContentEl.querySelectorAll('input, select, textarea').forEach(input => {
+                                input.toggleAttribute('required', isYes);
+                            });
+                        }
+                    }
+                });
                 document.getElementById('pca-type')?.addEventListener('change', (e) => App.ui.updateFormRequirements(e.target.value));
                 document.getElementById('pca-wbs-input')?.addEventListener('input', (e) => {
                     const wbsCodeFull = e.target.value.toUpperCase(); const wbsCode = wbsCodeFull.substring(0, 2); const wbsData = App.config.WBS_DATA[wbsCode]; const lavorazioneSelect = document.getElementById('pca-lavorazione-select');
                     const resetDependentFields = () => { lavorazioneSelect.innerHTML = '<option value="">-- Prima inserisci WBS --</option>'; lavorazioneSelect.disabled = true; App.config.CHECK_TEMPLATES_PERIODIC.forEach(template => { const el = document.getElementById(`sheet-${template.id}`); if (el) el.style.display = 'none'; }); };
                     resetDependentFields();
                     if (wbsData && wbsCodeFull.length >= 2) {
+                        lavorazioneSelect.innerHTML = '<option value="">-- Seleziona Lavorazione --</option>'; // Placeholder
                         wbsData.lavorazioni.forEach(lav => { const option = document.createElement('option'); option.value = lav; option.textContent = lav; lavorazioneSelect.appendChild(option); });
                         lavorazioneSelect.disabled = false;
                         const requiredPcaIds = new Set(wbsData.aspetti.map(a => App.config.ASPETTO_TO_PCA_ID_MAP[a]).filter(Boolean));
@@ -247,17 +288,29 @@
                 if (App.state.isSaving) return;
                 App.state.isSaving = true;
                 const saveBtn = document.getElementById('save-pca-btn');
-                if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = `<span>Salvando...</span>`; }
+                if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Salvando...</span>`; }
 
                 try {
                     const form = e.target;
                     if (!form.checkValidity()) {
-                        form.reportValidity(); // Mostra i messaggi di errore standard del browser
+                        form.reportValidity();
                         throw new Error('Compilare tutti i campi obbligatori.');
                     }
                     const formData = new FormData(form);
                     const reportType = formData.get('type');
-                    const newReport = { id: parseInt(formData.get('id')), type: reportType, date: formData.get('date'), inspector: reportType === 'periodico' ? formData.get('inspector-wbs') : formData.get('inspector-manual'), wbs: reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual'), activities: reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual'), checks: {}, observations: {}, photos: {} };
+                    const newReport = { 
+                        id: parseInt(formData.get('id')), 
+                        type: reportType, 
+                        date: formData.get('date'), 
+                        inspector: reportType === 'periodico' ? formData.get('inspector-wbs') : formData.get('inspector-manual'), 
+                        wbs: reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual'), 
+                        activities: reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual'), 
+                        checks: {}, 
+                        observations: {}, 
+                        photos: {},
+                        extras: {},
+                        cerData: []
+                    };
 
                     let templates;
                     if (reportType === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
@@ -269,12 +322,49 @@
                         if (sheetElement && window.getComputedStyle(sheetElement).display !== 'none') {
                             newReport.checks[template.id] = template.items.map((item, idx) => ({ item: item, result: formData.get(`check_${template.id}_${idx}`) }));
                             newReport.observations[template.id] = formData.get(`observation_${template.id}`);
-                            newReport.photos[template.id] = App.state.tempPhotos[template.id] || null;
+                            newReport.extras[template.id] = {};
+                            
+                            template.items.forEach((item, idx) => {
+                                const baseName = `check_${template.id}_${idx}`;
+                                if (formData.get(baseName) === 'C') {
+                                    newReport.extras[template.id][idx] = {};
+                                    for(const [key, value] of formData.entries()) {
+                                        if (key.startsWith(`extra_${baseName}`)) {
+                                            const fieldName = key.replace(`extra_${baseName}_`, '');
+                                            newReport.extras[template.id][idx][fieldName] = value;
+                                        }
+                                    }
+                                }
+                            });
                         }
                     });
+                    
+                    for (const key in App.state.tempPhotos) {
+                        const parts = key.split('_');
+                        const templateId = parts[1];
+                        const itemIndex = parts[2];
+                        if (!newReport.photos[templateId]) newReport.photos[templateId] = {};
+                        newReport.photos[templateId][itemIndex] = App.state.tempPhotos[key];
+                    }
+
+                    const cerContainer = document.getElementById('cer-table-rows');
+                    if (cerContainer) {
+                        const cerRows = cerContainer.querySelectorAll('.cer-row');
+                        cerRows.forEach(row => {
+                            const rowData = {};
+                            row.querySelectorAll('input, select').forEach(input => {
+                                const key = input.name.split('_')[1]; // Adjusted index
+                                rowData[key] = input.type === 'checkbox' ? input.checked : input.value;
+                            });
+                            if (Object.values(rowData).some(v => v)) {
+                                newReport.cerData.push(rowData);
+                            }
+                        });
+                    }
 
                     await App.store.save(newReport);
                     App.ui.showToast('Controllo salvato con successo!', 'success');
+                    App.ui.resetPcaForm();
                     await App.ui.showTab('lista-pca');
                 } catch (error) {
                     App.ui.showToast(error.message, 'error');
@@ -283,38 +373,160 @@
                     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salva Controllo'; }
                 }
             },
-            async onPhotoUpload(e) { const input = e.target; const templateId = input.dataset.templateId; const previewContainer = document.getElementById(`preview_${templateId}`); const file = input.files[0]; if (!file || !previewContainer) return; previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="w-20 h-20 object-cover rounded border-2 border-slate-300 dark:border-slate-600" alt="Anteprima">`; App.state.tempPhotos[templateId] = dataUrl; } catch (err) { previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); delete App.state.tempPhotos[templateId]; App.ui.showToast("Errore nel caricamento foto.", "error"); } },
+            addCerRow() {
+                this.cerRowCounter++;
+                const container = document.getElementById('cer-table-rows');
+                if (!container) return;
+
+                const row = document.createElement('div');
+                row.className = 'cer-row grid grid-cols-2 md:grid-cols-9 gap-2 items-center';
+                row.innerHTML = `
+                    <input type="text" name="cer_produttore_${this.cerRowCounter}" placeholder="CER/Produttore" class="form-input text-xs col-span-2 md:col-span-1">
+                    <input type="text" name="cer_ubicazione_${this.cerRowCounter}" placeholder="Ubicazione" class="form-input text-xs col-span-2 md:col-span-1">
+                    <input type="text" name="cer_verbale_${this.cerRowCounter}" placeholder="Verbale N." class="form-input text-xs col-span-2 md:col-span-1">
+                    <input type="text" name="cer_prova_${this.cerRowCounter}" placeholder="Rapp. Prova N." class="form-input text-xs col-span-2 md:col-span-1">
+                    <select name="cer_identificato_${this.cerRowCounter}" class="form-select text-xs col-span-1"><option value="si">Sì</option><option value="no" selected>No</option></select>
+                    <select name="cer_delimitato_${this.cerRowCounter}" class="form-select text-xs col-span-1"><option value="si">Sì</option><option value="no" selected>No</option></select>
+                    <div class="flex items-center justify-center"><input type="checkbox" name="cer_produzione_${this.cerRowCounter}" class="form-checkbox h-4 w-4"></div>
+                    <div class="flex items-center justify-center"><input type="checkbox" name="cer_carico_${this.cerRowCounter}" class="form-checkbox h-4 w-4"></div>
+                    <button type="button" class="cer-delete-row-btn text-red-500 hover:text-red-700 p-1 justify-self-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                `;
+                container.appendChild(row);
+                row.querySelector('.cer-delete-row-btn').addEventListener('click', () => row.remove());
+            },
+            async onPhotoUpload(e) { const input = e.target; const key = input.dataset.key; const previewContainer = document.getElementById(`preview_${key}`); const file = input.files[0]; if (!file || !previewContainer) return; previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover rounded" alt="Anteprima">`; App.state.tempPhotos[key] = dataUrl; } catch (err) { previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); delete App.state.tempPhotos[key]; App.ui.showToast("Errore nel caricamento foto.", "error"); } },
             resizeImage: (file, maxSize) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { const img = new Image(); img.onload = () => { let { width, height } = img; if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.8)); }; img.onerror = reject; img.src = e.target.result; }; reader.onerror = reject; reader.readAsDataURL(file); }),
             attachSettingsListeners() { document.getElementById('export-btn')?.addEventListener('click', this.exportData); document.getElementById('import-btn')?.addEventListener('click', () => document.getElementById('import-file').click()); document.getElementById('import-file')?.addEventListener('change', this.importData); },
             async exportData() { const data = await App.store.getAll(); if (data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info'); const dataStr = JSON.stringify(data, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pca_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); App.ui.showToast("Esportazione dati completata.", 'success'); },
             importData(e) { const file = e.target.files[0]; if (!file) return; if (confirm("ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?")) { const reader = new FileReader(); reader.onload = async (e) => { try { const data = JSON.parse(e.target.result); if (!Array.isArray(data)) throw new Error("File non valido"); await App.store.saveAll(data); App.ui.showToast("Dati importati con successo!", 'success'); await App.ui.showTab('dashboard'); } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } }; reader.readAsText(file); } },
         },
         
-        // TEMPLATE: Ristrutturati per essere più semplici e robusti
         templates: {
             dashboard: (stats) => `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">${['Controlli Totali','NC Aperte','Controlli Periodici Eseguiti','Conformità Media'].map((label,i)=>`<div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm flex items-center"><div><h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${label}</h3><p class="mt-1 text-3xl font-semibold ${i===1&&stats.openNc>0?'text-red-500':(i===3&&stats.avgCompliance!=='N.D.'?'text-green-500':'')}">${Object.values(stats)[i]}</p></div></div>`).join('')}</div><div class="mt-8 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto Ambientale</h3><div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div></div>`,
             pcaList: (reports) => `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="min-w-full bg-transparent text-sm"><thead class="bg-slate-50 dark:bg-slate-700/50"><tr>${['ID','Data','Tipo','WBS/Area','Lavorazione','Stato','Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-slate-200 dark:divide-slate-700">${reports.length===0?`<tr><td colspan="7" class="p-8 text-center text-slate-500">Nessun controllo compilato.</td></tr>`:reports.map(report=>{const ncCount=Object.values(report.checks||{}).flat().filter(c=>c&&c.result==='NC').length;const typeLabels={'periodico':'Periodico','preliminare':'Preliminare','finale':'Finale'};return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200"><td class="p-3 font-medium">${report.id}</td><td class="p-3 whitespace-nowrap">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td><td class="p-3 font-medium">${typeLabels[report.type]||'N.D.'}</td><td class="p-3">${report.wbs||'N.A.'}</td><td class="p-3">${report.activities||'N.A.'}</td><td class="p-3 font-semibold ${ncCount>0?'text-red-500':'text-green-500'}">${report.type!=='periodico'?'-':(ncCount>0?`${ncCount} NC`:'Conforme')}</td><td class="p-3"><div class="flex items-center gap-4"><button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600" title="Stampa"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button><button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600" title="Elimina"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></td></tr>`;}).join('')}</tbody></table></div></div>`,
-            
             imagePlaceholderIcon: () => `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
 
+            // Helper per i campi extra condizionali
+            extraContent: {
+                'pca01_0': () => `<div class="w-full md:w-1/2"><label for="extra_check_pca01_0_auth" class="form-label">N° Autorizzazione</label><input type="text" id="extra_check_pca01_0_auth" name="extra_check_pca01_0_auth" class="form-input"></div>`,
+                'pca01_1': () => `<div class="w-full md:w-1/2"><label for="extra_check_pca01_1_auth" class="form-label">N° Autorizzazione</label><input type="text" id="extra_check_pca01_1_auth" name="extra_check_pca01_1_auth" class="form-input"></div>`,
+                'pca01_4': (id, idx) => App.templates.photoUpload(id, idx),
+                'pca01_5': () => `<div class="w-full md:w-1/2"><label for="extra_check_pca01_5_revisione" class="form-label">Data Ultima Revisione</label><input type="date" id="extra_check_pca01_5_revisione" name="extra_check_pca01_5_revisione" class="form-input"></div>`,
+                'pca02_0': (id, idx) => App.templates.photoUpload(id, idx),
+                'pca02_1': (id, idx) => App.templates.photoUpload(id, idx),
+                'pca02_2': () => `<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="extra_check_pca02_2_ddt" class="form-label">N° DDT</label><input type="text" id="extra_check_pca02_2_ddt" name="extra_check_pca02_2_ddt" class="form-input"></div><div><label for="extra_check_pca02_2_targa" class="form-label">Targa</label><input type="text" id="extra_check_pca02_2_targa" name="extra_check_pca02_2_targa" class="form-input"></div></div>`,
+                'pca03_0': () => `<div class="w-full md:w-1/2"><label for="extra_check_pca03_0_auth" class="form-label">N° Autorizzazione</label><input type="text" id="extra_check_pca03_0_auth" name="extra_check_pca03_0_auth" class="form-input"></div>`,
+                'pca04_0': (id, idx) => App.templates.photoUpload(id, idx),
+                'pca04_1': () => `<div class="w-full"><label class="form-label mb-2 block">Dettaglio Rifiuti per CER</label><div id="cer-table" class="space-y-3"><div class="hidden md:grid grid-cols-9 gap-2 text-xs font-bold text-slate-500 dark:text-slate-400"><span class="md:col-span-1">CER/Produttore</span><span class="md:col-span-1">Ubicazione</span><span class="md:col-span-1">Verbale N.</span><span class="md:col-span-1">Rapp. Prova N.</span><span class="md:col-span-1 text-center">Identif.</span><span class="md:col-span-1 text-center">Delim.</span><span class="md:col-span-1 text-center">In Prod.</span><span class="md:col-span-1 text-center">In Carico</span><span class="md:col-span-1"></span></div><div id="cer-table-rows" class="space-y-2"></div></div><button type="button" id="add-cer-row-btn" class="mt-4 px-3 py-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded-md text-sm font-semibold hover:bg-blue-200 dark:hover:bg-blue-900">+ Aggiungi Riga</button></div>`,
+                'pca04_2': (id, idx) => App.templates.photoUpload(id, idx),
+                'pca05_0': (id, idx) => App.templates.photoUpload(id, idx),
+                'pca05_1': (id, idx) => App.templates.photoUpload(id, idx),
+                'pca06_4': () => `<div class="space-y-4"> <h4 class="font-semibold text-sm text-slate-700 dark:text-slate-300">Dettagli Misurazione Fonometro</h4> <div class="grid grid-cols-1 md:grid-cols-2 gap-4"> <div><label for="extra_check_pca06_4_punto" class="form-label">Punto di Misura</label><input type="text" id="extra_check_pca06_4_punto" name="extra_check_pca06_4_punto" class="form-input" placeholder="Es. Bordo cantiere Ovest"></div> <div><label for="extra_check_pca06_4_strumento" class="form-label">Strumento Utilizzato</label><input type="text" id="extra_check_pca06_4_strumento" name="extra_check_pca06_4_strumento" class="form-input" placeholder="Marca, Modello, Seriale"></div> <div><label for="extra_check_pca06_4_misurato" class="form-label">Valore Misurato (dBA)</label><input type="number" step="0.1" id="extra_check_pca06_4_misurato" name="extra_check_pca06_4_misurato" class="form-input"></div> <div><label for="extra_check_pca06_4_limite" class="form-label">Valore Limite (dBA)</label><input type="number" step="0.1" id="extra_check_pca06_4_limite" name="extra_check_pca06_4_limite" class="form-input"></div> <div class="md:col-span-2"><label for="extra_check_pca06_4_taratura" class="form-label">Data Ultima Taratura Strumento</label><input type="date" id="extra_check_pca06_4_taratura" name="extra_check_pca06_4_taratura" class="form-input"></div> </div> </div>`,
+            },
+            
+            photoUpload(templateId, itemIndex) {
+                const key = `extra_${templateId}_${itemIndex}`;
+                return `<div><label class="text-sm font-medium mb-2 block">Rilievo Fotografico</label><div class="flex items-center gap-4"><div id="preview_${key}" class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center text-slate-400">${this.imagePlaceholderIcon()}</div><input type="file" accept="image/*" class="photo-input hidden" data-key="${key}"><button type="button" class="add-photo-btn px-4 py-2 bg-slate-200 dark:bg-slate-600 rounded-md text-sm font-semibold hover:bg-slate-300 dark:hover:bg-slate-500">Aggiungi</button></div></div>`
+            },
+
             renderChecklist(templates) {
-                return templates.map(t => { const significativitaBadgeColor = t.significativita === 'ALTA' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; const freqInfo = App.config.FREQUENCY_MAP[t.significativita]; return `<div id="sheet-${t.id}" class="pca-sheet bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm"><div class="flex flex-wrap gap-2 justify-between items-center mb-4"><h3 class="text-lg font-semibold">${t.icon} ${t.title}</h3><div class="flex items-center gap-2 flex-wrap">${t.significativita ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${significativitaBadgeColor}">SIGNIFICATIVITÀ ${t.significativita}</span>` : ''}${freqInfo ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${freqInfo.color}">${freqInfo.text} ${freqInfo.schedule}</span>` : ''}</div></div><div class="space-y-4 mb-6">${t.items.map((item, idx) => { const baseName = `check_${t.id}_${idx}`; return `<div class="check-item flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200 dark:border-slate-700 py-3 gap-3"><label class="mr-4 text-sm flex-1">${item}</label><div class="flex items-center gap-x-5 text-sm flex-shrink-0"><div class="flex items-center"><input id="${baseName}_c" name="${baseName}" type="radio" value="C" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"><label for="${baseName}_c" class="ml-2 block">Sì</label></div><div class="flex items-center"><input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"><label for="${baseName}_nc" class="ml-2 block">No</label></div><div class="flex items-center"><input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" checked><label for="${baseName}_na" class="ml-2 block">N.A.</label></div></div></div>` }).join('')}</div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-4"><div><label class="text-sm font-medium mb-2 block">Osservazioni e Misure Correttive</label><textarea name="observation_${t.id}" class="form-textarea" rows="3"></textarea></div><div><label class="text-sm font-medium mb-2 block">Rilievo Fotografico</label><div class="flex items-center gap-4"><div id="preview_${t.id}" class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center text-slate-400">${this.imagePlaceholderIcon()}</div><input type="file" accept="image/*" class="photo-input hidden" data-template-id="${t.id}"><button type="button" class="add-photo-btn px-4 py-2 bg-slate-200 dark:bg-slate-600 rounded-md text-sm font-semibold hover:bg-slate-300 dark:hover:bg-slate-500">Aggiungi</button></div></div></div></div>` }).join('');
+                return templates.map(t => {
+                    const significativitaBadgeColor = t.significativita === 'ALTA' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                    const freqInfo = App.config.FREQUENCY_MAP[t.significativita];
+                    return `<div id="sheet-${t.id}" class="pca-sheet bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm" style="display:none;"><div class="flex flex-wrap gap-2 justify-between items-center mb-4"><h3 class="text-lg font-semibold">${t.icon} ${t.title}</h3><div class="flex items-center gap-2 flex-wrap">${t.significativita ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${significativitaBadgeColor}">SIGNIFICATIVITÀ ${t.significativita}</span>` : ''}${freqInfo ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${freqInfo.color}">${freqInfo.text} ${freqInfo.schedule}</span>` : ''}</div></div>
+                    <div class="space-y-3">
+                        ${t.items.map((item, idx) => {
+                            const baseName = `check_${t.id}_${idx}`;
+                            const extraContentKey = `${t.id}_${idx}`;
+                            const extraContentFn = this.extraContent[extraContentKey];
+                            const extraContentHTML = extraContentFn ? extraContentFn(t.id, idx) : '';
+
+                            return `<div class="check-item-wrapper border-b border-slate-200 dark:border-slate-700 last:border-b-0 py-3">
+                                <div class="check-item flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                                    <label class="mr-4 text-sm flex-1">${item}</label>
+                                    <div class="flex items-center gap-x-5 text-sm flex-shrink-0">
+                                        <div class="flex items-center"><input id="${baseName}_c" name="${baseName}" type="radio" value="C" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"><label for="${baseName}_c" class="ml-2 block">Sì</label></div>
+                                        <div class="flex items-center"><input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"><label for="${baseName}_nc" class="ml-2 block">No</label></div>
+                                        <div class="flex items-center"><input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" checked><label for="${baseName}_na" class="ml-2 block">N.A.</label></div>
+                                    </div>
+                                </div>
+                                ${extraContentHTML ? `<div id="extra_content_wrapper_${baseName}" class="extra-content-wrapper mt-4 pl-4 border-l-2 border-slate-200 dark:border-slate-700"><div class="extra-content-inner pt-2 pb-2">${extraContentHTML}</div></div>` : ''}
+                            </div>`
+                        }).join('')}
+                    </div>
+                    <div class="mt-6">
+                        <label class="text-sm font-medium mb-2 block">Osservazioni e Misure Correttive Generali</label>
+                        <textarea name="observation_${t.id}" class="form-textarea" rows="3"></textarea>
+                    </div>
+                </div>` }).join('');
             },
 
             newPcaForm({ nextId, today }) {
-                return `<form id="new-pca-form" novalidate class="space-y-8"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div><div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div><div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div></div><div id="wbs-section" class="mt-6 space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="pca-wbs-input" class="form-label">1. Inserisci Codice WBS</label><input type="text" id="pca-wbs-input" name="wbs-input" class="form-input" placeholder="Es. RI12, GA01..."></div><div><label for="pca-lavorazione-select" class="form-label">2. Seleziona Lavorazione</label><select id="pca-lavorazione-select" name="lavorazione" class="form-select" disabled><option value="">-- Prima inserisci WBS --</option></select></div></div><div><label for="pca-inspector-wbs" class="form-label">Compilatore</label><input type="text" id="pca-inspector-wbs" name="inspector-wbs" class="form-input" placeholder="Nome e Funzione"></div></div><div id="manual-section" class="mt-6 space-y-4" style="display: none;"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="wbs-manual" class="form-label">Area di Riferimento</label><input id="wbs-manual" name="wbs-manual" class="form-input" placeholder="Es. Campo Base, Area X..."></div><div><label for="inspector-manual" class="form-label">Compilatore</label><input id="inspector-manual" name="inspector-manual" class="form-input" placeholder="Nome e Funzione"></div></div><div><label for="activities-manual" class="form-label">Oggetto del controllo</label><textarea id="activities-manual" name="activities-manual" class="form-textarea" rows="2"></textarea></div></div></div><div><h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2><div id="checklist-container-periodico" class="space-y-6">${this.renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC)}</div><div id="checklist-container-preliminare" class="space-y-6" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE)}</div><div id="checklist-container-finale" class="space-y-6" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_FINALE)}</div></div><div class="flex justify-end gap-4 pt-4"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">Salva Controllo</button></div></form><style> .form-label { @apply text-sm font-medium text-slate-600 dark:text-slate-300; } .form-input, .form-select, .form-textarea { @apply mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-900 text-sm; }</style>`;
+                return `<form id="new-pca-form" novalidate class="space-y-8"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div><div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div><div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div></div><div id="wbs-section" class="mt-6 space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="pca-wbs-input" class="form-label">1. Inserisci Codice WBS</label><input type="text" id="pca-wbs-input" name="wbs-input" class="form-input" placeholder="Es. RI12, GA01..."></div><div><label for="pca-lavorazione-select" class="form-label">2. Seleziona Lavorazione</label><select id="pca-lavorazione-select" name="lavorazione" class="form-select" disabled><option value="">-- Prima inserisci WBS --</option></select></div></div><div><label for="pca-inspector-wbs" class="form-label">Compilatore</label><input type="text" id="pca-inspector-wbs" name="inspector-wbs" class="form-input" placeholder="Nome e Funzione"></div></div><div id="manual-section" class="mt-6 space-y-4" style="display: none;"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label for="wbs-manual" class="form-label">Area di Riferimento</label><input id="wbs-manual" name="wbs-manual" class="form-input" placeholder="Es. Campo Base, Area X..."></div><div><label for="inspector-manual" class="form-label">Compilatore</label><input id="inspector-manual" name="inspector-manual" class="form-input" placeholder="Nome e Funzione"></div></div><div><label for="activities-manual" class="form-label">Oggetto del controllo</label><textarea id="activities-manual" name="activities-manual" class="form-textarea" rows="2"></textarea></div></div></div><div><h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2><div id="checklist-container-periodico" class="space-y-6">${this.renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC)}</div><div id="checklist-container-preliminare" class="space-y-6" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE)}</div><div id="checklist-container-finale" class="space-y-6" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_FINALE)}</div></div><div class="flex justify-end gap-4 pt-4"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">Salva Controllo</button></div></form><style> .form-label { @apply text-sm font-medium text-slate-600 dark:text-slate-300; } .form-input, .form-select, .form-textarea { @apply mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-900 text-sm; } .form-checkbox { @apply rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500; }</style>`;
             },
             settings: () => `<div class="space-y-8 max-w-2xl"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2><p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza dei tuoi verbali su un file, o ripristina i dati da un backup precedente.</p><div class="flex gap-4"><button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button><button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button><input type="file" id="import-file" class="hidden" accept=".json"></div></div></div>`,
             printReport(report, templates) {
-                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
-                 return `<div style="font-family:sans-serif;color:black;"><h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1><p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p><table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Lavorazione/Oggetto</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector || 'N.D.'}</td></tr></tbody></table>${templates.map(t => { const checks = report.checks ? report.checks[t.id] : null; if (!checks || checks.length === 0) return ''; const observationsText = report.observations ? (report.observations[t.id] || '') : ''; const photoSrc = report.photos ? report.photos[t.id] : null; return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;"><h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${t.title}</h2><table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>${checks.map(item => `<tr><td style="padding:0.3rem 0;">${item.item}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;">${item.result || 'N.D.'}</td></tr>`).join('')}</tbody></table>${(observationsText.trim() !== '' || photoSrc) ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;margin-bottom:1rem;white-space:pre-wrap;">${observationsText || 'Nessuna'}</p>${photoSrc ? `<h3 style="font-weight:bold;margin-bottom:0.5rem;">Rilievo Fotografico</h3><img src="${photoSrc}" style="max-width:400px;border-radius:0.25rem;display:block;" alt="Foto per ${t.title}">` : ''}</div>` : ''}</div>`; }).join('')}</div>`
+                const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
+                const renderExtras = (templateId, itemIndex) => {
+                    const extraData = report.extras?.[templateId]?.[itemIndex];
+                    if (!extraData || Object.keys(extraData).length === 0) return '';
+                    let html = '<div style="font-size:0.8rem; margin: 5px 0 5px 20px; padding: 5px; background-color:#f9f9f9; border-left: 2px solid #ccc;">';
+                    for (const [key, value] of Object.entries(extraData)) {
+                       const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                       html += `<span style="display:inline-block; min-width:120px;"><strong>${formattedKey}:</strong></span> ${value || 'N.D.'} <br>`;
+                    }
+                    html += '</div>';
+                    return html;
+                };
+                 const renderPhoto = (templateId, itemIndex) => {
+                    const photoSrc = report.photos?.[templateId]?.[itemIndex];
+                    if (!photoSrc) return '';
+                    return `<div style="margin-top:0.5rem;margin-left:20px;"><h4 style="font-weight:bold;font-size:0.8rem;">Foto:</h4><img src="${photoSrc}" style="max-width:200px;border-radius:4px;display:block;" alt="Foto allegata"></div>`;
+                };
+
+                return `<div style="font-family:sans-serif;color:black;"><h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1><p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p><table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Lavorazione/Oggetto</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector || 'N.D.'}</td></tr></tbody></table>
+                ${templates.map(t => {
+                    const checks = report.checks ? report.checks[t.id] : null;
+                    if (!checks || checks.length === 0) return '';
+                    const observationsText = report.observations ? (report.observations[t.id] || '') : '';
+                    let cerTableHtml = '';
+                    if(t.id === 'pca04' && report.cerData && report.cerData.length > 0) {
+                        cerTableHtml += '<h3 style="font-weight:bold;margin:1rem 0 0.5rem 0;">Dettaglio Rifiuti CER</h3><table style="width:100%; font-size:0.7rem; border-collapse:collapse;"><thead><tr style="background-color:#f3f4f6;">';
+                        const headers = ['CER/Prod.', 'Ubic.', 'Verbale', 'Rapp. Prova', 'Ident.', 'Delim.', 'In Prod.', 'In Carico'];
+                        headers.forEach(h => cerTableHtml += `<th style="border:1px solid #ccc; padding:4px;">${h}</th>`);
+                        cerTableHtml += '</tr></thead><tbody>';
+                        report.cerData.forEach(row => {
+                           cerTableHtml += `<tr>
+                                <td style="border:1px solid #ccc; padding:4px;">${row.produttore || ''}</td>
+                                <td style="border:1px solid #ccc; padding:4px;">${row.ubicazione || ''}</td>
+                                <td style="border:1px solid #ccc; padding:4px;">${row.verbale || ''}</td>
+                                <td style="border:1px solid #ccc; padding:4px;">${row.prova || ''}</td>
+                                <td style="border:1px solid #ccc; padding:4px; text-align:center;">${row.identificato || ''}</td>
+                                <td style="border:1px solid #ccc; padding:4px; text-align:center;">${row.delimitato || ''}</td>
+                                <td style="border:1px solid #ccc; padding:4px; text-align:center;">${row.produzione ? 'Sì' : 'No'}</td>
+                                <td style="border:1px solid #ccc; padding:4px; text-align:center;">${row.carico ? 'Sì' : 'No'}</td>
+                           </tr>`;
+                        });
+                        cerTableHtml += '</tbody></table>';
+                    }
+                    return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;">
+                        <h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${t.title}</h2>
+                        <table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>
+                        ${checks.map((item, idx) => `<tr><td style="padding:0.3rem 0; vertical-align:top;">${item.item}${renderExtras(t.id, idx)}${renderPhoto(t.id, idx)}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;vertical-align:top;">${item.result || 'N.D.'}</td></tr>`).join('')}
+                        </tbody></table>
+                        ${(observationsText.trim() !== '') ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;white-space:pre-wrap;">${observationsText}</p></div>` : ''}
+                        ${cerTableHtml}
+                    </div>`;
+                }).join('')}</div>`
             }
         }
     };
 
     App.init().catch(err => {
         console.error("ERRORE FATALE DURANTE L'INIZIALIZZAZIONE:", err);
-        document.body.innerHTML = `<div style='padding: 2rem; text-align: center; font-family: sans-serif; color: #ef4444;'><h1>Errore Critico</h1><p>Impossibile avviare l'applicazione. L'errore più probabile è un problema di connessione a internet che impedisce il caricamento delle librerie esterne. Controlla la console (F12) per i dettagli.</p></div>`;
+        document.body.innerHTML = `<div style='padding: 2rem; text-align: center; font-family: sans-serif; color: #ef4444;'><h1>Errore Critico</h1><p>Impossibile avviare l'applicazione. Potrebbe esserci un problema con le dipendenze esterne o un errore nello script. Controlla la console (F12) per i dettagli.</p></div>`;
     });
 });
     </script>
