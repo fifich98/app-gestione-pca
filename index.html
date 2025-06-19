@@ -17,20 +17,26 @@
         body { font-family: 'Inter', sans-serif; }
         .sidebar-link { transition: background-color 0.2s, color 0.2s; }
         .sidebar-link.active { @apply bg-blue-600 text-white font-semibold; }
-        .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s, transform 0.3s; z-index: 1000; }
+        .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s, transform 0.3s; z-index: 1050; }
         .toast.show { opacity: 1; bottom: 40px; transform: translateX(-50%) scale(1); }
         button, .sidebar-link { transition: transform 0.1s ease-in-out; }
         button:hover:not(:disabled), .sidebar-link:hover { transform: scale(1.02); }
         button:active:not(:disabled) { transform: scale(0.98); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* Animazione per la comparsa dei contenuti */
         .content-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Transizione per i campi condizionali */
         .extra-content-wrapper { transition: all 0.3s ease-in-out; max-height: 0; overflow: hidden; }
-        .extra-content-wrapper.visible { max-height: 500px; /* Valore sufficientemente alto */ }
+        .extra-content-wrapper.visible { max-height: 500px; }
+        
+        /* Stili per il Modal di Conferma */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1040; opacity: 0; transition: opacity 0.3s; }
+        .modal-overlay.visible { opacity: 1; }
+        .modal-box { background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-overlay.visible .modal-box { transform: scale(1); }
+        .dark .modal-box { background-color: #1e293b; /* slate-800 */ }
+
 
         @media print {
             body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact; color-adjust: exact; }
@@ -52,7 +58,7 @@
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v6',
+            STORAGE_KEY: 'pca_app_data_idb_v7',
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
                 { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
@@ -71,22 +77,42 @@
             ],
             WBS_DATA: { 'GA': { descrizione: 'Gallerie Artificiali', lavorazioni: ['Scavo di sbancamento', 'Posa armature e getti CLS', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti'] }, 'GN': { descrizione: 'Gallerie Naturali', lavorazioni: ['Scavo in naturale', 'Consolidamenti (spritz-beton, centine)', 'Rivestimenti e impermeabilizzazioni'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti', 'Vibrazioni'] }, 'AS': { descrizione: 'Opere in Sotterraneo', lavorazioni: ['Scavi e rivestimenti', 'Opere di sostegno e drenaggi'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Consumi'] }, 'TR': { descrizione: 'Trincee', lavorazioni: ['Scavi di trincea', 'Opere di sostegno (pali, diaframmi)', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Beni Culturali'] }, 'RI': { descrizione: 'Rilevati', lavorazioni: ['Formazione corpo del rilevato', 'Opere di sostegno', 'Sistemazioni idrauliche'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'VI': { descrizione: 'Viadotti', lavorazioni: ['Pali di fondazione e fondazioni', 'Elevazione pile e spalle', 'Varo impalcato e soletta'], aspetti: ['Rumore', 'Vibrazioni', 'Rifiuti', 'Sostanze Pericolose'] }, 'CB': { descrizione: 'Campo Base', lavorazioni: ['Installazione e gestione uffici/dormitori/mensa', 'Manutenzione aree e servizi'], aspetti: ['Acque', 'Rifiuti', 'Rumore', 'Consumi'] }, 'CO': { descrizione: 'Cantiere Operativo', lavorazione: ['Allestimento aree stoccaggio', 'Gestione impianto di betonaggio', 'Officina e manutenzione mezzi'], aspetti: ['Polveri', 'Rumore', 'Acque', 'Rifiuti', 'Sostanze Pericolose'] }, 'NV': { descrizione: 'Nuova Viabilità', lavorazioni: ['Scavi e rilevati per nuova viabilità', 'Formazione sottofondi e pavimentazioni', 'Opere idrauliche e finiture'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'FA': { descrizione: 'Fabbricati', lavorazioni: ['Scavi e fondazioni', 'Elevazione strutture', 'Finiture e impianti'], aspetti: ['Polveri', 'Rumore', 'Rifiuti', 'Consumi'] } },
             ASPETTO_TO_PCA_ID_MAP: { 'Polveri': 'pca03', 'Rumore': 'pca06', 'Vibrazioni': 'pca06', 'Acque': 'pca01', 'Suolo': 'pca07', 'Rifiuti': 'pca04', 'Terre e Rocce': 'pca02', 'Sostanze Pericolose': 'pca05', 'Rifornimenti': 'pca05', 'Consumi': 'pca05', 'Beni Culturali': 'pca08' },
-            FREQUENCY_MAP: { 'ALTA': { text: 'FREQUENZA ALTA', schedule: '(es. settimanale)', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' }, 'MEDIA': { text: 'FREQUENZA MEDIA', schedule: '(es. quindicinale)', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300' }, 'BASSA': { text: 'FREQUENZA BASSA', schedule: '(es. mensile)', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' } },
+            FREQUENCY_MAP: { 'ALTA': { text: 'FREQUENZA ALTA', schedule: '(es. settimanale)', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', days: 7 }, 'MEDIA': { text: 'FREQUENZA MEDIA', schedule: '(es. quindicinale)', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300', days: 15 }, 'BASSA': { text: 'FREQUENZA BASSA', schedule: '(es. mensile)', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', days: 30 } },
             CHECK_TEMPLATES_PRELIMINARE: [{ id: "stato_luoghi", title: "Verifica Stato dei Luoghi (Punto Zero)", icon: "📍", items: ["Analisi vincoli specifici e servitù completata", "Mappatura recettori sensibili eseguita", "Stato della vegetazione documentato", "Verificata assenza di rifiuti preesistenti", "Verificata assenza di contaminazione pregressa"] }],
             CHECK_TEMPLATES_FINALE: [{ id: "ripristino", title: "Verifica Ripristino Finale", icon: "✅", items: ["Area riconsegnata come da verbale preliminare", "Completa rimozione rifiuti e attrezzature", "Opere di ripristino ambientale eseguite", "Assenza di impatti residui visibili"] }],
+            WBS_SIGNIFICANCE_MAP: {},
         },
         state: { isSaving: false, tempPhotos: {}, activeChart: null, data: [] },
         dom: {},
         
         async init() {
-            this.dom = { sidebarNav: document.getElementById('sidebar-nav'), mainContent: document.getElementById('main-content'), pageTitle: document.getElementById('page-title'), currentDate: document.getElementById('current-date'), toast: document.getElementById('toast'), printArea: document.getElementById('print-area'), theme: { toggleBtn: document.getElementById('theme-toggle'), darkIcon: document.getElementById('theme-toggle-dark-icon'), lightIcon: document.getElementById('theme-toggle-light-icon'), } };
+            this.dom = { sidebarNav: document.getElementById('sidebar-nav'), mainContent: document.getElementById('main-content'), pageTitle: document.getElementById('page-title'), currentDate: document.getElementById('current-date'), toast: document.getElementById('toast'), printArea: document.getElementById('print-area'), modal: document.getElementById('modal-overlay'), theme: { toggleBtn: document.getElementById('theme-toggle'), darkIcon: document.getElementById('theme-toggle-dark-icon'), lightIcon: document.getElementById('theme-toggle-light-icon'), } };
             this.ui.renderNav();
+            this._computeWbsSignificance();
             this.handlers.attachGlobalListeners();
             this.ui.applyTheme(localStorage.getItem('theme') === 'dark', true);
             this.state.data = await this.store.getAll();
             await this.ui.showTab('dashboard');
         },
         
+        _computeWbsSignificance() {
+            const significanceValues = { 'ALTA': 2, 'MEDIA': 1, 'BASSA': 0 };
+            for (const wbsCode in this.config.WBS_DATA) {
+                const wbsData = this.config.WBS_DATA[wbsCode];
+                let maxSignificance = -1;
+                const requiredPcaIds = new Set(wbsData.aspetti.map(a => this.config.ASPETTO_TO_PCA_ID_MAP[a]).filter(Boolean));
+                requiredPcaIds.forEach(pcaId => {
+                    const template = this.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === pcaId);
+                    if (template && template.significativita) {
+                        const sigValue = significanceValues[template.significativita];
+                        if (sigValue > maxSignificance) { maxSignificance = sigValue; }
+                    }
+                });
+                const significanceKey = Object.keys(significanceValues).find(key => significanceValues[key] === maxSignificance);
+                if (significanceKey) { this.config.WBS_SIGNIFICANCE_MAP[wbsCode] = significanceKey; }
+            }
+        },
+
         store: {
             dbStore: idbKeyval.createStore('pca-db', 'reports'),
             async getAll() { return (await idbKeyval.get(App.config.STORAGE_KEY, this.dbStore)) || []; },
@@ -152,6 +178,31 @@
                 setTimeout(() => { App.dom.toast.classList.add('show'); }, 10);
                 setTimeout(() => { App.dom.toast.classList.remove('show'); }, 4000);
             },
+            showModal(config) {
+                return new Promise((resolve) => {
+                    const { title, message, confirmText = 'Conferma', cancelText = 'Annulla', confirmColor = 'bg-red-600' } = config;
+                    App.dom.modal.innerHTML = `
+                        <div class="modal-box">
+                            <h3 class="text-xl font-bold mb-4">${this.sanitize(title)}</h3>
+                            <p class="text-slate-600 dark:text-slate-300 mb-6">${this.sanitize(message)}</p>
+                            <div class="flex justify-end gap-4">
+                                <button id="modal-cancel" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">${this.sanitize(cancelText)}</button>
+                                <button id="modal-confirm" class="px-5 py-2 text-white rounded-md ${confirmColor} hover:opacity-90 font-semibold">${this.sanitize(confirmText)}</button>
+                            </div>
+                        </div>`;
+                    App.dom.modal.classList.add('visible');
+                    
+                    const confirmBtn = document.getElementById('modal-confirm');
+                    const cancelBtn = document.getElementById('modal-cancel');
+                    const closeModal = (decision) => {
+                        App.dom.modal.classList.remove('visible');
+                        resolve(decision);
+                    };
+                    confirmBtn.onclick = () => closeModal(true);
+                    cancelBtn.onclick = () => closeModal(false);
+                    App.dom.modal.onclick = (e) => { if (e.target === App.dom.modal) closeModal(false); };
+                });
+            },
             async showTab(tabId) {
                 const tab = App.config.TABS.find(t => t.id === tabId);
                 if (!tab) return;
@@ -169,7 +220,8 @@
             renderNav() { App.dom.sidebarNav.innerHTML = App.config.TABS.map(t => `<a href="#" data-tab-id="${t.id}" class="sidebar-link flex items-center px-4 py-3 mt-2 text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">${t.icon} ${t.label}</a>`).join(''); },
             renderDashboard() {
                 const stats = App.store.getDashboardStats();
-                App.dom.mainContent.innerHTML = App.templates.dashboard(stats);
+                const frequencyStatuses = this.getFrequencyStatuses();
+                App.dom.mainContent.innerHTML = App.templates.dashboard(stats, frequencyStatuses.dueList);
                 const ctx = document.getElementById('ncChart')?.getContext('2d');
                 if (!ctx) return;
                 if (App.state.activeChart) App.state.activeChart.destroy();
@@ -181,8 +233,55 @@
             },
             renderListaPca() {
                 const reports = [...App.state.data].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
-                App.dom.mainContent.innerHTML = App.templates.pcaList(reports);
+                const frequencyStatuses = this.getFrequencyStatuses();
+                App.dom.mainContent.innerHTML = App.templates.pcaList(reports, frequencyStatuses.statusMap);
                 App.handlers.attachPcaListListeners();
+            },
+            getFrequencyStatuses() {
+                const reports = App.state.data;
+                const latestReportByWbs = {};
+                [...reports].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(r => {
+                    if (r.type === 'periodico' && r.wbs) {
+                        const wbsCode = r.wbs.substring(0, 2).toUpperCase();
+                        if (!latestReportByWbs[wbsCode]) {
+                            latestReportByWbs[wbsCode] = r;
+                        }
+                    }
+                });
+
+                const statusMap = {};
+                const dueList = [];
+                const now = new Date();
+                
+                for (const wbsCode in App.config.WBS_SIGNIFICANCE_MAP) {
+                    const significance = App.config.WBS_SIGNIFICANCE_MAP[wbsCode];
+                    if (!significance) continue;
+
+                    const report = latestReportByWbs[wbsCode];
+                    const interval = App.config.FREQUENCY_MAP[significance].days;
+                    
+                    if(report) {
+                        const lastDate = new Date(report.date + 'T00:00:00');
+                        const dueDate = new Date(lastDate.setDate(lastDate.getDate() + interval));
+                        const daysDiff = (dueDate - now) / (1000 * 3600 * 24);
+
+                        if (daysDiff < 0) {
+                            statusMap[wbsCode] = { text: 'Scaduto', color: 'bg-red-100 text-red-800', icon: '🔥' };
+                            dueList.push({ wbs: wbsCode, status: statusMap[wbsCode], days: Math.round(daysDiff) });
+                        } else if (daysDiff <= 3) {
+                            statusMap[wbsCode] = { text: 'In Scadenza', color: 'bg-yellow-100 text-yellow-800', icon: '⚠️' };
+                            dueList.push({ wbs: wbsCode, status: statusMap[wbsCode], days: Math.round(daysDiff) });
+                        } else {
+                            statusMap[wbsCode] = { text: 'OK', color: 'bg-green-100 text-green-800', icon: '✅' };
+                        }
+                    } else {
+                         // Se non c'è nessun report per questo WBS, è scaduto
+                        statusMap[wbsCode] = { text: 'Da Eseguire', color: 'bg-gray-200 text-gray-800', icon: '➡️' };
+                        dueList.push({ wbs: wbsCode, status: statusMap[wbsCode], days: -Infinity });
+                    }
+                }
+                dueList.sort((a,b) => a.days - b.days);
+                return { statusMap, dueList };
             },
             async renderNuovoPca() {
                 const nextId = await App.store.getNextId();
@@ -222,6 +321,12 @@
                 App.dom.printArea.innerHTML = App.templates.printReport(report, templates);
                 setTimeout(() => window.print(), 100);
             },
+            sanitize(str) {
+                if (!str) return '';
+                const temp = document.createElement('div');
+                temp.textContent = str;
+                return temp.innerHTML;
+            }
         },
 
         handlers: {
@@ -232,19 +337,30 @@
                 App.dom.currentDate.textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             },
             attachPcaListListeners() {
-                App.dom.mainContent.addEventListener('click', (e) => {
+                App.dom.mainContent.addEventListener('click', async (e) => {
                     const printBtn = e.target.closest('.print-pca-btn');
                     const deleteBtn = e.target.closest('.delete-pca-btn');
                     if (printBtn) this.onPrintPca(printBtn.dataset.id);
-                    if (deleteBtn) this.onDeletePca(deleteBtn.dataset.id);
+                    if (deleteBtn) {
+                        const id = deleteBtn.dataset.id;
+                        const confirmed = await App.ui.showModal({
+                            title: 'Conferma Eliminazione',
+                            message: `Sei sicuro di voler eliminare il Controllo N° ${id}? L'azione è irreversibile.`,
+                            confirmText: 'Elimina',
+                            confirmColor: 'bg-red-600'
+                        });
+                        if (confirmed) this.onDeletePca(id);
+                    }
                 });
             },
             onPrintPca: (id) => App.ui.prepareAndPrintReport(id),
             async onDeletePca(reportId) {
-                if (confirm(`Sei sicuro di voler eliminare il Controllo N° ${reportId}? L'azione è irreversibile.`)) {
-                    await App.store.delete(reportId);
-                    App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info');
-                    App.ui.renderListaPca();
+                await App.store.delete(reportId);
+                App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info');
+                App.ui.renderListaPca();
+                // Refresh dashboard if on it
+                if (document.getElementById('page-title').textContent === 'Dashboard') {
+                    App.ui.renderDashboard();
                 }
             },
             attachNewPcaFormListeners() {
@@ -298,13 +414,15 @@
                     }
                     const formData = new FormData(form);
                     const reportType = formData.get('type');
+                    
+                    const sanitize = App.ui.sanitize;
                     const newReport = { 
                         id: parseInt(formData.get('id')), 
-                        type: reportType, 
-                        date: formData.get('date'), 
-                        inspector: reportType === 'periodico' ? formData.get('inspector-wbs') : formData.get('inspector-manual'), 
-                        wbs: reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual'), 
-                        activities: reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual'), 
+                        type: sanitize(reportType), 
+                        date: sanitize(formData.get('date')), 
+                        inspector: sanitize(reportType === 'periodico' ? formData.get('inspector-wbs') : formData.get('inspector-manual')), 
+                        wbs: sanitize(reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual')), 
+                        activities: sanitize(reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual')), 
                         checks: {}, 
                         observations: {}, 
                         photos: {},
@@ -320,8 +438,8 @@
                     templates.forEach(template => {
                         const sheetElement = document.getElementById(`sheet-${template.id}`);
                         if (sheetElement && window.getComputedStyle(sheetElement).display !== 'none') {
-                            newReport.checks[template.id] = template.items.map((item, idx) => ({ item: item, result: formData.get(`check_${template.id}_${idx}`) }));
-                            newReport.observations[template.id] = formData.get(`observation_${template.id}`);
+                            newReport.checks[template.id] = template.items.map((item, idx) => ({ item: sanitize(item), result: sanitize(formData.get(`check_${template.id}_${idx}`)) }));
+                            newReport.observations[template.id] = sanitize(formData.get(`observation_${template.id}`));
                             newReport.extras[template.id] = {};
                             
                             template.items.forEach((item, idx) => {
@@ -331,7 +449,7 @@
                                     for(const [key, value] of formData.entries()) {
                                         if (key.startsWith(`extra_${baseName}`)) {
                                             const fieldName = key.replace(`extra_${baseName}_`, '');
-                                            newReport.extras[template.id][idx][fieldName] = value;
+                                            newReport.extras[template.id][idx][fieldName] = sanitize(value);
                                         }
                                     }
                                 }
@@ -350,12 +468,12 @@
                     if (cerContainer) {
                         for (let i = 1; i <= this.cerRowCounter; i++) {
                              const rowData = {
-                                produttore: formData.get(`cer_produttore_${i}`),
-                                ubicazione: formData.get(`cer_ubicazione_${i}`),
-                                verbale: formData.get(`cer_verbale_${i}`),
-                                prova: formData.get(`cer_prova_${i}`),
-                                identificato: formData.get(`cer_identificato_${i}`),
-                                delimitato: formData.get(`cer_delimitato_${i}`),
+                                produttore: sanitize(formData.get(`cer_produttore_${i}`)),
+                                ubicazione: sanitize(formData.get(`cer_ubicazione_${i}`)),
+                                verbale: sanitize(formData.get(`cer_verbale_${i}`)),
+                                prova: sanitize(formData.get(`cer_prova_${i}`)),
+                                identificato: sanitize(formData.get(`cer_identificato_${i}`)),
+                                delimitato: sanitize(formData.get(`cer_delimitato_${i}`)),
                                 produzione: formData.has(`cer_produzione_${i}`),
                                 carico: formData.has(`cer_carico_${i}`),
                             };
@@ -401,14 +519,104 @@
             },
             async onPhotoUpload(e) { const input = e.target; const key = input.dataset.key; const previewContainer = document.getElementById(`preview_${key}`); const file = input.files[0]; if (!file || !previewContainer) return; previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover rounded" alt="Anteprima">`; App.state.tempPhotos[key] = dataUrl; } catch (err) { previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); delete App.state.tempPhotos[key]; App.ui.showToast("Errore nel caricamento foto.", "error"); } },
             resizeImage: (file, maxSize) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { const img = new Image(); img.onload = () => { let { width, height } = img; if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.8)); }; img.onerror = reject; img.src = e.target.result; }; reader.onerror = reject; reader.readAsDataURL(file); }),
-            attachSettingsListeners() { document.getElementById('export-btn')?.addEventListener('click', this.exportData); document.getElementById('import-btn')?.addEventListener('click', () => document.getElementById('import-file').click()); document.getElementById('import-file')?.addEventListener('change', this.importData); },
+            async attachSettingsListeners() { 
+                document.getElementById('export-btn')?.addEventListener('click', this.exportData); 
+                document.getElementById('import-btn')?.addEventListener('click', () => document.getElementById('import-file').click()); 
+                document.getElementById('import-file')?.addEventListener('change', async (e) => {
+                     const confirmed = await App.ui.showModal({
+                        title: 'Conferma Importazione',
+                        message: "ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?",
+                        confirmText: 'Sovrascrivi e Importa',
+                        confirmColor: 'bg-orange-500'
+                    });
+                    if (confirmed) this.importData(e);
+                }); 
+            },
             async exportData() { const data = await App.store.getAll(); if (data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info'); const dataStr = JSON.stringify(data, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pca_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); App.ui.showToast("Esportazione dati completata.", 'success'); },
-            importData(e) { const file = e.target.files[0]; if (!file) return; if (confirm("ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?")) { const reader = new FileReader(); reader.onload = async (e) => { try { const data = JSON.parse(e.target.result); if (!Array.isArray(data)) throw new Error("File non valido"); await App.store.saveAll(data); App.ui.showToast("Dati importati con successo!", 'success'); await App.ui.showTab('dashboard'); } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } }; reader.readAsText(file); } },
+            importData(e) { 
+                const file = e.target.files[0]; if (!file) return; 
+                const reader = new FileReader(); 
+                reader.onload = async (event) => { 
+                    try { 
+                        const data = JSON.parse(event.target.result); 
+                        if (!Array.isArray(data)) throw new Error("File non valido"); 
+                        await App.store.saveAll(data); 
+                        App.ui.showToast("Dati importati con successo!", 'success'); 
+                        await App.ui.showTab('dashboard'); 
+                    } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } 
+                }; 
+                reader.readAsText(file); 
+                e.target.value = ''; // Reset input
+            },
         },
         
         templates: {
-            dashboard: (stats) => `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">${['Controlli Totali','NC Aperte','Controlli Periodici Eseguiti','Conformità Media'].map((label,i)=>`<div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm flex items-center"><div><h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${label}</h3><p class="mt-1 text-3xl font-semibold ${i===1&&stats.openNc>0?'text-red-500':(i===3&&stats.avgCompliance!=='N.D.'?'text-green-500':'')}">${Object.values(stats)[i]}</p></div></div>`).join('')}</div><div class="mt-8 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto Ambientale</h3><div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div></div>`,
-            pcaList: (reports) => `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="min-w-full bg-transparent text-sm"><thead class="bg-slate-50 dark:bg-slate-700/50"><tr>${['ID','Data','Tipo','WBS/Area','Lavorazione','Stato','Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-slate-200 dark:divide-slate-700">${reports.length===0?`<tr><td colspan="7" class="p-8 text-center text-slate-500">Nessun controllo compilato.</td></tr>`:reports.map(report=>{const ncCount=Object.values(report.checks||{}).flat().filter(c=>c&&c.result==='NC').length;const typeLabels={'periodico':'Periodico','preliminare':'Preliminare','finale':'Finale'};return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200"><td class="p-3 font-medium">${report.id}</td><td class="p-3 whitespace-nowrap">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td><td class="p-3 font-medium">${typeLabels[report.type]||'N.D.'}</td><td class="p-3">${report.wbs||'N.A.'}</td><td class="p-3">${report.activities||'N.A.'}</td><td class="p-3 font-semibold ${ncCount>0?'text-red-500':'text-green-500'}">${report.type!=='periodico'?'-':(ncCount>0?`${ncCount} NC`:'Conforme')}</td><td class="p-3"><div class="flex items-center gap-4"><button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600" title="Stampa"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button><button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600" title="Elimina"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></td></tr>`;}).join('')}</tbody></table></div></div>`,
+            dashboard: (stats, dueList) => {
+                let dueListHtml = '<p class="text-slate-500 dark:text-slate-400">Tutti i controlli sono aggiornati.</p>';
+                if (dueList.length > 0) {
+                    dueListHtml = `<ul class="space-y-3">${dueList.map(item => `
+                        <li class="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50">
+                            <div>
+                                <span class="font-bold">${item.wbs}</span>
+                                <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">${App.config.WBS_DATA[item.wbs].descrizione}</span>
+                            </div>
+                            <span class="text-sm font-semibold px-2 py-0.5 rounded-full ${item.status.color}">${item.status.text}</span>
+                        </li>`).join('')}</ul>`;
+                }
+
+                return `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                    ${['Controlli Totali','NC Aperte','Controlli Periodici Eseguiti','Conformità Media'].map((label,i)=>`<div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm flex items-center"><div><h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${label}</h3><p class="mt-1 text-3xl font-semibold ${i===1&&stats.openNc>0?'text-red-500':(i===3&&stats.avgCompliance!=='N.D.'?'text-green-500':'')}">${Object.values(stats)[i]}</p></div></div>`).join('')}
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto</h3>
+                        <div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Controlli da Eseguire</h3>
+                        <div class="max-h-96 overflow-y-auto pr-2">${dueListHtml}</div>
+                    </div>
+                </div>`;
+            },
+            pcaList: (reports, wbsFrequencyStatus) => {
+                return `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-transparent text-sm">
+                            <thead class="bg-slate-50 dark:bg-slate-700/50">
+                                <tr>
+                                    ${['ID','Data','Tipo','WBS/Area','Lavorazione','Stato NC', 'Stato Frequenza', 'Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                ${reports.length===0?`<tr><td colspan="8" class="p-8 text-center text-slate-500">Nessun controllo compilato.</td></tr>`:reports.map(report=>{
+                                    const ncCount=Object.values(report.checks||{}).flat().filter(c=>c&&c.result==='NC').length;
+                                    const typeLabels={'periodico':'Periodico','preliminare':'Preliminare','finale':'Finale'};
+                                    const wbsCode = report.wbs ? report.wbs.substring(0,2).toUpperCase() : null;
+                                    const freqStatus = report.type === 'periodico' && wbsCode ? wbsFrequencyStatus[wbsCode] : null;
+                                    
+                                    return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200">
+                                        <td class="p-3 font-medium">${report.id}</td>
+                                        <td class="p-3 whitespace-nowrap">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td>
+                                        <td class="p-3 font-medium">${typeLabels[report.type]||'N.D.'}</td>
+                                        <td class="p-3">${report.wbs||'N.A.'}</td>
+                                        <td class="p-3">${report.activities||'N.A.'}</td>
+                                        <td class="p-3 font-semibold ${ncCount>0?'text-red-500':'text-green-500'}">${report.type!=='periodico'?'-':(ncCount>0?`${ncCount} NC`:'Conforme')}</td>
+                                        <td class="p-3">
+                                            ${freqStatus ? `<span class="text-xs font-semibold px-2 py-1 rounded-full ${freqStatus.color}">${freqStatus.text}</span>` : '-'}
+                                        </td>
+                                        <td class="p-3">
+                                            <div class="flex items-center gap-4">
+                                                <button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600" title="Stampa"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
+                                                <button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600" title="Elimina"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                            </div>
+                                        </td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+            },
             imagePlaceholderIcon: () => `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
 
             extraContent: {
@@ -625,5 +833,7 @@
     </div>
     <div id="toast" class="toast px-6 py-3 rounded-lg text-white font-medium shadow-lg" role="alert" aria-live="polite"></div>
     <div id="print-area" class="hidden"></div>
+    <div id="modal-overlay" class="modal-overlay"></div>
 </body>
 </html>
+
