@@ -5,17 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>App Gestione PCA - CHRYSAS (Versione Migliorata)</title>
     
-    <!-- Stili e Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Librerie JS con `defer` per garantire il corretto ordine di caricamento -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js" defer></script>
     
-    <!-- Stile CSS principale -->
     <style>
         body { font-family: 'Inter', sans-serif; }
         .sidebar-link { transition: background-color 0.2s, color 0.2s; }
@@ -45,13 +42,12 @@
         .hidden { display: none; }
     </style>
     
-    <!-- Script principale dell'applicazione con `defer` -->
     <script id="app-script" defer>
     document.addEventListener('DOMContentLoaded', () => {
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v5', // Versione chiave aggiornata
+            STORAGE_KEY: 'pca_app_data_idb_v5',
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
                 { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
@@ -102,7 +98,7 @@
                 const reportId = parseInt(newReport.id);
                 const existingIndex = reports.findIndex(r => parseInt(r.id) === reportId);
                 if (existingIndex !== -1) {
-                    reports[existingIndex] = newReport; // Sovrascrive se l'ID esiste
+                    reports[existingIndex] = newReport;
                 } else {
                     reports.push(newReport);
                 }
@@ -148,7 +144,7 @@
                 const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
                 App.dom.toast.textContent = message;
                 App.dom.toast.className = `toast px-6 py-3 rounded-lg text-white font-medium shadow-lg ${colors[type]}`;
-                setTimeout(() => { App.dom.toast.classList.add('show'); }, 10); // leggero ritardo per animazione
+                setTimeout(() => { App.dom.toast.classList.add('show'); }, 10);
                 setTimeout(() => { App.dom.toast.classList.remove('show'); }, 4000);
             },
             async showTab(tabId) {
@@ -158,7 +154,6 @@
                 App.dom.pageTitle.textContent = tab.label;
                 
                 App.dom.mainContent.classList.remove('content-fade-in');
-                // Forza reflow per riavviare l'animazione
                 void App.dom.mainContent.offsetWidth;
 
                 const renderFunctionName = this.renderMap[tabId];
@@ -220,7 +215,7 @@
                 else if (report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
                 else templates = App.config.CHECK_TEMPLATES_PERIODIC;
                 App.dom.printArea.innerHTML = App.templates.printReport(report, templates);
-                window.print();
+                setTimeout(() => window.print(), 100); // Ritardo per consentire il rendering delle immagini
             },
         },
 
@@ -275,7 +270,7 @@
                     const resetDependentFields = () => { lavorazioneSelect.innerHTML = '<option value="">-- Prima inserisci WBS --</option>'; lavorazioneSelect.disabled = true; App.config.CHECK_TEMPLATES_PERIODIC.forEach(template => { const el = document.getElementById(`sheet-${template.id}`); if (el) el.style.display = 'none'; }); };
                     resetDependentFields();
                     if (wbsData && wbsCodeFull.length >= 2) {
-                        lavorazioneSelect.innerHTML = '<option value="">-- Seleziona Lavorazione --</option>'; // Placeholder
+                        lavorazioneSelect.innerHTML = '<option value="">-- Seleziona Lavorazione --</option>';
                         wbsData.lavorazioni.forEach(lav => { const option = document.createElement('option'); option.value = lav; option.textContent = lav; lavorazioneSelect.appendChild(option); });
                         lavorazioneSelect.disabled = false;
                         const requiredPcaIds = new Set(wbsData.aspetti.map(a => App.config.ASPETTO_TO_PCA_ID_MAP[a]).filter(Boolean));
@@ -349,17 +344,21 @@
 
                     const cerContainer = document.getElementById('cer-table-rows');
                     if (cerContainer) {
-                        const cerRows = cerContainer.querySelectorAll('.cer-row');
-                        cerRows.forEach(row => {
-                            const rowData = {};
-                            row.querySelectorAll('input, select').forEach(input => {
-                                const key = input.name.split('_')[1]; // Adjusted index
-                                rowData[key] = input.type === 'checkbox' ? input.checked : input.value;
-                            });
+                        for (let i = 1; i <= this.cerRowCounter; i++) {
+                             const rowData = {
+                                produttore: formData.get(`cer_produttore_${i}`),
+                                ubicazione: formData.get(`cer_ubicazione_${i}`),
+                                verbale: formData.get(`cer_verbale_${i}`),
+                                prova: formData.get(`cer_prova_${i}`),
+                                identificato: formData.get(`cer_identificato_${i}`),
+                                delimitato: formData.get(`cer_delimitato_${i}`),
+                                produzione: formData.has(`cer_produzione_${i}`),
+                                carico: formData.has(`cer_carico_${i}`),
+                            };
                             if (Object.values(rowData).some(v => v)) {
                                 newReport.cerData.push(rowData);
                             }
-                        });
+                        }
                     }
 
                     await App.store.save(newReport);
@@ -408,7 +407,6 @@
             pcaList: (reports) => `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="min-w-full bg-transparent text-sm"><thead class="bg-slate-50 dark:bg-slate-700/50"><tr>${['ID','Data','Tipo','WBS/Area','Lavorazione','Stato','Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-slate-200 dark:divide-slate-700">${reports.length===0?`<tr><td colspan="7" class="p-8 text-center text-slate-500">Nessun controllo compilato.</td></tr>`:reports.map(report=>{const ncCount=Object.values(report.checks||{}).flat().filter(c=>c&&c.result==='NC').length;const typeLabels={'periodico':'Periodico','preliminare':'Preliminare','finale':'Finale'};return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200"><td class="p-3 font-medium">${report.id}</td><td class="p-3 whitespace-nowrap">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td><td class="p-3 font-medium">${typeLabels[report.type]||'N.D.'}</td><td class="p-3">${report.wbs||'N.A.'}</td><td class="p-3">${report.activities||'N.A.'}</td><td class="p-3 font-semibold ${ncCount>0?'text-red-500':'text-green-500'}">${report.type!=='periodico'?'-':(ncCount>0?`${ncCount} NC`:'Conforme')}</td><td class="p-3"><div class="flex items-center gap-4"><button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600" title="Stampa"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button><button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600" title="Elimina"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></td></tr>`;}).join('')}</tbody></table></div></div>`,
             imagePlaceholderIcon: () => `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
 
-            // Helper per i campi extra condizionali
             extraContent: {
                 'pca01_0': () => `<div class="w-full md:w-1/2"><label for="extra_check_pca01_0_auth" class="form-label">N° Autorizzazione</label><input type="text" id="extra_check_pca01_0_auth" name="extra_check_pca01_0_auth" class="form-input"></div>`,
                 'pca01_1': () => `<div class="w-full md:w-1/2"><label for="extra_check_pca01_1_auth" class="form-label">N° Autorizzazione</label><input type="text" id="extra_check_pca01_1_auth" name="extra_check_pca01_1_auth" class="form-input"></div>`,
@@ -468,11 +466,14 @@
             },
             settings: () => `<div class="space-y-8 max-w-2xl"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2><p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza dei tuoi verbali su un file, o ripristina i dati da un backup precedente.</p><div class="flex gap-4"><button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button><button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button><input type="file" id="import-file" class="hidden" accept=".json"></div></div></div>`,
             printReport(report, templates) {
+                const chrysasLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp';
+                const rtiLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp';
                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
+
                 const renderExtras = (templateId, itemIndex) => {
                     const extraData = report.extras?.[templateId]?.[itemIndex];
                     if (!extraData || Object.keys(extraData).length === 0) return '';
-                    let html = '<div style="font-size:0.8rem; margin: 5px 0 5px 20px; padding: 5px; background-color:#f9f9f9; border-left: 2px solid #ccc;">';
+                    let html = '<div style="font-size:0.8rem; margin: 5px 0 5px 20px; padding: 8px; background-color:#f9f9f9; border-left: 2px solid #ddd;">';
                     for (const [key, value] of Object.entries(extraData)) {
                        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                        html += `<span style="display:inline-block; min-width:120px;"><strong>${formattedKey}:</strong></span> ${value || 'N.D.'} <br>`;
@@ -486,7 +487,9 @@
                     return `<div style="margin-top:0.5rem;margin-left:20px;"><h4 style="font-weight:bold;font-size:0.8rem;">Foto:</h4><img src="${photoSrc}" style="max-width:200px;border-radius:4px;display:block;" alt="Foto allegata"></div>`;
                 };
 
-                return `<div style="font-family:sans-serif;color:black;"><h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1><p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p><table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Lavorazione/Oggetto</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector || 'N.D.'}</td></tr></tbody></table>
+                let reportBody = `<h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1>
+                <p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p>
+                <table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Lavorazione/Oggetto</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector || 'N.D.'}</td></tr></tbody></table>
                 ${templates.map(t => {
                     const checks = report.checks ? report.checks[t.id] : null;
                     if (!checks || checks.length === 0) return '';
@@ -519,7 +522,29 @@
                         ${(observationsText.trim() !== '') ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;white-space:pre-wrap;">${observationsText}</p></div>` : ''}
                         ${cerTableHtml}
                     </div>`;
-                }).join('')}</div>`
+                }).join('')}`;
+
+                return `<div style="font-family:sans-serif;color:black;">
+                    <header>
+                        <table style="width:100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="width:50%; text-align:left; vertical-align:middle;">
+                                    <img src="${chrysasLogoUrl}" alt="Logo CHRYSAS" style="height: 40px;">
+                                </td>
+                                <td style="width:50%; text-align:right; vertical-align:middle;">
+                                    <img src="${rtiLogoUrl}" alt="Logo RTI" style="height: 50px;">
+                                </td>
+                            </tr>
+                        </table>
+                        <hr style="margin-top: 1rem; margin-bottom: 1.5rem; border: 0; border-top: 1px solid #ccc;">
+                    </header>
+                    
+                    ${reportBody}
+                    
+                    <footer style="margin-top: 3rem; text-align: center; font-size: 0.8rem; color: #888; border-top: 1px solid #ccc; padding-top: 1rem;">
+                        Documento generato in data ${new Date().toLocaleDateString('it-IT')}
+                    </footer>
+                </div>`;
             }
         }
     };
