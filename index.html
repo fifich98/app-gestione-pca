@@ -35,7 +35,6 @@
     <div class="flex h-screen">
         <!-- Sidebar -->
         <aside class="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
-            <!-- LOGO CHRYSAS NELLA SIDEBAR -->
             <div class="h-16 flex items-center justify-center px-6 border-b border-slate-200 dark:border-slate-700">
                 <img src="https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp" alt="Logo CHRYSAS" class="h-8">
             </div>
@@ -47,7 +46,6 @@
             <header class="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 flex-shrink-0">
                 <h2 id="page-title" class="text-xl font-semibold"></h2>
                 <div class="flex items-center gap-6">
-                    <!-- LOGHI PARTNER NELL'HEADER -->
                     <img src="https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp" alt="Loghi Partner" class="h-10">
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" aria-label="Toggle dark mode">
                         <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
@@ -70,19 +68,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_v11',
+            STORAGE_KEY: 'pca_app_data_v15', // Versione con fix
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
                 { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>' },
                 { id: 'nuovo-pca', label: 'Esegui Controllo', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>' },
                 { id: 'impostazioni', label: 'Impostazioni', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' }
             ],
+            // SCHEDE PCA
             CHECK_TEMPLATES_PERIODIC: [
-                { id: "atmosfera", title: "A. Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Le piste di cantiere sono state bagnate a sufficienza?", "I mezzi in transito rispettano i limiti di velocità?", "I mezzi in uscita utilizzano il telo di copertura?", "L'impianto lavaruote è funzionante e utilizzato?", "I cumuli di materiali sono coperti o bagnati?"] },
-                { id: "rifiuti", title: "B. Gestione Rifiuti", icon: "🗑️", significativita: "ALTA", items: ["Il DTR è identificato, delimitato e ordinato?", "I rifiuti sono separati per CER e con corretta cartellonistica?", "I rifiuti pericolosi sono stoccati in modo sicuro?", "La documentazione di trasporto (FIR) è disponibile e corretta?"] },
-                { id: "suolo", title: "C. Tutela Suolo e Acque", icon: "💧", significativita: "MEDIA", items: ["Oli e carburanti sono stoccati su bacini di contenimento?", "Il kit di emergenza ambientale è presente e completo?", "Sono visibili sversamenti o macchie sul suolo?", "Le vasche di lavaggio betoniere sono a tenuta?"] },
-                { id: "rumore", title: "D. Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Le attività rumorose rispettano gli orari autorizzati?", "Le barriere acustiche (se previste) sono installate correttamente?"] }
+                { id: "pca01", title: "PCA 01: Scarichi Idrici ed Approvvigionamento", icon: "💧", significativita: "ALTA", items: ["Autorizzazione allo scarico acque reflue domestiche presente e valida?", "Autorizzazione allo scarico acque reflue industriali presente e valida?", "Rispetto delle prescrizioni contenute nelle autorizzazioni?", "Corretta gestione acque di lavorazione (es. scavo pali)?", "Kit di emergenza anti-sversamento presente e completo?", "Manutenzione impianti di depurazione/trattamento registrata?"] },
+                { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PPUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] },
+                { id: "pca03", title: "PCA 03: Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Autorizzazioni per impianti (es. calcestruzzo) presenti e valide?", "Copertura mezzi per trasporto materiali polverulenti?", "Bagnatura piste e/o cumuli eseguita regolarmente?", "Velocità dei mezzi in cantiere limitata a 30 km/h?", "Impianto lavaruote funzionante ed utilizzato?"] },
+                { id: "pca04", title: "PCA 04: Rifiuti", icon: "🗑️", significativita: "ALTA", items: ["Deposito temporaneo (DTR) ordinato e pulito?", "Rifiuti separati per CER e con corretta cartellonistica?", "Stoccaggio rifiuti pericolosi conforme (aree, bacini)?", "Registro di carico/scarico aggiornato (entro 10gg)?", "Quarta copia FIR ricevuta entro 90 giorni?"] },
+                { id: "pca05", title: "PCA 05: Sostanze Pericolose ed Emergenze", icon: "☣️", significativita: "MEDIA", items: ["Schede di Sicurezza (SDS) disponibili e aggiornate?", "Stoccaggio sostanze su bacini di contenimento idonei?", "Aree di stoccaggio segnalate e adeguate?", "Personale formato per la gestione delle emergenze?"] },
+                { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?"] },
+                { id: "pca07", title: "PCA 07: Suolo e Sottosuolo", icon: "🌱", significativita: "ALTA", items: ["Assenza di contaminazioni visive del suolo (macchie, sversamenti)?", "Corretto stoccaggio del terreno vegetale in cumuli separati?", "Utilizzo delle apposite vasche per lavaggio betoniere?", "Gestione corretta del calcestruzzo in esubero?"] },
+                { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] },
+                { id: "pca09", title: "PCA 09: Viabilità", icon: "🚚", significativita: "MEDIA", items: ["Flusso mezzi conforme al progetto della viabilità di cantiere?", "Rispetto delle ordinanze e disposizioni specifiche?", "Mezzi dotati di telo copricassone per materiali polverulenti?", "Mezzi in cantiere registrati e identificati?"] }
             ],
+            // MAPPATURA WBS -> Lavorazioni e Rischi (da Tab. D)
+            WBS_DATA: {
+                'GA': { descrizione: 'Gallerie Artificiali', lavorazione: 'Scavo di sbancamento, Posa in opera di armature, Getti di calcestruzzo, Impermeabilizzazioni, Rinterri.', rischi: ['TER', 'ATM', 'RUM', 'VIB', 'IDR', 'RIF', 'MAT'] },
+                'GN': { descrizione: 'Gallerie Naturali', lavorazione: 'Scavo, Rivestimenti provvisori e definitivi, Impermeabilizzazioni.', rischi: ['TER', 'ATM', 'RUM', 'VIB', 'IDR', 'RIF', 'MAT'] },
+                'AS': { descrizione: 'Opere in Sotterraneo', lavorazione: 'Scavi, Rivestimenti, Opere di sostegno, Drenaggi.', rischi: ['TER', 'ATM', 'RUM', 'IDR', 'RIF', 'MAT'] },
+                'TR': { descrizione: 'Trincee', lavorazione: 'Scavi, Opere di sostegno, Impermeabilizzazioni, Rilevati.', rischi: ['TER', 'ATM', 'RUM', 'IDR', 'RIF'] },
+                'RI': { descrizione: 'Rilevati', lavorazione: 'Formazione rilevati, Opere di sostegno, Sistemazioni idrauliche.', rischi: ['TER', 'ATM', 'RUM', 'MAT'] },
+                'VI': { descrizione: 'Viadotti', lavorazione: 'Pali di fondazione, Pile, Travi, Impalcato.', rischi: ['ATM', 'RUM', 'VIB', 'RIF', 'MAT'] },
+                'CB': { descrizione: 'Campo Base', lavorazione: 'Installazione, Gestione aree, Uffici, Dormitori, Mensa.', rischi: ['IDR', 'RIF', 'RUM', 'MAT'] },
+                'CO': { descrizione: 'Cantiere Operativo', lavorazione: 'Aree di stoccaggio, Impianti (calcestruzzo, etc.), Officine.', rischi: ['ATM', 'IDR', 'RIF', 'RUM', 'MAT'] },
+                'NV': { descrizione: 'Nuova Viabilità', lavorazione: 'Scavi, Rilevati, Sottofondi, Pavimentazioni, Opere accessorie.', rischi: ['TER', 'ATM', 'RUM', 'RIF', 'MAT'] },
+                'FA': { descrizione: 'Fabbricati', lavorazione: 'Scavi, Fondazioni, Strutture, Finiture, Impianti.', rischi: ['TER', 'ATM', 'RUM', 'RIF', 'MAT'] },
+            },
+            // MAPPATURA Rischi (da Tab. D) -> Schede PCA
+            RISK_TO_PCA_MAP: {
+                'ATM': ['pca03'], 'RUM': ['pca06'], 'VIB': ['pca06'],
+                'IDR': ['pca01', 'pca07'], 'INQ': ['pca01', 'pca05'],
+                'RIF': ['pca04'], 'TER': ['pca02'],
+                'MAT': ['pca05'], 'BAC': ['pca08'], 'PAE': ['pca08']
+            },
             CHECK_TEMPLATES_PRELIMINARE: [
                 { id: "stato_luoghi", title: "Verifica Stato dei Luoghi (Punto Zero)", icon: "📍", items: ["Analisi vincoli specifici e servitù completata", "Mappatura recettori sensibili eseguita (corpi idrici, abitazioni)", "Stato della vegetazione documentato", "Verificata assenza di rifiuti o materiali abbandonati preesistenti", "Verificata assenza di evidenze di contaminazione pregressa (macchie, odori)"] }
             ],
@@ -91,338 +115,524 @@ document.addEventListener('DOMContentLoaded', () => {
             ],
         },
 
-        state: {
-            isSaving: false,
-            tempPhotos: {},
-            activeChart: null,
-        },
+        state: {},
         dom: {},
+        init() {},
+        store: {},
+        ui: {},
+        handlers: {},
+        templates: {}
+    };
 
-        init() {
-            this.dom = {
-                sidebarNav: document.getElementById('sidebar-nav'), mainContent: document.getElementById('main-content'),
-                pageTitle: document.getElementById('page-title'), currentDate: document.getElementById('current-date'),
-                toast: document.getElementById('toast'), printArea: document.getElementById('print-area'),
-                theme: { toggleBtn: document.getElementById('theme-toggle'), darkIcon: document.getElementById('theme-toggle-dark-icon'), lightIcon: document.getElementById('theme-toggle-light-icon'), }
-            };
-            this.ui.renderNav();
-            this.handlers.attachGlobalListeners();
-            this.ui.applyTheme(localStorage.getItem('theme') === 'dark', true);
-            this.ui.showTab('dashboard');
+    App.state = { isSaving: false, tempPhotos: {}, activeChart: null };
+
+    App.init = function() {
+        this.dom = {
+            sidebarNav: document.getElementById('sidebar-nav'),
+            mainContent: document.getElementById('main-content'),
+            pageTitle: document.getElementById('page-title'),
+            currentDate: document.getElementById('current-date'),
+            toast: document.getElementById('toast'),
+            printArea: document.getElementById('print-area'),
+            theme: {
+                toggleBtn: document.getElementById('theme-toggle'),
+                darkIcon: document.getElementById('theme-toggle-dark-icon'),
+                lightIcon: document.getElementById('theme-toggle-light-icon'),
+            }
+        };
+        this.ui.renderNav();
+        this.handlers.attachGlobalListeners();
+        this.ui.applyTheme(localStorage.getItem('theme') === 'dark', true);
+        this.ui.showTab('dashboard');
+    };
+
+    App.store = {
+        getAll: () => JSON.parse(localStorage.getItem(App.config.STORAGE_KEY) || '[]'),
+        saveAll: (reports) => localStorage.setItem(App.config.STORAGE_KEY, JSON.stringify(reports)),
+        getById: (id) => App.store.getAll().find(r => r.id === id),
+        save(newReport) {
+            const reports = this.getAll();
+            if (reports.some(r => r.id === newReport.id)) {
+                throw new Error(`ID Scheda ${newReport.id} già esistente.`);
+            }
+            reports.push(newReport);
+            this.saveAll(reports);
         },
-        
-        store: {
-            getAll: () => JSON.parse(localStorage.getItem(App.config.STORAGE_KEY) || '[]'),
-            saveAll: (reports) => localStorage.setItem(App.config.STORAGE_KEY, JSON.stringify(reports)),
-            getById: (id) => App.store.getAll().find(r => r.id === id),
-            save(newReport) { const reports = this.getAll(); if (reports.some(r => r.id === newReport.id)) { throw new Error(`ID Scheda ${newReport.id} già esistente.`); } reports.push(newReport); this.saveAll(reports); },
-            delete: (id) => App.store.saveAll(App.store.getAll().filter(r => r.id !== id)),
-            getNextId: () => (App.store.getAll().reduce((max, r) => Math.max(max, r.id), 0) + 1),
-            getDashboardStats() {
-                const reports = this.getAll();
-                let openNc = 0, totalChecks = 0, compliantChecks = 0;
-                const ncByAspect = {};
-
-                reports.forEach(report => {
-                    if (report.type === 'periodico' && report.checks) {
-                        Object.entries(report.checks).forEach(([aspectId, checks]) => {
-                            const template = App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === aspectId);
-                            if (!template) return;
-                            
-                            checks.forEach(check => {
-                                if (check.result !== 'NA') totalChecks++;
+        delete: (id) => App.store.saveAll(App.store.getAll().filter(r => r.id !== id)),
+        getNextId: () => (App.store.getAll().reduce((max, r) => Math.max(max, r.id), 0) + 1),
+        getDashboardStats() {
+            const reports = this.getAll();
+            let openNc = 0, totalChecks = 0, compliantChecks = 0;
+            const ncByAspect = {};
+            reports.forEach(report => {
+                if (report.type === 'periodico' && report.checks) {
+                    Object.entries(report.checks).forEach(([aspectId, checks]) => {
+                        const template = App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === aspectId);
+                        if (!template) return;
+                        checks.forEach(check => {
+                            if (check.result !== 'NA') {
+                                totalChecks++;
                                 if (check.result === 'C') compliantChecks++;
                                 if (check.result === 'NC') {
                                     openNc++;
                                     ncByAspect[template.title] = (ncByAspect[template.title] || 0) + 1;
                                 }
-                            });
+                            }
                         });
-                    }
+                    });
+                }
+            });
+            const avgCompliance = totalChecks > 0 ? `${((compliantChecks / totalChecks) * 100).toFixed(0)}%` : 'N.D.';
+            return { totalPca: reports.length, openNc, totalChecks, avgCompliance, ncByAspect };
+        },
+    };
+
+    App.ui = {
+        renderMap: { 'dashboard': 'renderDashboard', 'lista-pca': 'renderListaPca', 'nuovo-pca': 'renderNuovoPca', 'impostazioni': 'renderImpostazioni' },
+        showToast(message, type = 'success') {
+            const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
+            App.dom.toast.textContent = message;
+            App.dom.toast.className = `toast px-6 py-3 rounded-lg text-white font-medium shadow-lg ${colors[type]} show`;
+            setTimeout(() => App.dom.toast.classList.remove('show'), 4000);
+        },
+        showTab(tabId) {
+            const tab = App.config.TABS.find(t => t.id === tabId);
+            if (!tab) return;
+            App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.toggle('active', link.dataset.tabId === tabId);
+            });
+            App.dom.pageTitle.textContent = tab.label;
+            const renderFunctionName = this.renderMap[tabId];
+            if (this[renderFunctionName]) {
+                this[renderFunctionName]();
+            }
+        },
+        renderNav() {
+            App.dom.sidebarNav.innerHTML = App.config.TABS.map(t => `<a href="#" data-tab-id="${t.id}" class="sidebar-link flex items-center px-4 py-3 mt-2 text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200">${t.icon} ${t.label}</a>`).join('');
+        },
+        renderDashboard() {
+            const stats = App.store.getDashboardStats();
+            App.dom.mainContent.innerHTML = App.templates.dashboard(stats);
+            const ctx = document.getElementById('ncChart')?.getContext('2d');
+            if (!ctx) return;
+            if (App.state.activeChart) App.state.activeChart.destroy();
+            App.state.activeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(stats.ncByAspect).map(l => l.substring(l.indexOf(':') + 1).trim()),
+                    datasets: [{ data: Object.values(stats.ncByAspect), backgroundColor: 'rgba(59, 130, 246, 0.7)' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
+            });
+        },
+        renderImpostazioni() {
+            App.dom.mainContent.innerHTML = App.templates.settings();
+            App.handlers.attachSettingsListeners();
+        },
+        renderListaPca() {
+            const reports = App.store.getAll().sort((a, b) => b.id - a.id);
+            App.dom.mainContent.innerHTML = App.templates.pcaList(reports);
+            App.handlers.attachPcaListListeners();
+        },
+        renderNuovoPca() {
+            const nextId = App.store.getNextId();
+            const today = new Date().toISOString().slice(0, 10);
+            App.dom.mainContent.innerHTML = App.templates.newPcaForm({ nextId, today });
+            App.handlers.attachNewPcaFormListeners();
+            this.updateChecklistVisibility('periodico');
+        },
+        updateChecklistVisibility(type) {
+            const isPeriodico = type === 'periodico';
+            document.getElementById('wbs-section').style.display = isPeriodico ? 'block' : 'none';
+            document.getElementById('manual-section').style.display = isPeriodico ? 'none' : 'block';
+
+            // Show/hide the correct checklist container
+            document.getElementById('checklist-container-periodico').style.display = isPeriodico ? 'block' : 'none';
+            document.getElementById('checklist-container-preliminare').style.display = type === 'preliminare' ? 'block' : 'none';
+            document.getElementById('checklist-container-finale').style.display = type === 'finale' ? 'block' : 'none';
+
+            if (!isPeriodico) {
+                // Reset WBS selection and hide all periodic sheets when switching to manual modes
+                document.getElementById('pca-wbs-select').value = '';
+                App.config.CHECK_TEMPLATES_PERIODIC.forEach(template => {
+                    const el = document.getElementById(`sheet-${template.id}`);
+                    if (el) el.style.display = 'none';
+                });
+            }
+        },
+        applyTheme(isDark, isInitial = false) {
+            document.documentElement.classList.toggle('dark', isDark);
+            App.dom.theme.darkIcon.classList.toggle('hidden', !isDark);
+            App.dom.theme.lightIcon.classList.toggle('hidden', isDark);
+            if (!isInitial) {
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            }
+        },
+        resetPcaForm: () => {
+            App.state.tempPhotos = {};
+            App.ui.renderNuovoPca();
+        },
+        prepareAndPrintReport(reportId) {
+            const report = App.store.getById(reportId);
+            if (!report) return;
+            let templates;
+            if (report.type === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+            else if (report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
+            else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+            App.dom.printArea.innerHTML = App.templates.printReport(report, templates);
+            window.print();
+        },
+    };
+
+    App.handlers = {
+        attachGlobalListeners() {
+            App.dom.sidebarNav.addEventListener('click', e => {
+                const link = e.target.closest('.sidebar-link');
+                if (link) {
+                    e.preventDefault();
+                    App.ui.showTab(link.dataset.tabId);
+                }
+            });
+            App.dom.theme.toggleBtn.addEventListener('click', () => App.ui.applyTheme(!document.documentElement.classList.contains('dark')));
+            App.dom.currentDate.textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        },
+        attachPcaListListeners() {
+            App.dom.mainContent.addEventListener('click', (e) => {
+                const printBtn = e.target.closest('.print-pca-btn');
+                const deleteBtn = e.target.closest('.delete-pca-btn');
+                if (printBtn) {
+                    App.ui.prepareAndPrintReport(parseInt(printBtn.dataset.id));
+                }
+                if (deleteBtn) {
+                    this.onDeletePca(parseInt(deleteBtn.dataset.id));
+                }
+            });
+        },
+        onDeletePca(reportId) {
+            if (confirm(`Sei sicuro di voler eliminare il Controllo N° ${reportId}? L'azione è irreversibile.`)) {
+                App.store.delete(reportId);
+                App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info');
+                App.ui.renderListaPca();
+            }
+        },
+        attachNewPcaFormListeners() {
+            const form = document.getElementById('new-pca-form');
+            if (!form) return;
+            form.addEventListener('submit', this.onNewPcaSubmit.bind(this));
+            form.addEventListener('click', (e) => {
+                if (e.target.matches('.add-photo-btn')) {
+                    e.target.previousElementSibling.click();
+                } else if (e.target.matches('#cancel-pca-btn')) {
+                    App.ui.resetPcaForm();
+                }
+            });
+            form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', this.onPhotoUpload.bind(this)));
+            document.getElementById('pca-type')?.addEventListener('change', (e) => {
+                App.ui.updateChecklistVisibility(e.target.value);
+            });
+            document.getElementById('pca-wbs-select')?.addEventListener('change', (e) => {
+                const wbsCode = e.target.value;
+                const wbsData = App.config.WBS_DATA[wbsCode];
+                const activitiesInput = document.getElementById('pca-activities');
+                const wbsHiddenInput = document.getElementById('pca-wbs-hidden');
+
+                App.config.CHECK_TEMPLATES_PERIODIC.forEach(template => {
+                    const el = document.getElementById(`sheet-${template.id}`);
+                    if(el) el.style.display = 'none';
                 });
 
-                const avgCompliance = totalChecks > 0 ? `${((compliantChecks / totalChecks) * 100).toFixed(0)}%` : 'N.D.';
-                return { totalPca: reports.length, openNc, totalChecks, avgCompliance, ncByAspect };
-            },
+                if (wbsData) {
+                    activitiesInput.value = wbsData.lavorazione;
+                    wbsHiddenInput.value = `${wbsCode} - ${wbsData.descrizione}`;
+                    const requiredPcaSheets = new Set();
+                    wbsData.rischi.forEach(riskCode => {
+                        const sheets = App.config.RISK_TO_PCA_MAP[riskCode] || [];
+                        sheets.forEach(sheetId => requiredPcaSheets.add(sheetId));
+                    });
+                    requiredPcaSheets.forEach(sheetId => {
+                        const el = document.getElementById(`sheet-${sheetId}`);
+                        if (el) el.style.display = 'block';
+                    });
+                } else {
+                    activitiesInput.value = '';
+                    wbsHiddenInput.value = '';
+                }
+            });
         },
-        
-        ui: {
-            renderMap: { 'dashboard': 'renderDashboard', 'lista-pca': 'renderListaPca', 'nuovo-pca': 'renderNuovoPca', 'impostazioni': 'renderImpostazioni' },
-            
-            showToast(message, type = 'success') { const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' }; App.dom.toast.textContent = message; App.dom.toast.className = `toast px-6 py-3 rounded-lg text-white font-medium shadow-lg ${colors[type]} show`; setTimeout(() => App.dom.toast.classList.remove('show'), 4000); },
-            showTab(tabId) { const tab = App.config.TABS.find(t => t.id === tabId); if (!tab) return; App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => { link.classList.toggle('active', link.dataset.tabId === tabId); }); App.dom.pageTitle.textContent = tab.label; const renderFunctionName = this.renderMap[tabId]; if (this[renderFunctionName]) { this[renderFunctionName](); } },
-            renderNav() { App.dom.sidebarNav.innerHTML = App.config.TABS.map(t => `<a href="#" data-tab-id="${t.id}" class="sidebar-link flex items-center px-4 py-3 mt-2 text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200">${t.icon} ${t.label}</a>`).join(''); },
-            renderDashboard() { const stats = App.store.getDashboardStats(); App.dom.mainContent.innerHTML = App.templates.dashboard(stats); const ctx = document.getElementById('ncChart')?.getContext('2d'); if (!ctx) return; if (App.state.activeChart) App.state.activeChart.destroy(); App.state.activeChart = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(stats.ncByAspect).map(l => l.substring(l.indexOf('.') + 1).trim()), datasets: [{ data: Object.values(stats.ncByAspect), backgroundColor: 'rgba(59, 130, 246, 0.7)' }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } } }); },
-            renderImpostazioni() { App.dom.mainContent.innerHTML = App.templates.settings(); App.handlers.attachSettingsListeners(); },
-            renderListaPca() {
-                const reports = App.store.getAll().sort((a, b) => b.id - a.id);
-                App.dom.mainContent.innerHTML = App.templates.pcaList(reports);
-                App.handlers.attachPcaListListeners();
-            },
-            
-            renderNuovoPca() {
-                const nextId = App.store.getNextId();
-                const today = new Date().toISOString().slice(0, 10);
-                App.dom.mainContent.innerHTML = App.templates.newPcaForm({ nextId, today });
-                App.handlers.attachNewPcaFormListeners();
-                this.updateChecklistVisibility('periodico');
-            },
-            
-            updateChecklistVisibility(type) {
-                document.getElementById('checklist-periodico').style.display = type === 'periodico' ? 'block' : 'none';
-                document.getElementById('checklist-preliminare').style.display = type === 'preliminare' ? 'block' : 'none';
-                document.getElementById('checklist-finale').style.display = type === 'finale' ? 'block' : 'none';
-            },
-
-            applyTheme(isDark, isInitial = false) { document.documentElement.classList.toggle('dark', isDark); App.dom.theme.darkIcon.classList.toggle('hidden', !isDark); App.dom.theme.lightIcon.classList.toggle('hidden', isDark); if (!isInitial) { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } },
-            resetPcaForm: () => { App.state.tempPhotos = {}; App.ui.renderNuovoPca(); },
-
-            prepareAndPrintReport(reportId) {
-                const report = App.store.getById(reportId);
-                if (!report) return;
-                
-                let templates;
-                if(report.type === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
-                else if(report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
-                else templates = App.config.CHECK_TEMPLATES_PERIODIC;
-
-                App.dom.printArea.innerHTML = App.templates.printReport(report, templates);
-                window.print();
-            },
-        },
-        
-        handlers: {
-            attachGlobalListeners() { App.dom.sidebarNav.addEventListener('click', e => { const link = e.target.closest('.sidebar-link'); if (link) { e.preventDefault(); App.ui.showTab(link.dataset.tabId); } }); App.dom.theme.toggleBtn.addEventListener('click', () => App.ui.applyTheme(!document.documentElement.classList.contains('dark'))); App.dom.currentDate.textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); },
-            attachPcaListListeners() { App.dom.mainContent.addEventListener('click', (e) => { const printBtn = e.target.closest('.print-pca-btn'); const deleteBtn = e.target.closest('.delete-pca-btn'); if (printBtn) { App.ui.prepareAndPrintReport(parseInt(printBtn.dataset.id)); } if (deleteBtn) { this.onDeletePca(parseInt(deleteBtn.dataset.id)); } }); },
-            onDeletePca(reportId) { if (confirm(`Sei sicuro di voler eliminare il Controllo N° ${reportId}? L'azione è irreversibile.`)) { App.store.delete(reportId); App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info'); App.ui.renderListaPca(); } },
-            
-            attachNewPcaFormListeners() {
-                const form = document.getElementById('new-pca-form');
-                if (!form) return;
-                
-                form.addEventListener('submit', this.onNewPcaSubmit.bind(this));
-                form.addEventListener('click', (e) => { if (e.target.matches('.add-photo-btn')) { e.target.previousElementSibling.click(); } else if (e.target.matches('#cancel-pca-btn')) { App.ui.resetPcaForm(); } });
-                form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', this.onPhotoUpload.bind(this)));
-                
-                document.getElementById('pca-type')?.addEventListener('change', (e) => {
-                    App.ui.updateChecklistVisibility(e.target.value);
-                });
-            },
-            
-            async onNewPcaSubmit(e) {
-                e.preventDefault();
-                if (App.state.isSaving) return;
-
-                App.state.isSaving = true;
-                const saveBtn = document.getElementById('save-pca-btn');
+        async onNewPcaSubmit(e) {
+            e.preventDefault();
+            if (App.state.isSaving) return;
+            App.state.isSaving = true;
+            const saveBtn = document.getElementById('save-pca-btn');
+            if(saveBtn) {
                 saveBtn.disabled = true;
                 saveBtn.innerHTML = `<span>Salvando...</span>`;
+            }
+            try {
+                const requiredFields = Array.from(e.target.querySelectorAll('[required]'));
+                let firstInvalid = null;
+                requiredFields.forEach(f => {
+                    f.classList.remove('border-red-500');
+                    if (!f.value.trim()) {
+                        f.classList.add('border-red-500', 'dark:border-red-500');
+                        if (!firstInvalid) firstInvalid = f;
+                    }
+                });
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                    throw new Error('Compilare tutti i campi generali richiesti.');
+                }
+                const formData = new FormData(e.target);
+                const reportType = formData.get('type');
+                
+                const newReport = {
+                    id: parseInt(formData.get('id')),
+                    type: reportType,
+                    date: formData.get('date'),
+                    inspector: formData.get('inspector'),
+                    wbs: reportType === 'periodico' ? formData.get('wbs-hidden') : formData.get('wbs-manual'),
+                    activities: reportType === 'periodico' ? formData.get('activities') : formData.get('activities-manual'),
+                    checks: {},
+                    observations: {},
+                    photos: {}
+                };
 
-                try {
-                    const requiredFields = Array.from(e.target.querySelectorAll('[required]'));
-                    let firstInvalid = null;
-                    requiredFields.forEach(f => { f.classList.remove('border-red-500'); if (!f.value.trim()) { f.classList.add('border-red-500', 'dark:border-red-500'); if (!firstInvalid) firstInvalid = f; } });
-                    if (firstInvalid) { firstInvalid.focus(); throw new Error('Compilare tutti i campi generali richiesti.'); }
+                let templates;
+                if (reportType === 'preliminare') {
+                    templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+                } else if (reportType === 'finale') {
+                    templates = App.config.CHECK_TEMPLATES_FINALE;
+                } else {
+                    templates = App.config.CHECK_TEMPLATES_PERIODIC;
+                }
 
-                    const formData = new FormData(e.target);
-                    const reportType = formData.get('type');
-                    
-                    const newReport = {
-                        id: parseInt(formData.get('id')),
-                        type: reportType,
-                        date: formData.get('date'),
-                        wbs: formData.get('wbs'),
-                        activities: formData.get('activities'),
-                        inspector: formData.get('inspector'),
-                        checks: {}, observations: {}, photos: {}
-                    };
-                    
-                    let templates;
-                    if (reportType === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
-                    else if (reportType === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
-                    else templates = App.config.CHECK_TEMPLATES_PERIODIC;
-
-                    templates.forEach(template => {
+                templates.forEach(template => {
+                    const sheetElement = document.getElementById(`sheet-${template.id}`);
+                    if (reportType !== 'periodico' || (sheetElement && sheetElement.style.display === 'block')) {
                         newReport.checks[template.id] = template.items.map((item, idx) => ({ item: item, result: formData.get(`check_${template.id}_${idx}`) }));
                         newReport.observations[template.id] = formData.get(`observation_${template.id}`);
                         newReport.photos[template.id] = App.state.tempPhotos[template.id] || null;
-                    });
-                    
-                    App.store.save(newReport);
-                    App.ui.showToast('Controllo salvato con successo!', 'success');
-                    App.ui.resetPcaForm();
-                    App.ui.showTab('lista-pca');
+                    }
+                });
 
-                } catch (error) {
-                    App.ui.showToast(error.message, 'error');
-                } finally {
-                    App.state.isSaving = false;
+                App.store.save(newReport);
+                App.ui.showToast('Controllo salvato con successo!', 'success');
+                App.ui.resetPcaForm();
+                App.ui.showTab('lista-pca');
+            } catch (error) {
+                App.ui.showToast(error.message, 'error');
+            } finally {
+                App.state.isSaving = false;
+                 if(saveBtn) {
                     saveBtn.disabled = false;
                     saveBtn.textContent = 'Salva Controllo';
                 }
-            },
-            
-            async onPhotoUpload(e) { const input = e.target; const templateId = input.dataset.templateId; const previewContainer = document.getElementById(`preview_${templateId}`); const file = input.files[0]; if (!file || !previewContainer) return; previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="w-20 h-20 object-cover rounded border-2 border-slate-300 dark:border-slate-600" alt="Anteprima">`; App.state.tempPhotos[templateId] = dataUrl; } catch (err) { console.error("Image resize error:", err); App.ui.showToast('Errore nel caricamento della foto.', 'error'); previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); delete App.state.tempPhotos[templateId]; } },
-            resizeImage: (file, maxSize) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { const img = new Image(); img.onload = () => { let { width, height } = img; if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.8)); }; img.onerror = reject; img.src = e.target.result; }; reader.onerror = reject; reader.readAsDataURL(file); }),
-            attachSettingsListeners() { document.getElementById('export-btn')?.addEventListener('click', this.exportData); document.getElementById('import-btn')?.addEventListener('click', () => document.getElementById('import-file').click()); document.getElementById('import-file')?.addEventListener('change', this.importData); },
-            exportData() { const data = App.store.getAll(); if (data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info'); const dataStr = JSON.stringify(data, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pca_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); App.ui.showToast("Esportazione dati completata.", 'success'); },
-            importData(e) { const file = e.target.files[0]; if (!file) return; if (confirm("ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?")) { const reader = new FileReader(); reader.onload = e => { try { const data = JSON.parse(e.target.result); if (!Array.isArray(data)) throw new Error("File non valido"); App.store.saveAll(data); App.ui.showToast("Dati importati con successo!", 'success'); App.ui.showTab('dashboard'); } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } }; reader.readAsText(file); } },
-        },
-
-        templates: {
-            dashboard: (stats) => `
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    ${['Controlli Totali', 'NC Aperte', 'Controlli Eseguiti', 'Conformità Media'].map((label, i) => `
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm flex items-center">
-                        <div>
-                            <h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${label}</h3>
-                            <p class="mt-1 text-3xl font-semibold ${i === 1 && stats.openNc > 0 ? 'text-red-500' : (i === 3 ? 'text-green-500' : '')}">${Object.values(stats)[i]}</p>
-                        </div>
-                    </div>`).join('')}
-                </div>
-                <div class="mt-8 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                    <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto Ambientale</h3>
-                    <div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div>
-                </div>`,
-            
-            pcaList: (reports) => `
-                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-transparent text-sm">
-                            <thead class="bg-slate-50 dark:bg-slate-700/50">
-                                <tr>
-                                    ${['ID', 'Data', 'Tipo Controllo', 'WBS/Area', 'Stato', 'Azioni'].map(h => `<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                                ${reports.length === 0 ? `<tr><td colspan="6" class="p-8 text-center text-slate-500">Nessun controllo compilato. Inizia dalla sezione 'Esegui Controllo'.</td></tr>` : 
-                                reports.map(report => {
-                                    const ncCount = Object.values(report.checks || {}).flat().filter(c => c.result === 'NC').length;
-                                    const typeLabels = { 'periodico': 'Periodico', 'preliminare': 'Preliminare', 'finale': 'Finale' };
-                                    return `
-                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200">
-                                        <td class="p-3 font-medium">${report.id}</td>
-                                        <td class="p-3 whitespace-nowrap">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td>
-                                        <td class="p-3 font-medium">${typeLabels[report.type] || 'N.D.'}</td>
-                                        <td class="p-3">${report.wbs}</td>
-                                        <td class="p-3 font-semibold ${ncCount > 0 ? 'text-red-500' : 'text-green-500'}">${report.type !== 'periodico' ? '-' : (ncCount > 0 ? `${ncCount} NC Aperte` : 'Conforme')}</td>
-                                        <td class="p-3">
-                                            <div class="flex items-center gap-4">
-                                                <button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400" title="Stampa Verbale"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
-                                                <button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-500" title="Elimina Verbale"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                                            </div>
-                                        </td>
-                                    </tr>`;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>`,
-            
-            newPcaForm: ({ nextId, today }) => {
-                const renderChecklist = (templates, type) => `
-                <div id="checklist-${type}" class="space-y-6" style="display: none;">
-                    ${templates.map(t => {
-                        const significativitaBadge = t.significativita ? {
-                            'ALTA': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-                            'MEDIA': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-                            'BASSA': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        }[t.significativita] : '';
-                        return `
-                        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-semibold">${t.icon} ${t.title}</h3>
-                                ${t.significativita ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${significativitaBadge}">SIGNIFICATIVITÀ ${t.significativita}</span>` : ''}
-                            </div>
-                            <div class="space-y-4 mb-6">
-                                ${t.items.map((item, idx) => {
-                                    const baseName = `check_${t.id}_${idx}`;
-                                    return `
-                                    <div class="check-item flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200 dark:border-slate-700 py-3 gap-3">
-                                        <label class="mr-4 text-sm flex-1">${item}</label>
-                                        <div class="flex items-center gap-x-5 text-sm flex-shrink-0">
-                                            <div class="flex items-center">
-                                                <input id="${baseName}_c" name="${baseName}" type="radio" value="C" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
-                                                <label for="${baseName}_c" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Sì</label>
-                                            </div>
-                                            <div class="flex items-center">
-                                                <input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
-                                                <label for="${baseName}_nc" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">No</label>
-                                            </div>
-                                            <div class="flex items-center">
-                                                <input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" checked>
-                                                <label for="${baseName}_na" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">N.A.</label>
-                                            </div>
-                                        </div>
-                                    </div>`
-                                }).join('')}
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-4">
-                                <div><label class="text-sm font-medium mb-2 block">Osservazioni e Misure Correttive</label><textarea name="observation_${t.id}" class="form-textarea" rows="3"></textarea></div>
-                                <div><label class="text-sm font-medium mb-2 block">Rilievo Fotografico</label><div class="flex items-center gap-4"><div id="preview_${t.id}" class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center text-slate-400">${App.templates.imagePlaceholderIcon()}</div><input type="file" accept="image/*" class="photo-input hidden" data-template-id="${t.id}"><button type="button" class="add-photo-btn px-4 py-2 bg-slate-200 dark:bg-slate-600 rounded-md text-sm font-semibold hover:bg-slate-300 dark:hover:bg-slate-500">Aggiungi</button></div></div>
-                            </div>
-                        </div>`
-                    }).join('')}
-                </div>`;
-                return `
-                <form id="new-pca-form" novalidate class="space-y-8">
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali del Controllo</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
-                            <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
-                            <div><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select"><option value="periodico" selected>Periodico</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
-                            <div class="md:col-span-2"><label for="pca-wbs" class="form-label">WBS / Area</label><input type="text" id="pca-wbs" name="wbs" class="form-input" placeholder="Es. AS09-MU50" required></div>
-                            <div><label for="pca-inspector" class="form-label">Compilatore (RCO/Addetto)</label><input type="text" id="pca-inspector" name="inspector" class="form-input" placeholder="Nome e Funzione" required></div>
-                            <div class="md:col-span-3"><label for="pca-activities" class="form-label">Lavorazioni in corso / Oggetto del controllo</label><input type="text" id="pca-activities" name="activities" class="form-input" placeholder="Es. Scavi, gestione area, ispezione preliminare..." required></div>
-                        </div>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2>
-                        ${renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC, 'periodico')}
-                        ${renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE, 'preliminare')}
-                        ${renderChecklist(App.config.CHECK_TEMPLATES_FINALE, 'finale')}
-                    </div>
-                    <div class="flex justify-end gap-4 pt-4"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">Salva Controllo</button></div>
-                </form>
-                <style> .form-label { @apply text-sm font-medium text-slate-600 dark:text-slate-300; } .form-input, .form-select, .form-textarea { @apply mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-900 text-sm; } </style>`
-            },
-            
-            imagePlaceholderIcon: () => `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
-            
-            settings: () => `
-                <div class="space-y-8 max-w-2xl">
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                        <h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2>
-                        <p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza di tutti i tuoi verbali su un file, o ripristina i dati da un backup precedente.</p>
-                        <div class="flex gap-4">
-                            <button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button>
-                            <button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button>
-                            <input type="file" id="import-file" class="hidden" accept=".json">
-                        </div>
-                    </div>
-                </div>`,
-            
-            printReport: (report, templates) => {
-                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
-                 return `
-                <div style="font-family:sans-serif;color:black;">
-                    <h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1>
-                    <p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p>
-                    <table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody>
-                        <tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs}</td></tr>
-                        <tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr>
-                        <tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Oggetto/Lavorazioni</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities}</td></tr>
-                        <tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector}</td></tr>
-                    </tbody></table>
-                    ${templates.map(t => {
-                        const checks = report.checks[t.id] || [];
-                        const observationsText = report.observations[t.id] || '';
-                        const photoSrc = report.photos[t.id];
-                        return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;"><h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${t.title}</h2><table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>${checks.map(item => `<tr><td style="padding:0.3rem 0;">${item.item}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;">${item.result}</td></tr>`).join('')}</tbody></table>${(observationsText.trim() !== '' || photoSrc) ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;margin-bottom:1rem;white-space:pre-wrap;">${observationsText || 'Nessuna'}</p>${photoSrc ? `<h3 style="font-weight:bold;margin-bottom:0.5rem;">Rilievo Fotografico</h3><img src="${photoSrc}" style="width:80%;max-width:400px;border-radius:0.25rem;display:block;" alt="Foto per ${t.title}">` : ''}</div>` : ''}</div>`;
-                    }).join('')}
-                </div>`
             }
+        },
+        async onPhotoUpload(e) {
+            const input = e.target;
+            const templateId = input.dataset.templateId;
+            const previewContainer = document.getElementById(`preview_${templateId}`);
+            const file = input.files[0];
+            if (!file || !previewContainer) return;
+            previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`;
+            try {
+                const dataUrl = await this.resizeImage(file, 1024);
+                previewContainer.innerHTML = `<img src="${dataUrl}" class="w-20 h-20 object-cover rounded border-2 border-slate-300 dark:border-slate-600" alt="Anteprima">`;
+                App.state.tempPhotos[templateId] = dataUrl;
+            } catch (err) {
+                console.error("Image resize error:", err);
+                App.ui.showToast('Errore nel caricamento della foto.', 'error');
+                previewContainer.innerHTML = App.templates.imagePlaceholderIcon();
+                delete App.state.tempPhotos[templateId];
+            }
+        },
+        resizeImage: (file, maxSize) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    let { width, height } = img;
+                    if (width > height) {
+                        if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+                    } else {
+                        if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        }),
+        attachSettingsListeners() {
+            document.getElementById('export-btn')?.addEventListener('click', this.exportData);
+            document.getElementById('import-btn')?.addEventListener('click', () => document.getElementById('import-file').click());
+            document.getElementById('import-file')?.addEventListener('change', this.importData);
+        },
+        exportData() {
+            const data = App.store.getAll();
+            if (data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info');
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pca_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            App.ui.showToast("Esportazione dati completata.", 'success');
+        },
+        importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (confirm("ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?")) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (!Array.isArray(data)) throw new Error("File non valido");
+                        App.store.saveAll(data);
+                        App.ui.showToast("Dati importati con successo!", 'success');
+                        App.ui.showTab('dashboard');
+                    } catch (err) {
+                        App.ui.showToast("Errore: il file di backup non è valido.", 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        },
+    };
+
+    App.templates = {
+        dashboard: (stats) => `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                ${['Controlli Totali', 'NC Aperte', 'Controlli Periodici Eseguiti', 'Conformità Media'].map((label, i) => `
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm flex items-center">
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${label}</h3>
+                        <p class="mt-1 text-3xl font-semibold ${i === 1 && stats.openNc > 0 ? 'text-red-500' : (i === 3 ? 'text-green-500' : '')}">${Object.values(stats)[i]}</p>
+                    </div>
+                </div>`).join('')}
+            </div>
+            <div class="mt-8 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto Ambientale</h3>
+                <div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div>
+            </div>`,
+        
+        pcaList: (reports) => `
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-transparent text-sm">
+                        <thead class="bg-slate-50 dark:bg-slate-700/50">
+                            <tr>
+                                ${['ID', 'Data', 'Tipo Controllo', 'WBS/Area', 'Stato', 'Azioni'].map(h => `<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                            ${reports.length === 0 ? `<tr><td colspan="6" class="p-8 text-center text-slate-500">Nessun controllo compilato. Inizia dalla sezione 'Esegui Controllo'.</td></tr>` : 
+                            reports.map(report => {
+                                const ncCount = Object.values(report.checks || {}).flat().filter(c => c.result === 'NC').length;
+                                const typeLabels = { 'periodico': 'Periodico', 'preliminare': 'Preliminare', 'finale': 'Finale' };
+                                return `
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-200">
+                                    <td class="p-3 font-medium">${report.id}</td>
+                                    <td class="p-3 whitespace-nowrap">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td>
+                                    <td class="p-3 font-medium">${typeLabels[report.type] || 'N.D.'}</td>
+                                    <td class="p-3">${report.wbs}</td>
+                                    <td class="p-3 font-semibold ${ncCount > 0 ? 'text-red-500' : 'text-green-500'}">${report.type !== 'periodico' ? '-' : (ncCount > 0 ? `${ncCount} NC Aperte` : 'Conforme')}</td>
+                                    <td class="p-3">
+                                        <div class="flex items-center gap-4">
+                                            <button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400" title="Stampa Verbale"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
+                                            <button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-500" title="Elimina Verbale"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                        </div>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`,
+        
+        newPcaForm: ({ nextId, today }) => {
+            const wbsOptions = Object.keys(App.config.WBS_DATA).map(key => `<option value="${key}">${key} - ${App.config.WBS_DATA[key].descrizione}</option>`).join('');
+            
+            const renderChecklist = (templates, type) => `
+            <div id="checklist-container-${type}" class="space-y-6" style="display: none;">
+                ${templates.map(t => `
+                <div id="sheet-${t.id}" class="pca-sheet bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm" ${type === 'periodico' ? 'style="display: none;"' : ''}>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">${t.icon} ${t.title}</h3>
+                        ${t.significativita ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-${t.significativita === 'ALTA' ? 'red' : 'yellow'}-100 text-${t.significativita === 'ALTA' ? 'red' : 'yellow'}-800 dark:bg-${t.significativita === 'ALTA' ? 'red' : 'yellow'}-900 dark:text-${t.significativita === 'ALTA' ? 'red' : 'yellow'}-200">SIGNIFICATIVITÀ ${t.significativita}</span>` : ''}
+                    </div>
+                    <div class="space-y-4 mb-6">
+                        ${t.items.map((item, idx) => {
+                            const baseName = `check_${t.id}_${idx}`;
+                            return `<div class="check-item flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200 dark:border-slate-700 py-3 gap-3">
+                                <label class="mr-4 text-sm flex-1">${item}</label>
+                                <div class="flex items-center gap-x-5 text-sm flex-shrink-0">
+                                    <div class="flex items-center"><input id="${baseName}_c" name="${baseName}" type="radio" value="C" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"><label for="${baseName}_c" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Sì</label></div>
+                                    <div class="flex items-center"><input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"><label for="${baseName}_nc" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">No</label></div>
+                                    <div class="flex items-center"><input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" checked><label for="${baseName}_na" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">N.A.</label></div>
+                                </div>
+                            </div>`
+                        }).join('')}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-4">
+                        <div><label class="text-sm font-medium mb-2 block">Osservazioni e Misure Correttive</label><textarea name="observation_${t.id}" class="form-textarea" rows="3"></textarea></div>
+                        <div><label class="text-sm font-medium mb-2 block">Rilievo Fotografico</label><div class="flex items-center gap-4"><div id="preview_${t.id}" class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center text-slate-400">${App.templates.imagePlaceholderIcon()}</div><input type="file" accept="image/*" class="photo-input hidden" data-template-id="${t.id}"><button type="button" class="add-photo-btn px-4 py-2 bg-slate-200 dark:bg-slate-600 rounded-md text-sm font-semibold hover:bg-slate-300 dark:hover:bg-slate-500">Aggiungi</button></div></div>
+                    </div>
+                </div>`
+                ).join('')}
+            </div>`;
+
+            return `
+            <form id="new-pca-form" novalidate class="space-y-8">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                    <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali e Identificazione Attività</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
+                        <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
+                        <div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
+                    </div>
+
+                    <div id="wbs-section" class="mt-6 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label for="pca-wbs-select" class="form-label">Seleziona WBS</label><select id="pca-wbs-select" class="form-select"><option value="">-- Seleziona un'attività --</option>${wbsOptions}</select></div>
+                            <div><label for="pca-inspector" class="form-label">Compilatore (RCO/Addetto)</label><input type="text" id="pca-inspector" name="inspector" class="form-input" placeholder="Nome e Funzione" required></div>
+                        </div>
+                        <div><label for="pca-activities" class="form-label">Lavorazioni in Corso (automatico)</label><textarea id="pca-activities" name="activities" class="form-textarea bg-slate-50 dark:bg-slate-700" rows="2" readonly></textarea></div>
+                        <input type="hidden" id="pca-wbs-hidden" name="wbs-hidden">
+                    </div>
+                    
+                    <div id="manual-section" class="mt-6 space-y-6" style="display: none;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div><label for="wbs-manual" class="form-label">Area di Riferimento</label><input id="wbs-manual" name="wbs-manual" class="form-input" placeholder="Es. Campo Base, Area X..."></div>
+                             <div><label for="inspector-manual" class="form-label">Compilatore</label><input name="inspector-manual" class="form-input" placeholder="Nome e Funzione"></div>
+                        </div>
+                        <div><label for="activities-manual" class="form-label">Oggetto del controllo</label><textarea id="activities-manual" name="activities-manual" class="form-textarea" rows="2"></textarea></div>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2>
+                    ${renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC, 'periodico')}
+                    ${renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE, 'preliminare')}
+                    ${renderChecklist(App.config.CHECK_TEMPLATES_FINALE, 'finale')}
+                </div>
+                <div class="flex justify-end gap-4 pt-4"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">Salva Controllo</button></div>
+            </form>
+            <style> .form-label { @apply text-sm font-medium text-slate-600 dark:text-slate-300; } .form-input, .form-select, .form-textarea { @apply mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-900 text-sm; } </style>`
+        },
+        imagePlaceholderIcon: () => `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
+        settings: () => `<div class="space-y-8 max-w-2xl"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2><p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza di tutti i tuoi verbali su un file, o ripristina i dati da un backup precedente.</p><div class="flex gap-4"><button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button><button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button><input type="file" id="import-file" class="hidden" accept=".json"></div></div></div>`,
+        printReport: (report, templates) => {
+             const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
+             return `<div style="font-family:sans-serif;color:black;"><h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1><p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p><table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Oggetto/Lavorazioni</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector}</td></tr></tbody></table>${templates.map(t => { const checks = report.checks[t.id] || []; const observationsText = report.observations[t.id] || ''; const photoSrc = report.photos[t.id]; if(checks.length === 0) return ''; return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;"><h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${t.title}</h2><table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>${checks.map(item => `<tr><td style="padding:0.3rem 0;">${item.item}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;">${item.result}</td></tr>`).join('')}</tbody></table>${(observationsText.trim() !== '' || photoSrc) ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;margin-bottom:1rem;white-space:pre-wrap;">${observationsText || 'Nessuna'}</p>${photoSrc ? `<h3 style="font-weight:bold;margin-bottom:0.5rem;">Rilievo Fotografico</h3><img src="${photoSrc}" style="width:80%;max-width:400px;border-radius:0.25rem;display:block;" alt="Foto per ${t.title}">` : ''}</div>` : ''}</div>`; }).join('')}</div>`
         }
     };
 
