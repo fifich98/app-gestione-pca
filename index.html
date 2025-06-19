@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Gestione PCA - CHRYSAS (Versione Finale)</title>
+    <title>App Gestione PCA - CHRYSAS (Versione Stabile)</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,7 +58,7 @@
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v7',
+            STORAGE_KEY: 'pca_app_data_idb_v8',
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
                 { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
@@ -322,7 +322,7 @@
                 setTimeout(() => window.print(), 100);
             },
             sanitize(str) {
-                if (!str) return '';
+                if (typeof str !== 'string') return str;
                 const temp = document.createElement('div');
                 temp.textContent = str;
                 return temp.innerHTML;
@@ -366,6 +366,7 @@
                     if (e.target.matches('.add-photo-btn')) e.target.previousElementSibling.click(); 
                     if (e.target.matches('#cancel-pca-btn')) App.ui.resetPcaForm();
                     if (e.target.id === 'add-cer-row-btn') this.addCerRow();
+                    if (e.target.matches('.cer-delete-row-btn')) e.target.closest('.cer-row').remove();
                 });
                 form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', (e) => this.onPhotoUpload(e)));
                 form.addEventListener('change', (e) => {
@@ -461,7 +462,6 @@
                         newReport.photos[templateId][itemIndex] = App.state.tempPhotos[key];
                     }
 
-                    // *** BUG FIX: Correctly iterate over DOM rows for CER data ***
                     const cerContainer = document.getElementById('cer-table-rows');
                     if (cerContainer) {
                         cerContainer.querySelectorAll('.cer-row').forEach(row => {
@@ -471,7 +471,7 @@
                                 const key = keyParts[1];
                                 rowData[key] = input.type === 'checkbox' ? input.checked : sanitize(input.value);
                             });
-                             if (Object.values(rowData).some(v => v !== '' && v !== false)) {
+                             if (Object.values(rowData).some(v => v !== '' && v !== false && v !== null)) {
                                 newReport.cerData.push(rowData);
                             }
                         });
@@ -510,8 +510,6 @@
                     </button>
                 `;
                 container.appendChild(row);
-                // *** BUG FIX: Attach listener to the new delete button ***
-                row.querySelector('.cer-delete-row-btn').addEventListener('click', () => row.remove());
             },
             async onPhotoUpload(e) { const input = e.target; const key = input.dataset.key; const previewContainer = document.getElementById(`preview_${key}`); const file = input.files[0]; if (!file || !previewContainer) return; previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover rounded" alt="Anteprima">`; App.state.tempPhotos[key] = dataUrl; } catch (err) { previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); delete App.state.tempPhotos[key]; App.ui.showToast("Errore nel caricamento foto.", "error"); } },
             resizeImage: (file, maxSize) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { const img = new Image(); img.onload = () => { let { width, height } = img; if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.8)); }; img.onerror = reject; img.src = e.target.result; }; reader.onerror = reject; reader.readAsDataURL(file); }),
@@ -641,7 +639,18 @@
                 return templates.map(t => {
                     const significativitaBadgeColor = t.significativita === 'ALTA' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
                     const freqInfo = App.config.FREQUENCY_MAP[t.significativita];
-                    return `<div id="sheet-${t.id}" class="pca-sheet bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm" style="display:none;"><div class="flex flex-wrap gap-2 justify-between items-center mb-4"><h3 class="text-lg font-semibold">${t.icon} ${t.title}</h3><div class="flex items-center gap-2 flex-wrap">${t.significativita ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${significativitaBadgeColor}">SIGNIFICATIVITÀ ${t.significativita}</span>` : ''}${freqInfo ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${freqInfo.color}">${freqInfo.text} ${freqInfo.schedule}</span>` : ''}</div></div>
+                    let freqText = '';
+                    if (freqInfo && freqInfo.days) {
+                       freqText = `<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Controllo consigliato ogni <strong>${freqInfo.days} giorni</strong>.</p>`
+                    }
+                    return `<div id="sheet-${t.id}" class="pca-sheet bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm" style="display:none;">
+                        <div class="mb-4">
+                            <div class="flex flex-wrap gap-2 justify-between items-start">
+                                <h3 class="text-lg font-semibold">${t.icon} ${t.title}</h3>
+                                <div class="flex items-center gap-2 flex-wrap">${t.significativita ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${significativitaBadgeColor}">SIGNIFICATIVITÀ ${t.significativita}</span>` : ''}${freqInfo ? `<span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${freqInfo.color}">${freqInfo.text} ${freqInfo.schedule}</span>` : ''}</div>
+                            </div>
+                            ${freqText}
+                        </div>
                     <div class="space-y-3">
                         ${t.items.map((item, idx) => {
                             const baseName = `check_${t.id}_${idx}`;
@@ -649,7 +658,7 @@
                             const extraContentFn = this.extraContent[extraContentKey];
                             const extraContentHTML = extraContentFn ? extraContentFn(t.id, idx) : '';
 
-                            return `<div class="check-item-wrapper border-b border-slate-200 dark:border-slate-700 last:border-b-0 py-3">
+                            return `<div class="check-item-wrapper border-t border-slate-200 dark:border-slate-700 py-3">
                                 <div class="check-item flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                                     <label class="mr-4 text-sm flex-1">${item}</label>
                                     <div class="flex items-center gap-x-5 text-sm flex-shrink-0">
