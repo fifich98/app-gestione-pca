@@ -6,6 +6,8 @@
     <title>App Gestione PCA - CHRYSAS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Libreria per semplificare IndexedDB -->
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -36,7 +38,7 @@
         <!-- Sidebar -->
         <aside class="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
             <div class="h-16 flex items-center justify-center px-6 border-b border-slate-200 dark:border-slate-700">
-                <!-- SUGGERIMENTO: Convertire l'immagine in formato .png o .webp per prestazioni migliori -->
+                <!-- OTTIMIZZAZIONE CRITICA: Convertire questa immagine da .bmp a .png o .webp per ridurre drasticamente il tempo di caricamento. -->
                 <img src="https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp" alt="Logo CHRYSAS" class="h-8">
             </div>
             <nav id="sidebar-nav" class="flex-grow px-4 py-6"></nav>
@@ -47,7 +49,7 @@
             <header class="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 flex-shrink-0">
                 <h2 id="page-title" class="text-xl font-semibold"></h2>
                 <div class="flex items-center gap-6">
-                    <!-- SUGGERIMENTO: Convertire l'immagine in formato .png o .webp per prestazioni migliori -->
+                     <!-- OTTIMIZZAZIONE CRITICA: Convertire anche questa immagine da .bmp a .png o .webp. -->
                     <img src="https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp" alt="Loghi Partner" class="h-10">
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" aria-label="Toggle dark mode">
                         <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
@@ -70,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_v20',
+            STORAGE_KEY: 'pca_app_data_idb_v1', // Chiave per IndexedDB
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
                 { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>' },
@@ -121,10 +123,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ],
         },
 
-        state: { isSaving: false, tempPhotos: {}, activeChart: null },
+        state: { isSaving: false, tempPhotos: {}, activeChart: null, data: [] }, // Stato centralizzato per i dati
         dom: {},
         
-        init() {
+        async init() {
             this.dom = {
                 sidebarNav: document.getElementById('sidebar-nav'),
                 mainContent: document.getElementById('main-content'),
@@ -141,36 +143,58 @@ document.addEventListener('DOMContentLoaded', () => {
             this.ui.renderNav();
             this.handlers.attachGlobalListeners();
             this.ui.applyTheme(localStorage.getItem('theme') === 'dark', true);
+            
+            // Carica i dati da IndexedDB all'avvio
+            this.state.data = await this.store.getAll();
             this.ui.showTab('dashboard');
         },
         
+        // --- NUOVO MODULO STORE BASATO SU INDEXEDDB ---
         store: {
-            getAll: () => JSON.parse(localStorage.getItem(App.config.STORAGE_KEY) || '[]'),
-            saveAll: (reports) => localStorage.setItem(App.config.STORAGE_KEY, JSON.stringify(reports)),
-            getById: (id) => App.store.getAll().find(r => r.id === parseInt(id)),
-            save(newReport) {
-                const reports = this.getAll();
+            // idb-keyval è ora disponibile globalmente
+            dbStore: idbKeyval.createStore('pca-db', 'reports'),
+
+            async getAll() {
+                return (await idbKeyval.get(App.config.STORAGE_KEY, this.dbStore)) || [];
+            },
+            async saveAll(reports) {
+                await idbKeyval.set(App.config.STORAGE_KEY, reports, this.dbStore);
+                App.state.data = reports; // Aggiorna lo stato locale
+            },
+            async getById(id) {
+                const reports = await this.getAll();
+                return reports.find(r => r.id === parseInt(id));
+            },
+            async save(newReport) {
+                const reports = await this.getAll();
                 const reportId = parseInt(newReport.id);
                 if (reports.some(r => parseInt(r.id) === reportId)) {
                     throw new Error(`ID Scheda ${reportId} già esistente.`);
                 }
                 reports.push(newReport);
-                this.saveAll(reports);
+                await this.saveAll(reports);
             },
-            delete: (id) => App.store.saveAll(App.store.getAll().filter(r => r.id !== parseInt(id))),
-            getNextId: () => (App.store.getAll().reduce((max, r) => Math.max(max, parseInt(r.id) || 0), 0) + 1),
+            async delete(id) {
+                let reports = await this.getAll();
+                reports = reports.filter(r => r.id !== parseInt(id));
+                await this.saveAll(reports);
+            },
+            async getNextId() {
+                const reports = await this.getAll();
+                return (reports.reduce((max, r) => Math.max(max, parseInt(r.id) || 0), 0) + 1);
+            },
             getDashboardStats() {
-                const reports = this.getAll();
+                const reports = App.state.data; // Usa i dati in memoria
                 let openNc = 0;
                 let totalChecks = 0;
                 let compliantChecks = 0;
                 const ncByAspect = {};
                 reports.forEach(report => {
                     if (report.type === 'periodico' && report.checks) {
-                        Object.entries(report.checks).forEach(([aspectId, checks]) => {
+                        Object.entries(report.checks).forEach(([aspectId, aspectChecks]) => {
                             const template = App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === aspectId);
-                            if (!template || !checks) return;
-                            checks.forEach(check => {
+                            if (!template || !aspectChecks) return;
+                            aspectChecks.forEach(check => {
                                 if (check.result && check.result !== 'NA') {
                                     totalChecks++;
                                     if (check.result === 'C') compliantChecks++;
@@ -196,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 App.dom.toast.className = `toast px-6 py-3 rounded-lg text-white font-medium shadow-lg ${colors[type]} show`;
                 setTimeout(() => App.dom.toast.classList.remove('show'), 4000);
             },
-            showTab(tabId) {
+            async showTab(tabId) { // La funzione può essere asincrona
                 const tab = App.config.TABS.find(t => t.id === tabId);
                 if (!tab) return;
                 App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => {
@@ -205,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 App.dom.pageTitle.textContent = tab.label;
                 const renderFunctionName = this.renderMap[tabId];
                 if (this[renderFunctionName]) {
-                    this[renderFunctionName]();
+                    await this[renderFunctionName](); // Usa await per le funzioni che potrebbero essere asincrone
                 }
             },
             renderNav() {
@@ -231,12 +255,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 App.handlers.attachSettingsListeners();
             },
             renderListaPca() {
-                const reports = App.store.getAll().sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
+                const reports = [...App.state.data].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
                 App.dom.mainContent.innerHTML = App.templates.pcaList(reports);
                 App.handlers.attachPcaListListeners();
             },
-            renderNuovoPca() {
-                const nextId = App.store.getNextId();
+            async renderNuovoPca() {
+                const nextId = await App.store.getNextId();
                 const today = new Date().toISOString().slice(0, 10);
                 App.dom.mainContent.innerHTML = App.templates.newPcaForm({ nextId, today });
                 App.handlers.attachNewPcaFormListeners();
@@ -253,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!isPeriodico) {
                     const wbsInput = document.getElementById('pca-wbs-input');
                     if (wbsInput) wbsInput.value = '';
-                     const lavorazioneSelect = document.getElementById('pca-lavorazione-select');
+                    const lavorazioneSelect = document.getElementById('pca-lavorazione-select');
                     if(lavorazioneSelect) lavorazioneSelect.innerHTML = '<option value="">-- Prima inserisci WBS --</option>';
 
                     App.config.CHECK_TEMPLATES_PERIODIC.forEach(template => {
@@ -274,8 +298,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 App.state.tempPhotos = {};
                 App.ui.renderNuovoPca();
             },
-            prepareAndPrintReport(reportId) {
-                const report = App.store.getById(reportId);
+            async prepareAndPrintReport(reportId) {
+                const report = await App.store.getById(reportId);
                 if (!report) return;
                 let templates;
                 if (report.type === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
@@ -287,6 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         handlers: {
+            // --- NUOVA FUNZIONE HELPER PER VERIFICARE LA VISIBILITÀ DI UN ELEMENTO ---
+            isElementVisible(el) {
+                // Un elemento è visibile se ha una dimensione (offsetParent non è null)
+                // e non ha uno stile esplicito di display: none.
+                return !!el.offsetParent && window.getComputedStyle(el).display !== "none";
+            },
+
             attachGlobalListeners() {
                 App.dom.sidebarNav.addEventListener('click', e => {
                     const link = e.target.closest('.sidebar-link');
@@ -306,11 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (deleteBtn) this.onDeletePca(deleteBtn.dataset.id);
                 });
             },
-            onDeletePca(reportId) {
+            async onDeletePca(reportId) {
                 if (confirm(`Sei sicuro di voler eliminare il Controllo N° ${reportId}? L'azione è irreversibile.`)) {
-                    App.store.delete(reportId);
+                    await App.store.delete(reportId);
                     App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info');
-                    App.ui.renderListaPca();
+                    App.ui.renderListaPca(); // Ricarica la vista
                 }
             },
             attachNewPcaFormListeners() {
@@ -324,14 +355,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', (e) => this.onPhotoUpload(e)));
                 document.getElementById('pca-type')?.addEventListener('change', (e) => App.ui.updateChecklistVisibility(e.target.value));
                 
-                // --- CODICE CORRETTO E MIGLIORATO ---
                 document.getElementById('pca-wbs-input')?.addEventListener('input', (e) => {
                     const wbsCodeFull = e.target.value.toUpperCase();
                     const wbsCode = wbsCodeFull.substring(0, 2);
                     const wbsData = App.config.WBS_DATA[wbsCode];
                     const lavorazioneSelect = document.getElementById('pca-lavorazione-select');
 
-                    // Funzione per pulire e resettare i campi dipendenti
                     const resetDependentFields = () => {
                         lavorazioneSelect.innerHTML = '<option value="">-- Prima inserisci WBS --</option>';
                         lavorazioneSelect.disabled = true;
@@ -341,10 +370,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     };
                     
-                    // Resetta sempre prima di valutare il nuovo input
                     resetDependentFields();
 
-                    // Popola i campi solo se l'input WBS è valido e corrisponde ai dati
                     if (wbsData && wbsCodeFull.length >= 2) {
                         wbsData.lavorazioni.forEach(lav => {
                             const option = document.createElement('option');
@@ -366,7 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                 });
-                // --- FINE BLOCCO CORRETTO ---
             },
             async onNewPcaSubmit(e) {
                 e.preventDefault();
@@ -378,22 +404,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveBtn.innerHTML = `<span>Salvando...</span>`;
                 }
                 try {
+                    // --- LOGICA DI VALIDAZIONE CORRETTA ---
                     const requiredFields = Array.from(e.target.querySelectorAll('[required]'));
                     let firstInvalid = null;
-                    requiredFields.forEach(f => {
-                        const parentIsHidden = f.closest('[style*="display: none"]');
-                        if(!parentIsHidden) {
-                            f.classList.remove('border-red-500');
-                            if (!f.value.trim()) {
-                                f.classList.add('border-red-500', 'dark:border-red-500');
-                                if (!firstInvalid) firstInvalid = f;
+
+                    for (const field of requiredFields) {
+                        // Controlla solo i campi VISIBILI
+                        if (App.handlers.isElementVisible(field)) {
+                            field.classList.remove('border-red-500');
+                            if (!field.value.trim()) {
+                                field.classList.add('border-red-500', 'dark:border-red-500');
+                                if (!firstInvalid) {
+                                    firstInvalid = field;
+                                }
                             }
+                        } else {
+                            // Rimuovi eventuale bordo rosso da campi nascosti
+                            field.classList.remove('border-red-500');
                         }
-                    });
+                    }
+
                     if (firstInvalid) {
                         firstInvalid.focus();
                         throw new Error('Compilare tutti i campi generali richiesti.');
                     }
+                    // --- FINE LOGICA DI VALIDAZIONE CORRETTA ---
+
                     const formData = new FormData(e.target);
                     const reportType = formData.get('type');
                     
@@ -416,18 +452,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     templates.forEach(template => {
                         const sheetElement = document.getElementById(`sheet-${template.id}`);
-                        // Controlla se il report è di tipo diverso da 'periodico' OPPURE se l'elemento checklist è visibile
-                        if (reportType !== 'periodico' || (sheetElement && window.getComputedStyle(sheetElement).display !== 'none')) {
+                        // Salva i dati solo se la checklist è visibile
+                        if (sheetElement && App.handlers.isElementVisible(sheetElement)) {
                             newReport.checks[template.id] = template.items.map((item, idx) => ({ item: item, result: formData.get(`check_${template.id}_${idx}`) }));
                             newReport.observations[template.id] = formData.get(`observation_${template.id}`);
                             newReport.photos[template.id] = App.state.tempPhotos[template.id] || null;
                         }
                     });
 
-                    App.store.save(newReport);
+                    await App.store.save(newReport);
                     App.ui.showToast('Controllo salvato con successo!', 'success');
-                    App.ui.resetPcaForm();
-                    App.ui.showTab('lista-pca');
+                    await App.ui.resetPcaForm();
+                    await App.ui.showTab('lista-pca');
                 } catch (error) {
                     App.ui.showToast(error.message, 'error');
                 } finally {
@@ -441,11 +477,12 @@ document.addEventListener('DOMContentLoaded', () => {
             async onPhotoUpload(e) { const input = e.target; const templateId = input.dataset.templateId; const previewContainer = document.getElementById(`preview_${templateId}`); const file = input.files[0]; if (!file || !previewContainer) return; previewContainer.innerHTML = `<span class="text-xs text-slate-500">Carico...</span>`; try { const dataUrl = await this.resizeImage(file, 1024); previewContainer.innerHTML = `<img src="${dataUrl}" class="w-20 h-20 object-cover rounded border-2 border-slate-300 dark:border-slate-600" alt="Anteprima">`; App.state.tempPhotos[templateId] = dataUrl; } catch (err) { previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); delete App.state.tempPhotos[templateId]; } },
             resizeImage: (file, maxSize) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { const img = new Image(); img.onload = () => { let { width, height } = img; if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.8)); }; img.onerror = reject; img.src = e.target.result; }; reader.onerror = reject; reader.readAsDataURL(file); }),
             attachSettingsListeners() { document.getElementById('export-btn')?.addEventListener('click', this.exportData); document.getElementById('import-btn')?.addEventListener('click', () => document.getElementById('import-file').click()); document.getElementById('import-file')?.addEventListener('change', this.importData); },
-            exportData() { const data = App.store.getAll(); if (data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info'); const dataStr = JSON.stringify(data, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pca_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); App.ui.showToast("Esportazione dati completata.", 'success'); },
-            importData(e) { const file = e.target.files[0]; if (!file) return; if (confirm("ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?")) { const reader = new FileReader(); reader.onload = e => { try { const data = JSON.parse(e.target.result); if (!Array.isArray(data)) throw new Error("File non valido"); App.store.saveAll(data); App.ui.showToast("Dati importati con successo!", 'success'); App.ui.showTab('dashboard'); } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } }; reader.readAsText(file); } },
+            async exportData() { const data = await App.store.getAll(); if (data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info'); const dataStr = JSON.stringify(data, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pca_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); App.ui.showToast("Esportazione dati completata.", 'success'); },
+            importData(e) { const file = e.target.files[0]; if (!file) return; if (confirm("ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?")) { const reader = new FileReader(); reader.onload = async (e) => { try { const data = JSON.parse(e.target.result); if (!Array.isArray(data)) throw new Error("File non valido"); await App.store.saveAll(data); App.ui.showToast("Dati importati con successo!", 'success'); await App.ui.showTab('dashboard'); } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } }; reader.readAsText(file); } },
         },
 
         templates: {
+            // ... I TEMPLATE RESTANO IDENTICI A PRIMA ...
             dashboard(stats) {
                 return `
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -453,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm flex items-center">
                         <div>
                             <h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${label}</h3>
-                            <p class="mt-1 text-3xl font-semibold ${i === 1 && stats.openNc > 0 ? 'text-red-500' : (i === 3 ? 'text-green-500' : '')}">${Object.values(stats)[i]}</p>
+                            <p class="mt-1 text-3xl font-semibold ${i === 1 && stats.openNc > 0 ? 'text-red-500' : (i === 3 && stats.avgCompliance !== 'N.D.' ? 'text-green-500' : '')}">${Object.values(stats)[i]}</p>
                         </div>
                     </div>`).join('')}
                 </div>
@@ -531,47 +568,51 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>`
                     }).join('')}
                 </div>`;
-            };
+            },
 
-            return `
-            <form id="new-pca-form" novalidate class="space-y-8">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                    <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali e Identificazione Attività</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
-                        <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
-                        <div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
-                    </div>
-                    <div id="wbs-section" class="mt-6 space-y-4">
+            newPcaForm({ nextId, today }) {
+                return `
+                <form id="new-pca-form" novalidate class="space-y-8">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali e Identificazione Attività</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                           <div><label for="pca-wbs-input" class="form-label">1. Inserisci Codice WBS</label><input type="text" id="pca-wbs-input" name="wbs-input" class="form-input" placeholder="Es. RI12, GA01..." required></div>
-                           <div><label for="pca-lavorazione-select" class="form-label">2. Seleziona Lavorazione</label><select id="pca-lavorazione-select" name="lavorazione" class="form-select" required disabled><option value="">-- Prima inserisci WBS --</option></select></div>
+                            <div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
+                            <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
+                            <div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
                         </div>
-                        <div><label for="pca-inspector-wbs" class="form-label">Compilatore (RCO/Addetto)</label><input type="text" id="pca-inspector-wbs" name="inspector-wbs" class="form-input" placeholder="Nome e Funzione" required></div>
-                    </div>
-                    <div id="manual-section" class="mt-6 space-y-4" style="display: none;">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <div><label for="wbs-manual" class="form-label">Area di Riferimento</label><input id="wbs-manual" name="wbs-manual" class="form-input" placeholder="Es. Campo Base, Area X..."></div>
-                             <div><label for="inspector-manual" class="form-label">Compilatore</label><input id="inspector-manual" name="inspector-manual" class="form-input" placeholder="Nome e Funzione"></div>
+                        <div id="wbs-section" class="mt-6 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                               <div><label for="pca-wbs-input" class="form-label">1. Inserisci Codice WBS</label><input type="text" id="pca-wbs-input" name="wbs-input" class="form-input" placeholder="Es. RI12, GA01..." required></div>
+                               <div><label for="pca-lavorazione-select" class="form-label">2. Seleziona Lavorazione</label><select id="pca-lavorazione-select" name="lavorazione" class="form-select" required disabled><option value="">-- Prima inserisci WBS --</option></select></div>
+                            </div>
+                            <div><label for="pca-inspector-wbs" class="form-label">Compilatore (RCO/Addetto)</label><input type="text" id="pca-inspector-wbs" name="inspector-wbs" class="form-input" placeholder="Nome e Funzione" required></div>
                         </div>
-                        <div><label for="activities-manual" class="form-label">Oggetto del controllo</label><textarea id="activities-manual" name="activities-manual" class="form-textarea" rows="2"></textarea></div>
+                        <div id="manual-section" class="mt-6 space-y-4" style="display: none;">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <div><label for="wbs-manual" class="form-label">Area di Riferimento</label><input id="wbs-manual" name="wbs-manual" class="form-input" placeholder="Es. Campo Base, Area X..." required></div>
+                                 <div><label for="inspector-manual" class="form-label">Compilatore</label><input id="inspector-manual" name="inspector-manual" class="form-input" placeholder="Nome e Funzione" required></div>
+                            </div>
+                            <div><label for="activities-manual" class="form-label">Oggetto del controllo</label><textarea id="activities-manual" name="activities-manual" class="form-textarea" rows="2" required></textarea></div>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo Applicabili</h2>
-                    ${renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC, 'periodico')}
-                    ${renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE, 'preliminare')}
-                    ${renderChecklist(App.config.CHECK_TEMPLATES_FINALE, 'finale')}
-                </div>
-                <div class="flex justify-end gap-4 pt-4"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">Salva Controllo</button></div>
-            </form>
-            <style> .form-label { @apply text-sm font-medium text-slate-600 dark:text-slate-300; } .form-input, .form-select, .form-textarea { @apply mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-900 text-sm; } </style>`;
-        },
-        imagePlaceholderIcon: () => `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
-        settings: () => `<div class="space-y-8 max-w-2xl"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2><p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza di tutti i tuoi verbali su un file, o ripristina i dati da un backup precedente.</p><div class="flex gap-4"><button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button><button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button><input type="file" id="import-file" class="hidden" accept=".json"></div></div></div>`,
-        printReport(report, templates) {
-             const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
-             return `<div style="font-family:sans-serif;color:black;"><h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1><p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p><table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Lavorazione/Oggetto</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector}</td></tr></tbody></table>${templates.map(t => { const checks = report.checks[t.id] || []; const observationsText = report.observations[t.id] || ''; const photoSrc = report.photos[t.id]; if(!checks || checks.every(c => !c || c.result === null || c.result === undefined)) return ''; return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;"><h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${t.title}</h2><table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>${checks.map(item => `<tr><td style="padding:0.3rem 0;">${item.item}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;">${item.result}</td></tr>`).join('')}</tbody></table>${(observationsText.trim() !== '' || photoSrc) ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;margin-bottom:1rem;white-space:pre-wrap;">${observationsText || 'Nessuna'}</p>${photoSrc ? `<h3 style="font-weight:bold;margin-bottom:0.5rem;">Rilievo Fotografico</h3><img src="${photoSrc}" style="width:80%;max-width:400px;border-radius:0.25rem;display:block;" alt="Foto per ${t.title}">` : ''}</div>` : ''}</div>`; }).join('')}</div>`
+                    <div>
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo Applicabili</h2>
+                        ${this.renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC, 'periodico')}
+                        ${this.renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE, 'preliminare')}
+                        ${this.renderChecklist(App.config.CHECK_TEMPLATES_FINALE, 'finale')}
+                    </div>
+                    <div class="flex justify-end gap-4 pt-4"><button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button><button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">Salva Controllo</button></div>
+                </form>
+                <style> .form-label { @apply text-sm font-medium text-slate-600 dark:text-slate-300; } .form-input, .form-select, .form-textarea { @apply mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-900 text-sm; } </style>`;
+            },
+            imagePlaceholderIcon: () => `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
+            settings: () => `<div class="space-y-8 max-w-2xl"><div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"><h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2><p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza di tutti i tuoi verbali su un file, o ripristina i dati da un backup precedente.</p><div class="flex gap-4"><button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button><button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button><input type="file" id="import-file" class="hidden" accept=".json"></div></div></div>`,
+            printReport(report, templates) {
+                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
+                 const hasData = (obj) => obj && Object.keys(obj).length > 0;
+
+                 return `<div style="font-family:sans-serif;color:black;"><h1 style="text-align:center;font-size:1.5rem;margin-bottom:0.5rem;font-weight:bold;">Verbale di Controllo Ambientale</h1><p style="text-align:center;font-size:1.1rem;margin-bottom:2rem;">Verbale N° ${report.id}</p><table style="width:100%;border-collapse:collapse;margin-bottom:2rem;font-size:0.9rem;"><tbody><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Data</td><td style="padding:0.5rem;border:1px solid #ccc;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">WBS/Area</td><td style="padding:0.5rem;border:1px solid #ccc;">${report.wbs || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Tipo Verbale</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${typeLabels[report.type] || 'N.D.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Lavorazione/Oggetto</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.activities || 'N.A.'}</td></tr><tr><td style="padding:0.5rem;border:1px solid #ccc;font-weight:bold;">Compilato da</td><td style="padding:0.5rem;border:1px solid #ccc;" colspan="3">${report.inspector || 'N.D.'}</td></tr></tbody></table>${templates.map(t => { const checks = report.checks ? report.checks[t.id] : null; if (!checks || checks.length === 0) return ''; const observationsText = report.observations ? (report.observations[t.id] || '') : ''; const photoSrc = report.photos ? report.photos[t.id] : null; return `<div style="margin-bottom:1.5rem;page-break-inside:avoid;"><h2 style="font-size:1.2rem;font-weight:bold;margin-bottom:1rem;border-bottom:1px solid #ccc;padding-bottom:0.5rem;">${t.title}</h2><table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><tbody>${checks.map(item => `<tr><td style="padding:0.3rem 0;">${item.item}</td><td style="padding:0.3rem 0;text-align:right;font-weight:bold;width:80px;">${item.result || 'N.D.'}</td></tr>`).join('')}</tbody></table>${(observationsText.trim() !== '' || photoSrc) ? `<div style="background-color:#f3f4f6;padding:1rem;border:1px solid #e5e7eb;border-radius:0.25rem;margin-top:1rem;page-break-inside:avoid;"><h3 style="font-weight:bold;margin-bottom:0.5rem;">Osservazioni</h3><p style="font-size:0.9rem;margin-bottom:1rem;white-space:pre-wrap;">${observationsText || 'Nessuna'}</p>${photoSrc ? `<h3 style="font-weight:bold;margin-bottom:0.5rem;">Rilievo Fotografico</h3><img src="${photoSrc}" style="width:80%;max-width:400px;border-radius:0.25rem;display:block;" alt="Foto per ${t.title}">` : ''}</div>` : ''}</div>`; }).join('')}</div>`
+            }
         }
     };
 
@@ -581,5 +622,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
-
