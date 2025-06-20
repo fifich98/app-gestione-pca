@@ -83,56 +83,18 @@
         .accordion-header.open .accordion-icon, .grouped-pca-header.open .grouped-pca-icon { transform: rotate(180deg); }
         .grouped-pca-content.open { margin-top: 0.5rem; }
 
-        /* MODIFICATO: Stili dei form consolidati e migliorati per visibilità */
-        .form-label {
-            font-size: 0.875rem; /* text-sm */
-            font-weight: 500; /* font-medium */
-            color: #475569; /* text-slate-600 */
-        }
-        .dark .form-label {
-            color: #d1d5db; /* dark:text-slate-300 */
-        }
-        .form-input, .form-select, .form-textarea {
-            margin-top: 0.25rem; /* mt-1 */
-            display: block;
-            width: 100%;
-            border-radius: 0.375rem; /* rounded-md */
-            background-color: #ffffff; /* bg-white */
-            font-size: 0.875rem; /* text-sm */
-            border: 2px solid #cbd5e1; /* border-2 border-slate-300 */
-            transition: border-color 0.2s, box-shadow 0.2s;
-            padding: 0.5rem 0.75rem;
-        }
-        .dark .form-input, .dark .form-select, .dark .form-textarea {
-            background-color: #1f2937; 
-            border-color: #4b5563; 
-        }
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: 2px solid transparent;
-            outline-offset: 2px;
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); 
-            border-color: #3b82f6; 
-        }
-        .form-input:invalid, .form-select:invalid, .form-textarea:invalid {
-            border-color: #ef4444 !important;
-        }
-        .form-checkbox {
-            height: 1rem;
-            width: 1rem;
-            border-radius: 0.25rem; 
-            border-color: #d1d5db;
-            color: #3b82f6;
-        }
-        .dark .form-checkbox {
-            border-color: #4b5563;
-        }
-        .form-checkbox:focus {
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
-        }
+        .form-label { font-size: 0.875rem; font-weight: 500; color: #475569; }
+        .dark .form-label { color: #d1d5db; }
+        .form-input, .form-select, .form-textarea { margin-top: 0.25rem; display: block; width: 100%; border-radius: 0.375rem; background-color: #ffffff; font-size: 0.875rem; border: 2px solid #cbd5e1; transition: border-color 0.2s, box-shadow 0.2s; padding: 0.5rem 0.75rem; }
+        .dark .form-input, .dark .form-select, .dark .form-textarea { background-color: #1f2937; border-color: #4b5563; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: 2px solid transparent; outline-offset: 2px; box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); border-color: #3b82f6; }
+        .form-input:invalid, .form-select:invalid, .form-textarea:invalid { border-color: #ef4444 !important; }
+        .form-checkbox { height: 1rem; width: 1rem; border-radius: 0.25rem; border-color: #d1d5db; color: #3b82f6; }
+        .dark .form-checkbox { border-color: #4b5563; }
+        .form-checkbox:focus { box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); }
         
         .hidden { display: none; }
 
-        /* Print Styles */
         @media print {
             body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
             body > *:not(#print-area-wrapper) { display: none !important; }
@@ -151,6 +113,20 @@
     </style>
     
     <script id="app-script" defer>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("ERRORE GLOBALE NON GESTITO:", { message, source, lineno, colno, error });
+        try {
+            App.ui?.showToast('Si è verificato un errore inatteso. L\'app continuerà a funzionare.', 'error');
+        } catch(e) {
+            const toast = document.getElementById('toast');
+            if(toast) {
+                toast.textContent = 'Errore critico. Ricaricare la pagina.';
+                toast.className = 'toast px-6 py-3 rounded-lg text-white font-medium shadow-lg bg-red-600 show';
+            }
+        }
+        return true; 
+    };
+    
     document.addEventListener('DOMContentLoaded', () => {
 
     const App = {
@@ -233,12 +209,12 @@
             },
             async getById(id) {
                 const reports = await this.getAll();
-                return reports.find(r => r.id === parseInt(id));
+                return reports.find(r => r && r.id === parseInt(id));
             },
             async save(newReport) {
                 const reports = await this.getAll();
                 const reportId = parseInt(newReport.id);
-                const existingIndex = reports.findIndex(r => parseInt(r.id) === reportId);
+                const existingIndex = reports.findIndex(r => r && r.id === reportId);
                 if (existingIndex !== -1) {
                     reports[existingIndex] = newReport;
                 } else {
@@ -248,12 +224,12 @@
             },
             async delete(id) {
                 let reports = await this.getAll();
-                reports = reports.filter(r => r.id !== parseInt(id));
+                reports = reports.filter(r => r && r.id !== parseInt(id));
                 await this.saveAll(reports);
             },
             async getNextId() {
                 const reports = await this.getAll();
-                return (reports.reduce((max, r) => Math.max(max, parseInt(r.id) || 0), 0) + 1);
+                return (reports.reduce((max, r) => Math.max(max, (r && r.id) ? parseInt(r.id) : 0), 0) + 1);
             },
             getDashboardStats() {
                 const reports = App.state.data; let openNc = 0, totalChecks = 0, compliantChecks = 0; const ncByAspect = {};
@@ -287,14 +263,14 @@
                 widget.innerHTML = `<div class="loader"></div><span>Carico meteo...</span>`;
 
                 if (!navigator.geolocation) {
-                    widget.textContent = 'Geolocalizzazione non supportata.';
+                    widget.innerHTML = '<span>Geolocalizzazione non supportata.</span>';
                     return;
                 }
 
                 navigator.geolocation.getCurrentPosition(
                     async (position) => {
                         const { latitude, longitude } = position.coords;
-                        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(2)}&longitude=${longitude.toFixed(2)}&current=temperature_2m,weather_code,wind_speed_10m`;
+                        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(2)}&longitude=${longitude.toFixed(2)}&current=temperature_2m,precipitation,weather_code,wind_speed_10m`;
                         try {
                             const response = await fetch(apiUrl);
                             if (!response.ok) throw new Error('Risposta API non valida');
@@ -307,7 +283,7 @@
                     },
                     (error) => {
                         console.warn("Errore geolocalizzazione:", error.message);
-                        widget.textContent = 'Impossibile recuperare la posizione.';
+                        widget.innerHTML = '<span>Geolocalizzazione negata.</span>';
                     }
                 );
             },
@@ -384,6 +360,7 @@
             },
             renderListaPca() {
                 const reports = [...App.state.data].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
+                const frequencyStatuses = this.getFrequencyStatuses();
                 
                 const groupedReports = reports.reduce((acc, report) => {
                     if (!report || !report.wbs) {
@@ -398,7 +375,7 @@
                     return acc;
                 }, {});
 
-                App.dom.mainContent.innerHTML = App.templates.pcaGroupedList(groupedReports);
+                App.dom.mainContent.innerHTML = App.templates.pcaGroupedList(groupedReports, frequencyStatuses.statusMap);
                 App.handlers.attachPcaListListeners();
             },
             getFrequencyStatuses() {
@@ -459,6 +436,10 @@
                 widget.innerHTML = `
                     <span title="${weatherInfo.text}" class="text-xl">${weatherInfo.icon}</span>
                     <span class="font-semibold">${weatherData.temperature_2m}°C</span>
+                    <span class="hidden sm:inline-flex items-center gap-1" title="Precipitazioni">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M128,24A104.11,104.11,0,0,0,24,128c0,41.94,23.31,81.34,64,98.34V241.6a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16v-15.26c40.69-17,64-56.4,64-98.34A104.11,104.11,0,0,0,128,24Zm-8,191.6v-8a16,16,0,0,0-16-16H94.48c-32.32-15.53-50.48-46.72-50.48-79.6,0-48.52,39.48-88,88-88s88,39.48,88,88c0,32.88-18.16,64.07-50.48,79.6H152a16,16,0,0,0-16,16v8Z"></path></svg>
+                        ${weatherData.precipitation} mm
+                    </span>
                     <span class="hidden sm:inline-flex items-center gap-1" title="Velocità del vento">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M248,128a12,12,0,0,1-12,12H132v8a24,24,0,0,1-48,0v-8H24a12,12,0,0,1,0-24H84v-8a24,24,0,0,1,48,0v8h104A12,12,0,0,1,248,128ZM108,88a24,24,0,0,1,48,0v8H108Zm0,80v-8h48v8a24,24,0,0,1-48,0Zm12-48a12,12,0,1,1-12-12A12,12,0,0,1,120,120Z"></path></svg>
                         ${weatherData.wind_speed_10m.toFixed(1)} km/h
@@ -908,7 +889,7 @@
                     </div>
                 </div>`;
             },
-            pcaGroupedList: (groupedReports) => {
+            pcaGroupedList: (groupedReports, frequencyStatuses) => {
                 const wbsOrder = Object.keys(App.config.WBS_DATA);
                 const sortedWbsKeys = Object.keys(groupedReports).sort((a, b) => {
                     const indexA = wbsOrder.indexOf(a);
@@ -947,19 +928,25 @@
                                     <table class="min-w-full bg-transparent text-sm">
                                         <thead class="bg-slate-100 dark:bg-slate-800">
                                             <tr>
-                                                ${['ID','Data','Tipo','Lavorazione','Stato NC', 'Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
+                                                ${['ID','Data','Tipo','Lavorazione','Stato Frequenza', 'Prossimo Controllo', 'Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                                             ${reports.map(report => {
-                                                const ncCount=Object.values(report.checks||{}).flat().filter(c=>c&&c.result==='NC').length;
+                                                const wbsCode = report.wbs ? report.wbs.substring(0,2).toUpperCase() : null;
+                                                const freqStatus = report.type === 'periodico' && wbsCode ? frequencyStatuses[wbsCode] : null;
                                                 const typeLabels={'periodico':'Periodico','preliminare':'Preliminare','finale':'Finale'};
                                                 return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                                     <td class="p-3 font-medium">${report.id}</td>
                                                     <td class="p-3 whitespace-nowrap">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td>
                                                     <td class="p-3">${typeLabels[report.type]||'N.D.'}</td>
                                                     <td class="p-3">${report.activities||'N.A.'}</td>
-                                                    <td class="p-3 font-semibold ${ncCount>0?'text-red-500':'text-green-500'}">${report.type!=='periodico'?'-':(ncCount>0?`${ncCount} NC`:'Conforme')}</td>
+                                                    <td class="p-3">
+                                                        ${freqStatus ? `<span class="text-xs font-semibold px-2 py-1 rounded-full ${freqStatus.color}">${freqStatus.text}</span>` : '-'}
+                                                    </td>
+                                                    <td class="p-3 whitespace-nowrap">
+                                                        ${freqStatus && freqStatus.nextDate ? freqStatus.nextDate.toLocaleDateString('it-IT') : '-'}
+                                                    </td>
                                                     <td class="p-3">
                                                         <div class="flex items-center gap-4">
                                                             <button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600" title="Stampa"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
@@ -1217,13 +1204,6 @@
                 </style>`;
             }
         }
-    };
-
-    // Global Error Catcher
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("ERRORE GLOBALE NON GESTITO:", { message, source, lineno, colno, error });
-        App.ui?.showToast('Si è verificato un errore inatteso. L\'app continuerà a funzionare.', 'error');
-        return true; // Prevents the default browser error handling
     };
 
     App.init().catch(err => {
