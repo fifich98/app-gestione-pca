@@ -58,8 +58,8 @@
         
         .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s, transform 0.3s; z-index: 1050; }
         .toast.show { opacity: 1; bottom: 40px; transform: translateX(-50%) scale(1); }
-        button, .sidebar-link { transition: all 0.2s ease-in-out; }
-        button:hover:not(:disabled), .sidebar-link:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        button, .sidebar-link, .dashboard-card { transition: all 0.2s ease-in-out; }
+        button:hover:not(:disabled), .sidebar-link:hover, .dashboard-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px -1px rgb(0 0 0 / 0.1), 0 2px 6px -2px rgb(0 0 0 / 0.1); }
         button:active:not(:disabled) { transform: translateY(0px); box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
         .content-fade-in { animation: fadeIn 0.4s ease-out forwards; }
@@ -101,7 +101,7 @@
             #print-area-wrapper { display: block !important; }
             @page {
                 size: A4;
-                margin: 2cm 1.5cm;
+                margin: 2.5cm 1.5cm;
                 @top-center { content: element(header); }
                 @bottom-center { content: element(footer); }
             }
@@ -131,7 +131,7 @@
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v13',
+            STORAGE_KEY: 'pca_app_data_idb_v14',
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
                 { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
@@ -147,7 +147,7 @@
             WBS_SIGNIFICANCE_MAP: {},
             WEATHER_CODE_MAP: { 0: {text:'Sereno', icon:'☀️'}, 1: {text:'Prevalentemente sereno', icon:'🌤️'}, 2: {text:'Parzialmente nuvoloso', icon:'⛅️'}, 3: {text:'Nuvoloso', icon:'☁️'}, 45: {text:'Nebbia', icon:'🌫️'}, 48: {text:'Nebbia con brina', icon:'🌫️'}, 51: {text:'Pioggerella leggera', icon:'🌦️'}, 53: {text:'Pioggerella moderata', icon:'🌦️'}, 55: {text:'Pioggerella forte', icon:'🌦️'}, 61: {text:'Pioggia leggera', icon:'🌧️'}, 63: {text:'Pioggia moderata', icon:'🌧️'}, 65: {text:'Pioggia forte', icon:'🌧️'}, 71: {text:'Nevicata leggera', icon:'❄️'}, 73: {text:'Nevicata moderata', icon:'❄️'}, 75: {text:'Nevicata forte', icon:'❄️'}, 80: {text:'Rovescio leggero', icon:'🌧️'}, 81: {text:'Rovescio moderato', icon:'🌧️'}, 82: {text:'Rovescio violento', icon:'🌧️'}, 95: {text:'Temporale', icon:' thunderstorms'}, 96: {text:'Temporale con grandine', icon:'⛈️'} }
         },
-        state: { isSaving: false, tempPhotos: {}, activeChart: null, data: [], isSidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' },
+        state: { isSaving: false, tempPhotos: {}, activeChart: null, data: [], isSidebarOpen: localStorage.getItem('sidebarOpen') !== 'false', currentWeather: null },
         dom: {},
         
         async init() {
@@ -264,6 +264,7 @@
 
                 if (!navigator.geolocation) {
                     widget.innerHTML = '<span>Geolocalizzazione non supportata.</span>';
+                    App.state.currentWeather = null;
                     return;
                 }
 
@@ -275,15 +276,18 @@
                             const response = await fetch(apiUrl);
                             if (!response.ok) throw new Error('Risposta API non valida');
                             const data = await response.json();
+                            App.state.currentWeather = data.current; // Salva i dati meteo
                             App.ui.renderWeather(data.current);
                         } catch (error) {
                             console.error("Errore API meteo:", error);
                             widget.textContent = 'Meteo non disponibile';
+                            App.state.currentWeather = null;
                         }
                     },
                     (error) => {
                         console.warn("Errore geolocalizzazione:", error.message);
                         widget.innerHTML = '<span>Geolocalizzazione negata.</span>';
+                        App.state.currentWeather = null;
                     }
                 );
             },
@@ -359,24 +363,29 @@
                 App.handlers.attachSettingsListeners();
             },
             renderListaPca() {
-                const reports = [...App.state.data].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
-                const frequencyStatuses = this.getFrequencyStatuses();
-                
-                const groupedReports = reports.reduce((acc, report) => {
-                    if (!report || !report.wbs) {
-                        console.warn("Saltato report corrotto o senza WBS:", report);
+                try {
+                    const reports = [...App.state.data].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
+                    const frequencyStatuses = this.getFrequencyStatuses();
+                    
+                    const groupedReports = reports.reduce((acc, report) => {
+                        if (!report || !report.wbs) {
+                            console.warn("Saltato report corrotto o senza WBS:", report);
+                            return acc;
+                        }
+                        const wbsKey = report.wbs.substring(0, 2).toUpperCase() || 'Generico';
+                        if (!acc[wbsKey]) {
+                            acc[wbsKey] = [];
+                        }
+                        acc[wbsKey].push(report);
                         return acc;
-                    }
-                    const wbsKey = report.wbs.substring(0, 2).toUpperCase() || 'Generico';
-                    if (!acc[wbsKey]) {
-                        acc[wbsKey] = [];
-                    }
-                    acc[wbsKey].push(report);
-                    return acc;
-                }, {});
+                    }, {});
 
-                App.dom.mainContent.innerHTML = App.templates.pcaGroupedList(groupedReports, frequencyStatuses.statusMap);
-                App.handlers.attachPcaListListeners();
+                    App.dom.mainContent.innerHTML = App.templates.pcaGroupedList(groupedReports, frequencyStatuses.statusMap);
+                    App.handlers.attachPcaListListeners();
+                } catch(err) {
+                    console.error("Errore durante il rendering della lista PCA:", err);
+                    App.dom.mainContent.innerHTML = `<p class="text-red-500">Impossibile visualizzare la lista dei controlli.</p>`;
+                }
             },
             getFrequencyStatuses() {
                 const reports = App.state.data;
@@ -618,6 +627,7 @@
 
 
                     if (wbsData && wbsCodeFull.length >= 2) {
+                        App.ui.showToast('Checklist per ' + wbsCode + ' caricate.', 'info');
                         lavorazioneSelect.innerHTML = '<option value="">-- Seleziona Lavorazione --</option>';
                         wbsData.lavorazioni.forEach(lav => { const option = document.createElement('option'); option.value = lav; option.textContent = lav; lavorazioneSelect.appendChild(option); });
                         lavorazioneSelect.disabled = false;
@@ -676,6 +686,7 @@
                         inspector: sanitize(reportType === 'periodico' ? formData.get('inspector-wbs') : formData.get('inspector-manual')), 
                         wbs: sanitize(reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual')), 
                         activities: sanitize(reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual')), 
+                        weather: App.state.currentWeather, // Salva i dati meteo
                         checks: {}, 
                         observations: {}, 
                         photos: {},
@@ -870,7 +881,7 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                     ${cards.map(card => `
-                    <div class="bg-white dark:bg-slate-800 p-5 rounded-lg shadow-sm flex items-center gap-5 border-t-4 border-${card.color}-500">
+                    <div class="dashboard-card bg-white dark:bg-slate-800 p-5 rounded-lg shadow-sm flex items-center gap-5 border-t-4 border-${card.color}-500">
                         <div class="p-3 rounded-full bg-slate-100 dark:bg-slate-700 text-${card.color}-500">${card.icon}</div>
                         <div>
                             <h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${card.label}</h3>
@@ -992,7 +1003,7 @@
                         <div class="accordion-header p-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-700/50">
                             <div>
                                 <h3 class="text-lg font-semibold flex items-center gap-3">${t.icon} ${t.title}</h3>
-                                ${freqInfo ? `<span class="text-xs font-semibold mt-1 px-2 py-0.5 rounded-full ${freqInfo.color}">${freqInfo.text}</span>` : ''}
+                                ${freqInfo ? `<span class="text-sm font-semibold mt-1 px-2.5 py-1 rounded-full ${freqInfo.color}">${freqInfo.text}</span>` : ''}
                             </div>
                             <div class="flex items-center gap-4">
                                 <svg class="accordion-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -1084,28 +1095,25 @@
                 const rtiLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp';
                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
                 
-                const renderExtras = (templateId, itemIndex) => {
-                    const extraData = report.extras?.[templateId]?.[itemIndex];
-                    if (!extraData || Object.keys(extraData).length === 0) return '';
-                    let html = '<div style="font-size: 9pt; margin: 6px 0 6px 20px; padding: 8px; background-color: #f8f8f8; border-left: 2px solid #ddd;">';
-                    for (const [key, value] of Object.entries(extraData)) {
-                       const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                       html += `<span style="display: inline-block; min-width: 140px;"><strong>${formattedKey}:</strong></span> ${value || 'N.D.'} <br>`;
-                    }
-                    html += '</div>';
-                    return html;
-                };
-                
-                 const renderPhoto = (templateId, itemIndex) => {
-                    const photoSrc = report.photos?.[templateId]?.[itemIndex];
-                    if (!photoSrc) return '';
-                    return `<div style="margin-top: 8px; margin-left: 20px;"><h4 style="font-weight: bold; font-size: 9pt; margin-bottom: 4px;">Rilievo Fotografico:</h4><img src="${photoSrc}" style="max-width: 350px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata"></div>`;
-                };
+                const weatherHTML = report.weather ? `
+                    <div class="no-break" style="margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 4px;">Condizioni Meteo al Momento del Controllo</h3>
+                        <table style="font-size: 9pt; width: 100%;">
+                            <tr>
+                                <td style="padding: 2px 5px;"><strong>Condizione:</strong> ${App.config.WEATHER_CODE_MAP[report.weather.weather_code]?.text || 'N/D'}</td>
+                                <td style="padding: 2px 5px;"><strong>Temperatura:</strong> ${report.weather.temperature_2m}°C</td>
+                                <td style="padding: 2px 5px;"><strong>Precipitazioni:</strong> ${report.weather.precipitation} mm</td>
+                                <td style="padding: 2px 5px;"><strong>Vento:</strong> ${report.weather.wind_speed_10m} km/h</td>
+                            </tr>
+                        </table>
+                    </div>` : '';
 
                 const reportBody = `
                     <div id="print-content">
-                        <h1 style="text-align: center; font-size: 1.6rem; margin-bottom: 2rem; font-weight: bold; color: var(--print-text-primary);">Verbale di Controllo Ambientale N° ${report.id}</h1>
-                        <table class="no-break" style="width: 100%; border-collapse: collapse; margin-bottom: 2.5rem; font-size: 10pt;">
+                        <h1 style="text-align: center; font-size: 1.8rem; margin: 0; font-weight: bold; color: var(--print-text-primary);">PIANO DI CONTROLLO AMBIENTALE</h1>
+                        <h2 style="text-align: center; font-size: 1.2rem; margin-bottom: 2rem; color: var(--print-text-secondary);">Verbale di Controllo N° ${report.id}</h2>
+                        
+                        <table class="no-break" style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 10pt;">
                             <tbody>
                                 <tr>
                                     <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg); width: 25%;">Data</td>
@@ -1127,51 +1135,21 @@
                                 </tr>
                             </tbody>
                         </table>
+
+                        ${weatherHTML}
                         
                         ${templates.map(t => {
                             const checks = report.checks ? report.checks[t.id] : null;
-                            if (!checks || checks.length === 0) return '';
-                            const observationsText = report.observations ? (report.observations[t.id] || '') : '';
-                            
-                            let cerTableHtml = '';
-                            if(t.id === 'pca04' && report.cerData && report.cerData.length > 0) {
-                                cerTableHtml += '<h3 class="no-break" style="font-weight:bold; font-size: 11pt; margin: 1.5rem 0 0.5rem 0;">Dettaglio Rifiuti CER</h3><table class="no-break" style="width:100%; font-size: 8pt; border-collapse:collapse;"><thead><tr style="background-color:var(--print-header-bg);">';
-                                const headers = ['CER/Prod.', 'Ubic.', 'Verbale', 'Rapp. Prova', 'Ident.', 'Delim.', 'In Prod.', 'In Carico'];
-                                headers.forEach(h => cerTableHtml += `<th style="border:1px solid var(--print-border-color); padding: 5px; text-align: left;">${h}</th>`);
-                                cerTableHtml += '</tr></thead><tbody>';
-                                report.cerData.forEach(row => {
-                                    cerTableHtml += `<tr>
-                                        <td style="border:1px solid var(--print-border-color); padding: 5px;">${row.produttore || ''}</td>
-                                        <td style="border:1px solid var(--print-border-color); padding: 5px;">${row.ubicazione || ''}</td>
-                                        <td style="border:1px solid var(--print-border-color); padding: 5px;">${row.verbale || ''}</td>
-                                        <td style="border:1px solid var(--print-border-color); padding: 5px;">${row.prova || ''}</td>
-                                        <td style="border:1px solid var(--print-border-color); padding: 5px; text-align:center;">${row.identificato || ''}</td>
-                                        <td style="border:1px solid var(--print-border-color); padding: 5px; text-align:center;">${row.delimitato || ''}</td>
-                                        <td style="border:1px solid var(--print-border-color); padding: 5px; text-align:center;">${row.produzione ? 'Sì' : 'No'}</td>
-                                        <td style="border:1px solid var(--print-border-color); padding: 5px; text-align:center;">${row.carico ? 'Sì' : 'No'}</td>
-                                   </tr>`;
-                                });
-                                cerTableHtml += '</tbody></table>';
-                            }
+                            if (!checks) return '';
+                            const freqInfo = App.config.FREQUENCY_MAP[t.significativita];
+                            const freqText = freqInfo ? ` (Frequenza: ${t.significativita})` : '';
 
                             return `<div class="no-break" style="margin-bottom: 2rem;">
                                 <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem; color: var(--print-text-primary);">
                                     <span style="font-size: 1.5rem; vertical-align: -0.2em; margin-right: 0.5rem;">${t.icon}</span>${t.title}
+                                    <span style="font-size: 0.9rem; font-weight: normal; color: #555;">${freqText}</span>
                                 </h2>
-                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;"><tbody>
-                                ${checks.map((item, idx) => `
-                                    <tr style="border-bottom: 1px solid #eee;">
-                                        <td style="padding: 8px 0; vertical-align: top; color: var(--print-text-secondary);">
-                                            ${item.item}
-                                            ${renderExtras(t.id, idx)}
-                                            ${renderPhoto(t.id, idx)}
-                                        </td>
-                                        <td style="padding: 8px 0; text-align: right; font-weight: bold; width: 80px; vertical-align: top; color: ${item.result==='NC'?'#D32F2F':'var(--print-text-primary)'};">${item.result || 'N.D.'}</td>
-                                    </tr>`).join('')}
-                                </tbody></table>
-                                ${(observationsText.trim() !== '') ? `<div class="no-break" style="background-color: #f8f8f8; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 1rem;"><h3 style="font-weight: bold; margin-bottom: 0.5rem; font-size: 11pt;">Osservazioni e Misure Correttive</h3><p style="font-size: 10pt; white-space: pre-wrap; margin: 0;">${observationsText}</p></div>` : ''}
-                                ${cerTableHtml}
-                            </div>`;
+                                </div>`;
                         }).join('')}
                     </div>`;
 
@@ -1253,3 +1231,4 @@
     <div id="modal-overlay" class="modal-overlay"></div>
 </body>
 </html>
+
