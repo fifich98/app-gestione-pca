@@ -1095,6 +1095,24 @@
                 const rtiLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp';
                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
                 
+                const renderExtras = (templateId, itemIndex) => {
+                    const extraData = report.extras?.[templateId]?.[itemIndex];
+                    if (!extraData || Object.keys(extraData).length === 0) return '';
+                    let html = '<div style="font-size: 9pt; margin: 6px 0 6px 20px; padding: 8px; background-color: #f8f8f8; border-left: 2px solid #ddd;">';
+                    for (const [key, value] of Object.entries(extraData)) {
+                       const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                       html += `<span style="display: inline-block; min-width: 140px;"><strong>${formattedKey}:</strong></span> ${value || 'N.D.'} <br>`;
+                    }
+                    html += '</div>';
+                    return html;
+                };
+                
+                 const renderPhoto = (templateId, itemIndex) => {
+                    const photoSrc = report.photos?.[templateId]?.[itemIndex];
+                    if (!photoSrc) return '';
+                    return `<div style="margin-top: 8px; margin-left: 20px;"><h4 style="font-weight: bold; font-size: 9pt; margin-bottom: 4px;">Rilievo Fotografico:</h4><img src="${photoSrc}" style="max-width: 350px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata"></div>`;
+                };
+
                 const weatherHTML = report.weather ? `
                     <div class="no-break" style="margin-bottom: 1.5rem;">
                         <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 4px;">Condizioni Meteo al Momento del Controllo</h3>
@@ -1141,15 +1159,50 @@
                         ${templates.map(t => {
                             const checks = report.checks ? report.checks[t.id] : null;
                             if (!checks) return '';
+                            const observationsText = report.observations ? (report.observations[t.id] || '') : '';
                             const freqInfo = App.config.FREQUENCY_MAP[t.significativita];
                             const freqText = freqInfo ? ` (Frequenza: ${t.significativita})` : '';
+
+                            let cerTableHtml = '';
+                            if(t.id === 'pca04' && report.cerData && report.cerData.length > 0) {
+                                cerTableHtml += '<h3 class="no-break" style="font-weight:bold; font-size: 11pt; margin: 1.5rem 0 0.5rem 0;">Dettaglio Rifiuti CER</h3><table class="no-break" style="width:100%; font-size: 8pt; border-collapse:collapse;"><thead><tr style="background-color:var(--print-header-bg);">';
+                                const headers = ['CER/Prod.', 'Ubic.', 'Verbale', 'Rapp. Prova', 'Ident.', 'Delim.', 'In Prod.', 'In Carico'];
+                                headers.forEach(h => cerTableHtml += `<th style="border:1px solid var(--print-border-color); padding: 5px; text-align: left;">${h}</th>`);
+                                cerTableHtml += '</tr></thead><tbody>';
+                                report.cerData.forEach(row => {
+                                    cerTableHtml += `<tr>
+                                        <td style="border:1px solid var(--print-border-color); padding: 5px;">${row.produttore || ''}</td>
+                                        <td style="border:1px solid var(--print-border-color); padding: 5px;">${row.ubicazione || ''}</td>
+                                        <td style="border:1px solid var(--print-border-color); padding: 5px;">${row.verbale || ''}</td>
+                                        <td style="border:1px solid var(--print-border-color); padding: 5px;">${row.prova || ''}</td>
+                                        <td style="border:1px solid var(--print-border-color); padding: 5px; text-align:center;">${row.identificato || ''}</td>
+                                        <td style="border:1px solid var(--print-border-color); padding: 5px; text-align:center;">${row.delimitato || ''}</td>
+                                        <td style="border:1px solid var(--print-border-color); padding: 5px; text-align:center;">${row.produzione ? 'Sì' : 'No'}</td>
+                                        <td style="border:1px solid var(--print-border-color); padding: 5px; text-align:center;">${row.carico ? 'Sì' : 'No'}</td>
+                                   </tr>`;
+                                });
+                                cerTableHtml += '</tbody></table>';
+                            }
 
                             return `<div class="no-break" style="margin-bottom: 2rem;">
                                 <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem; color: var(--print-text-primary);">
                                     <span style="font-size: 1.5rem; vertical-align: -0.2em; margin-right: 0.5rem;">${t.icon}</span>${t.title}
                                     <span style="font-size: 0.9rem; font-weight: normal; color: #555;">${freqText}</span>
                                 </h2>
-                                </div>`;
+                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;"><tbody>
+                                ${checks.map((item, idx) => `
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 8px 0; vertical-align: top; color: var(--print-text-secondary);">
+                                            ${item.item}
+                                            ${renderExtras(t.id, idx)}
+                                            ${renderPhoto(t.id, idx)}
+                                        </td>
+                                        <td style="padding: 8px 0; text-align: right; font-weight: bold; width: 80px; vertical-align: top; color: ${item.result==='NC'?'#D32F2F':'var(--print-text-primary)'};">${item.result || 'N.D.'}</td>
+                                    </tr>`).join('')}
+                                </tbody></table>
+                                ${(observationsText.trim() !== '') ? `<div class="no-break" style="background-color: #f8f8f8; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 1rem;"><h3 style="font-weight: bold; margin-bottom: 0.5rem; font-size: 11pt;">Osservazioni e Misure Correttive</h3><p style="font-size: 10pt; white-space: pre-wrap; margin: 0;">${observationsText}</p></div>` : ''}
+                                ${cerTableHtml}
+                            </div>`;
                         }).join('')}
                     </div>`;
 
@@ -1231,4 +1284,3 @@
     <div id="modal-overlay" class="modal-overlay"></div>
 </body>
 </html>
-
