@@ -14,7 +14,7 @@
         base-uri 'self';
         form-action 'none';
     ">
-    <title>App Gestione PCA - CHRYSAS (Versione Migliorata)</title>
+    <title>App Gestione PCA - CHRYSAS (v2.0)</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -95,13 +95,17 @@
         
         .hidden { display: none; }
         
-        .photo-uploader { position: relative; width: 8rem; height: 8rem; }
+        .photo-uploader { position: relative; width: 5rem; height: 5rem; flex-shrink: 0; }
         .photo-preview { width: 100%; height: 100%; background-color: #f3f4f6; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #d1d5db; cursor: pointer; transition: border-color 0.2s; }
         .dark .photo-preview { background-color: #374151; border-color: #4b5563; }
         .photo-preview:hover { border-color: #3b82f6; }
         .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
         .remove-photo-btn { position: absolute; top: -0.5rem; right: -0.5rem; background-color: #ef4444; color: white; border-radius: 9999px; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s; }
         .remove-photo-btn:hover { transform: scale(1.1); }
+
+        .cer-table-wrapper { overflow-x: auto; }
+        .cer-table { min-width: 1200px; }
+
 
         @media print {
             body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
@@ -139,15 +143,16 @@
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v15',
+            STORAGE_KEY: 'pca_app_data_idb_v16',
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
                 { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
-                { id: 'nuovo-pca', label: 'Esegui Controllo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
+                { id: 'nuovo-pca', label: 'Nuovo PCA', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
+                { id: 'sopralluogo', label: 'Verbale Sopralluogo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="12" cy="15" r="2"></circle><path d="M12 10v3"></path></svg>' },
                 { id: 'impostazioni', label: 'Impostazioni', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' }
             ],
             WBS_DATA: { 'GA': { descrizione: 'Gallerie Artificiali', lavorazioni: ['Scavo di sbancamento', 'Posa armature e getti CLS', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti'] }, 'GN': { descrizione: 'Gallerie Naturali', lavorazioni: ['Scavo in naturale', 'Consolidamenti (spritz-beton, centine)', 'Rivestimenti e impermeabilizzazioni'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti', 'Vibrazioni'] }, 'AS': { descrizione: 'Aree di Stoccaggio', lavorazioni: ['Scavi e rivestimenti', 'Opere di sostegno e drenaggi'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Consumi'] }, 'TR': { descrizione: 'Trincee', lavorazioni: ['Scavi di trincea', 'Opere di sostegno (pali, diaframmi)', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Beni Culturali'] }, 'RI': { descrizione: 'Rilevati', lavorazioni: ['Formazione corpo del rilevato', 'Opere di sostegno', 'Sistemazioni idrauliche'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'VI': { descrizione: 'Viadotti', lavorazioni: ['Pali di fondazione e fondazioni', 'Elevazione pile e spalle', 'Varo impalcato e soletta'], aspetti: ['Rumore', 'Vibrazioni', 'Rifiuti', 'Sostanze Pericolose'] }, 'CB': { descrizione: 'Campo Base', lavorazioni: ['Installazione e gestione uffici/dormitori/mensa', 'Manutenzione aree e servizi'], aspetti: ['Acque', 'Rifiuti', 'Rumore', 'Consumi'] }, 'CO': { descrizione: 'Cantiere Operativo', lavorazioni: ['Allestimento aree stoccaggio', 'Gestione impianto di betonaggio', 'Officina e manutenzione mezzi'], aspetti: ['Polveri', 'Rumore', 'Acque', 'Rifiuti', 'Sostanze Pericolose'] }, 'NV': { descrizione: 'Nuova Viabilità', lavorazioni: ['Scavi e rilevati per nuova viabilità', 'Formazione sottofondi e pavimentazioni', 'Opere idrauliche e finiture'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'FA': { descrizione: 'Fabbricati', lavorazioni: ['Scavi e fondazioni', 'Elevazione strutture', 'Finiture e impianti'], aspetti: ['Polveri', 'Rumore', 'Rifiuti', 'Consumi'] } },
-            CHECK_TEMPLATES_PERIODIC: [ { id: "pca01", title: "PCA 01: Scarichi Idrici ed Approvvigionamento", icon: "💧", significativita: "ALTA", items: ["Autorizzazione allo scarico acque reflue domestiche presente e valida?", "Autorizzazione allo scarico acque reflue industriali presente e valida?", "Rispetto delle prescrizioni contenute nelle autorizzazioni?", "Corretta gestione acque di lavorazione (es. scavo pali)?", "Kit di emergenza anti-sversamento presente e completo?", "Manutenzione impianti di depurazione/trattamento registrata?"] }, { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] }, { id: "pca03", title: "PCA 03: Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Autorizzazioni per impianti (es. calcestruzzo) presenti e valide?", "Copertura mezzi per trasporto materiali polverulenti?", "Bagnatura piste e/o cumuli eseguita regolarmente?", "Velocità dei mezzi in cantiere limitata a 30 km/h?", "Impianto lavaruote funzionante ed utilizzato?"] }, { id: "pca04", title: "PCA 04: Rifiuti", icon: "🗑️", significativita: "ALTA", items: ["Deposito temporaneo (DTR) ordinato e pulito?", "Rifiuti separati per CER e con corretta cartellonistica?", "Stoccaggio rifiuti pericolosi conforme (aree, bacini)?", "Registro di carico/scarico aggiornato (entro 10gg)?", "Quarta copia FIR ricevuta entro 90 giorni?"] }, { id: "pca05", title: "PCA 05: Sostanze Pericolose ed Emergenze", icon: "☣️", significativita: "MEDIA", items: ["Schede di Sicurezza (SDS) disponibili e aggiornate?", "Stoccaggio sostanze su bacini di contenimento idonei?", "Aree di stoccaggio segnalate e adeguate?", "Personale formato per la gestione delle emergenze?"] }, { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?", "Eseguita misurazione fonometrica periodica?"] }, { id: "pca07", title: "PCA 07: Suolo e Sottosuolo", icon: "🌱", significativita: "ALTA", items: ["Assenza di contaminazioni visive del suolo (macchie, sversamenti)?", "Corretto stoccaggio del terreno vegetale in cumuli separati?", "Utilizzo delle apposite vasche per lavaggio betoniere?", "Gestione corretta del calcestruzzo in esubero?"] }, { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] } ],
+            CHECK_TEMPLATES_PERIODIC: [ { id: "pca01", title: "PCA 01: Scarichi Idrici ed Approvvigionamento", icon: "💧", significativita: "ALTA", items: ["Autorizzazione allo scarico acque reflue domestiche presente e valida?", "Autorizzazione allo scarico acque reflue industriali presente e valida?", "Rispetto delle prescrizioni contenute nelle autorizzazioni?", "Corretta gestione acque di lavorazione (es. scavo pali)?", "Kit di emergenza anti-sversamento presente e completo?", "Manutenzione impianti di depurazione/trattamento registrata?"] }, { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] }, { id: "pca03", title: "PCA 03: Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Autorizzazioni per impianti (es. calcestruzzo) presenti e valide?", "Copertura mezzi per trasporto materiali polverulenti?", "Bagnatura piste e/o cumuli eseguita regolarmente?", "Velocità dei mezzi in cantiere limitata a 30 km/h?", "Impianto lavaruote funzionante ed utilizzato?"] }, { id: "pca04", title: "PCA 04: Rifiuti", icon: "🗑️", significativita: "ALTA", items: [] }, { id: "pca05", title: "PCA 05: Sostanze Pericolose ed Emergenze", icon: "☣️", significativita: "MEDIA", items: ["Schede di Sicurezza (SDS) disponibili e aggiornate?", "Stoccaggio sostanze su bacini di contenimento idonei?", "Aree di stoccaggio segnalate e adeguate?", "Personale formato per la gestione delle emergenze?"] }, { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?", "Eseguita misurazione fonometrica periodica?"] }, { id: "pca07", title: "PCA 07: Suolo e Sottosuolo", icon: "🌱", significativita: "ALTA", items: ["Assenza di contaminazioni visive del suolo (macchie, sversamenti)?", "Corretto stoccaggio del terreno vegetale in cumuli separati?", "Utilizzo delle apposite vasche per lavaggio betoniere?", "Gestione corretta del calcestruzzo in esubero?"] }, { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] } ],
             ASPETTO_TO_PCA_ID_MAP: { 'Polveri': 'pca03', 'Rumore': 'pca06', 'Vibrazioni': 'pca06', 'Acque': 'pca01', 'Suolo': 'pca07', 'Rifiuti': 'pca04', 'Terre e Rocce': 'pca02', 'Sostanze Pericolose': 'pca05', 'Rifornimenti': 'pca05', 'Consumi': 'pca05', 'Beni Culturali': 'pca08' },
             FREQUENCY_MAP: { 'ALTA': { text: 'FREQUENZA ALTA', schedule: '(es. settimanale)', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', days: 7 }, 'MEDIA': { text: 'FREQUENZA MEDIA', schedule: '(es. quindicinale)', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300', days: 15 }, 'BASSA': { text: 'FREQUENZA BASSA', schedule: '(es. mensile)', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', days: 30 } },
             CHECK_TEMPLATES_PRELIMINARE: [{ id: "preliminare", title: "Verifica Preliminare (Ante Operam)", icon: "📍", items: ["Eseguita analisi documentale (vincoli, servitù, prescrizioni)?", "Eseguita mappatura e documentazione dei recettori sensibili?", "Documentato stato della vegetazione con rilievo fotografico?", "Verificata e documentata assenza di rifiuti/materiali preesistenti?", "Verificata e documentata assenza di contaminazioni pregresse (macchie, odori)?"] }],
@@ -155,7 +160,7 @@
             WBS_SIGNIFICANCE_MAP: {},
             WEATHER_CODE_MAP: { 0: {text:'Sereno', icon:'☀️'}, 1: {text:'Prevalentemente sereno', icon:'🌤️'}, 2: {text:'Parzialmente nuvoloso', icon:'⛅️'}, 3: {text:'Nuvoloso', icon:'☁️'}, 45: {text:'Nebbia', icon:'🌫️'}, 48: {text:'Nebbia con brina', icon:'🌫️'}, 51: {text:'Pioggerella leggera', icon:'🌦️'}, 53: {text:'Pioggerella moderata', icon:'🌦️'}, 55: {text:'Pioggerella forte', icon:'🌦️'}, 61: {text:'Pioggia leggera', icon:'🌧️'}, 63: {text:'Pioggia moderata', icon:'🌧️'}, 65: {text:'Pioggia forte', icon:'🌧️'}, 71: {text:'Nevicata leggera', icon:'❄️'}, 73: {text:'Nevicata moderata', icon:'❄️'}, 75: {text:'Nevicata forte', icon:'❄️'}, 80: {text:'Rovescio leggero', icon:'🌧️'}, 81: {text:'Rovescio moderato', icon:'🌧️'}, 82: {text:'Rovescio violento', icon:'🌧️'}, 95: {text:'Temporale', icon:'⛈️'}, 96: {text:'Temporale con grandine', icon:'⛈️'} }
         },
-        state: { isSaving: false, tempPhotos: {}, activeChart: null, data: [], isSidebarOpen: localStorage.getItem('sidebarOpen') !== 'false', currentWeather: null },
+        state: { isSaving: false, tempPhotos: {}, activeChart: null, data: [], isSidebarOpen: localStorage.getItem('sidebarOpen') !== 'false', currentWeather: null, currentLocation: null },
         dom: {},
         
         async init() {
@@ -187,7 +192,7 @@
                 this.state.data = [];
             }
             await this.ui.showTab('dashboard');
-            this.services.fetchWeather();
+            this.services.fetchLocationAndWeather();
         },
         
         _computeWbsSignificance() {
@@ -217,12 +222,13 @@
             },
             async getById(id) {
                 const reports = await this.getAll();
-                return reports.find(r => r && r.id === parseInt(id));
+                // Match both numeric and string IDs
+                return reports.find(r => r && String(r.id) === String(id));
             },
             async save(newReport) {
                 const reports = await this.getAll();
-                const reportId = parseInt(newReport.id);
-                const existingIndex = reports.findIndex(r => r && r.id === reportId);
+                const reportId = String(newReport.id);
+                const existingIndex = reports.findIndex(r => r && String(r.id) === reportId);
                 if (existingIndex !== -1) {
                     reports[existingIndex] = newReport;
                 } else {
@@ -232,18 +238,27 @@
             },
             async delete(id) {
                 let reports = await this.getAll();
-                reports = reports.filter(r => r && r.id !== parseInt(id));
+                reports = reports.filter(r => r && String(r.id) !== String(id));
                 await this.saveAll(reports);
             },
-            async getNextId() {
+            async getNextId(prefix = '') {
                 const reports = await this.getAll();
-                return (reports.reduce((max, r) => Math.max(max, (r && r.id) ? parseInt(r.id) : 0), 0) + 1);
+                const relevantIds = reports
+                    .map(r => String(r.id))
+                    .filter(id => id.startsWith(prefix))
+                    .map(id => parseInt(id.replace(prefix, ''), 10))
+                    .filter(num => !isNaN(num));
+                
+                const maxId = relevantIds.length > 0 ? Math.max(...relevantIds) : 0;
+                return prefix + (maxId + 1);
             },
             getDashboardStats() {
                 const reports = App.state.data; let openNc = 0; let totalChecks = 0; let compliantChecks = 0; const ncByAspect = {};
                 reports.forEach(report => {
                     if (report && report.type === 'periodico' && report.checks) {
                         Object.entries(report.checks).forEach(([aspectId, aspectChecks]) => {
+                            // Skip waste table from stats
+                            if (aspectId === 'pca04') return;
                             const template = App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === aspectId);
                             if (!template || !aspectChecks) return;
                             aspectChecks.forEach(check => {
@@ -265,20 +280,22 @@
         },
 
         services: {
-            async fetchWeather() {
+            async fetchLocationAndWeather() {
                 const widget = App.dom.weatherWidget;
                 if (!widget) return;
-                widget.innerHTML = `<div class="loader"></div><span>Carico meteo...</span>`;
+                widget.innerHTML = `<div class="loader"></div><span>Geolocalizzazione...</span>`;
 
                 if (!navigator.geolocation) {
                     widget.innerHTML = '<span>Geolocalizzazione non supportata.</span>';
                     App.state.currentWeather = null;
+                    App.state.currentLocation = null;
                     return;
                 }
 
                 navigator.geolocation.getCurrentPosition(
                     async (position) => {
                         const { latitude, longitude } = position.coords;
+                        App.state.currentLocation = { latitude: latitude.toFixed(5), longitude: longitude.toFixed(5) };
                         const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(2)}&longitude=${longitude.toFixed(2)}&current=temperature_2m,precipitation,weather_code,wind_speed_10m`;
                         try {
                             const response = await fetch(apiUrl);
@@ -296,6 +313,7 @@
                         console.warn("Errore geolocalizzazione:", error.message);
                         widget.innerHTML = '<span>Geolocalizzazione negata.</span>';
                         App.state.currentWeather = null;
+                        App.state.currentLocation = null;
                     }
                 );
             },
@@ -308,7 +326,7 @@
         },
         
         ui: {
-            renderMap: { 'dashboard': 'renderDashboard', 'lista-pca': 'renderListaPca', 'nuovo-pca': 'renderNuovoPca', 'impostazioni': 'renderImpostazioni' },
+            renderMap: { 'dashboard': 'renderDashboard', 'lista-pca': 'renderListaPca', 'nuovo-pca': 'renderNuovoPca', 'sopralluogo': 'renderNuovoSopralluogo', 'impostazioni': 'renderImpostazioni' },
             showToast(message, type = 'success') {
                 const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
                 App.dom.toast.textContent = message;
@@ -364,7 +382,28 @@
                 const ctx = document.getElementById('ncChart')?.getContext('2d');
                 if (!ctx) return;
                 if (App.state.activeChart) App.state.activeChart.destroy();
-                App.state.activeChart = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(stats.ncByAspect).map(l => l.substring(l.indexOf(':') + 1).trim()), datasets: [{ data: Object.values(stats.ncByAspect), backgroundColor: 'rgba(59, 130, 246, 0.7)', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false }, tooltip: { displayColors: false } } } });
+                const chartData = {
+                    labels: Object.keys(stats.ncByAspect).map(l => l.substring(l.indexOf(':') + 1).trim()),
+                    datasets: [{
+                        label: 'NC',
+                        data: Object.values(stats.ncByAspect),
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                };
+                App.state.activeChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+                        plugins: { legend: { display: false }, tooltip: { displayColors: false } }
+                    }
+                });
             },
             renderImpostazioni() {
                 App.dom.mainContent.innerHTML = App.templates.settings();
@@ -372,19 +411,28 @@
             },
             renderListaPca() {
                 try {
-                    const reports = [...App.state.data].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
+                    const reports = [...App.state.data].sort((a, b) => ( (b.date > a.date) ? 1 : -1 ));
                     const frequencyStatuses = this.getFrequencyStatuses();
                     
                     const groupedReports = reports.reduce((acc, report) => {
-                        if (!report || !report.wbs) {
-                            console.warn("Saltato report corrotto o senza WBS:", report);
+                        if (!report || !report.type) {
+                            console.warn("Saltato report corrotto:", report);
                             return acc;
                         }
-                        const wbsKey = (report.type === 'periodico' ? report.wbs.substring(0, 2).toUpperCase() : 'Generico') || 'Generico';
-                        if (!acc[wbsKey]) {
-                            acc[wbsKey] = [];
+                        let key;
+                        if(report.type === 'periodico') {
+                           key = report.wbs ? report.wbs.substring(0, 2).toUpperCase() : 'Generico';
+                        } else if (report.type === 'sopralluogo') {
+                           key = 'Sopralluoghi';
+                        } else {
+                           key = 'Ispezioni Specifiche';
                         }
-                        acc[wbsKey].push(report);
+
+                        if (!acc[key]) acc[key] = {
+                           descrizione: App.config.WBS_DATA[key]?.descrizione || key,
+                           reports: []
+                        };
+                        acc[key].reports.push(report);
                         return acc;
                     }, {});
 
@@ -470,6 +518,12 @@
                 App.handlers.attachNewPcaFormListeners();
                 this.updateFormRequirements('periodico');
             },
+            async renderNuovoSopralluogo() {
+                const nextId = await App.store.getNextId('VdS-');
+                const today = new Date().toISOString().slice(0, 10);
+                App.dom.mainContent.innerHTML = App.templates.newSopralluogoForm({ nextId, today });
+                App.handlers.attachSopralluogoListeners();
+            },
             updateFormRequirements(type) {
                 const isPeriodico = type === 'periodico';
                 document.getElementById('wbs-section').classList.toggle('visible', isPeriodico);
@@ -510,12 +564,16 @@
                 const report = await App.store.getById(reportId);
                 if (!report) return App.ui.showToast("Report non trovato", "error");
                 
-                let templates;
-                if (report.type === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
-                else if (report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
-                else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+                if (report.type === 'sopralluogo') {
+                    App.dom.printAreaWrapper.innerHTML = App.templates.printSopralluogo(report);
+                } else {
+                    let templates;
+                    if (report.type === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+                    else if (report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
+                    else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+                    App.dom.printAreaWrapper.innerHTML = App.templates.printReport(report, templates);
+                }
 
-                App.dom.printAreaWrapper.innerHTML = App.templates.printReport(report, templates);
                 setTimeout(() => window.print(), 200);
             },
             sanitize(str) {
@@ -574,9 +632,10 @@
                     }
                     if (deleteBtn) {
                         const id = deleteBtn.dataset.id;
+                        const report = await App.store.getById(id);
                         const confirmed = await App.ui.showModal({
                             title: 'Conferma Eliminazione',
-                            message: `Sei sicuro di voler eliminare il Controllo N° ${id}? L'azione è irreversibile.`,
+                            message: `Sei sicuro di voler eliminare il verbale N° ${id} (${report.activities || report.wbs})? L'azione è irreversibile.`,
                             confirmText: 'Elimina',
                             confirmColor: 'bg-red-600'
                         });
@@ -592,7 +651,7 @@
             onPrintPca: (id) => App.ui.prepareAndPrintReport(id),
             async onDeletePca(reportId) {
                 await App.store.delete(reportId);
-                App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info');
+                App.ui.showToast(`Verbale N° ${reportId} eliminato.`, 'info');
                 await App.ui.showTab('lista-pca');
             },
             attachNewPcaFormListeners() {
@@ -602,6 +661,8 @@
                     if (e.target.closest('.photo-preview-content')) e.target.closest('.photo-uploader').querySelector('.photo-input').click(); 
                     if (e.target.closest('.remove-photo-btn')) this.onPhotoRemove(e);
                     if (e.target.matches('#cancel-pca-btn')) App.ui.resetPcaForm();
+                    if (e.target.id === 'add-cer-row-btn') this.addCerRow();
+                    if (e.target.closest('.cer-delete-row-btn')) e.target.closest('.cer-row').remove();
                     
                     const accordionHeader = e.target.closest('.accordion-header');
                     if (accordionHeader) {
@@ -661,6 +722,16 @@
                     }
                 });
             },
+            addCerRow() {
+                const index = Date.now(); 
+                const container = document.getElementById('cer-table-rows');
+                if (!container) return;
+
+                const row = document.createElement('tr');
+                row.className = 'cer-row';
+                row.innerHTML = App.templates.wasteTableRow(index);
+                container.appendChild(row);
+            },
             async onNewPcaSubmit(e) {
                 e.preventDefault();
                 if (App.state.isSaving) return;
@@ -694,9 +765,11 @@
                         wbs: sanitize(reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual')), 
                         activities: sanitize(reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual')), 
                         weather: App.state.currentWeather,
+                        location: App.state.currentLocation,
                         checks: {}, 
                         observations: {}, 
                         photos: {},
+                        cerData: []
                     };
                     
                     let templates;
@@ -707,20 +780,46 @@
                     templates.forEach(template => {
                         const sheetElement = document.getElementById(`accordion-${template.id}`);
                         if (sheetElement && window.getComputedStyle(sheetElement).display !== 'none') {
-                            newReport.checks[template.id] = template.items.map((item, idx) => {
-                                const result = sanitize(formData.get(`check_${template.id}_${idx}`));
-                                const nc_observation = result === 'NC' ? sanitize(formData.get(`nc_observation_${template.id}_${idx}`)) : null;
-                                return { item: sanitize(item), result, nc_observation };
-                            });
-                            newReport.observations[template.id] = sanitize(formData.get(`observation_${template.id}`));
-                            
-                            const photoKey = `photo_${template.id}`;
-                            if (App.state.tempPhotos[photoKey]) {
-                                if (!newReport.photos[template.id]) newReport.photos[template.id] = {};
-                                newReport.photos[template.id]['general'] = App.state.tempPhotos[photoKey];
+                            // Handle standard checklists
+                            if (template.id !== 'pca04') {
+                                newReport.checks[template.id] = template.items.map((item, idx) => {
+                                    const result = sanitize(formData.get(`check_${template.id}_${idx}`));
+                                    const nc_observation = result === 'NC' ? sanitize(formData.get(`nc_observation_${template.id}_${idx}`)) : null;
+                                    const photoKey = `photo_${template.id}_${idx}`;
+                                    if(App.state.tempPhotos[photoKey]) {
+                                       if(!newReport.photos[template.id]) newReport.photos[template.id] = {};
+                                       newReport.photos[template.id][idx] = App.state.tempPhotos[photoKey];
+                                    }
+                                    return { item: sanitize(item), result, nc_observation };
+                                });
                             }
+                            newReport.observations[template.id] = sanitize(formData.get(`observation_${template.id}`));
                         }
                     });
+
+                    // Handle Waste Table specifically
+                    const cerContainer = document.getElementById('cer-table-rows');
+                    if (cerContainer) {
+                        cerContainer.querySelectorAll('.cer-row').forEach(row => {
+                            const rowData = {
+                                cer: sanitize(row.querySelector('[name^="cer_produttore"]').value),
+                                ubicazione: sanitize(row.querySelector('[name^="cer_ubicazione"]').value),
+                                verbaleN: sanitize(row.querySelector('[name^="cer_verbaleN"]').value),
+                                verbaleDel: sanitize(row.querySelector('[name^="cer_verbaleDel"]').value),
+                                provaN: sanitize(row.querySelector('[name^="cer_provaN"]').value),
+                                provaDel: sanitize(row.querySelector('[name^="cer_provaDel"]').value),
+                                identificato: sanitize(row.querySelector('[name^="cer_identificato"]').value),
+                                delimitato: sanitize(row.querySelector('[name^="cer_delimitato"]').value),
+                                produzione: row.querySelector('[name^="cer_produzione"]').checked,
+                                carico: row.querySelector('[name^="cer_carico"]').checked,
+                                validita: sanitize(row.querySelector('[name^="cer_validita"]').value),
+                                note: sanitize(row.querySelector('[name^="cer_note"]').value),
+                            };
+                            if (Object.values(rowData).some(v => (typeof v === 'string' && v.trim() !== '') || (typeof v === 'boolean' && v))) {
+                                newReport.cerData.push(rowData);
+                            }
+                        });
+                    }
                     
                     await App.store.save(newReport);
                     App.ui.showToast('Controllo salvato con successo!', 'success');
@@ -790,7 +889,7 @@
                 const modalHTML = `
                     <div class="modal-box">
                         <h3 class="text-xl font-bold mb-2 text-red-500">Azione Irreversibile</h3>
-                        <p class="text-slate-600 dark:text-slate-300 mb-4">Sei assolutamente sicuro di voler eliminare TUTTI i controlli salvati? Questa azione non può essere annullata.</p>
+                        <p class="text-slate-600 dark:text-slate-300 mb-4">Sei assolutamente sicuro di voler eliminare TUTTI i verbali salvati? Questa azione non può essere annullata.</p>
                         <p class="text-slate-600 dark:text-slate-300 mb-4">Per confermare, digita "<b>ELIMINA</b>" nel campo sottostante.</p>
                         <input type="text" id="delete-confirm-input" class="form-input w-full mb-6" placeholder="ELIMINA">
                         <div class="flex justify-end gap-4">
@@ -845,6 +944,72 @@
                 reader.readAsText(file); 
                 e.target.value = '';
             },
+             attachSopralluogoListeners() {
+                const form = document.getElementById('new-sopralluogo-form'); if (!form) return;
+                form.addEventListener('submit', (e) => this.onSopralluogoSubmit(e));
+                form.addEventListener('click', (e) => { 
+                    if (e.target.closest('.photo-preview-content')) e.target.closest('.photo-uploader').querySelector('.photo-input').click(); 
+                    if (e.target.closest('.remove-photo-btn')) this.onPhotoRemove(e);
+                });
+                form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', (e) => this.onPhotoUpload(e)));
+             },
+             async onSopralluogoSubmit(e) {
+                e.preventDefault();
+                if (App.state.isSaving) return;
+                
+                const form = e.target;
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    App.ui.showToast('Compilare tutti i campi obbligatori evidenziati.', 'error');
+                    return;
+                }
+
+                App.state.isSaving = true;
+                const saveBtn = form.querySelector('button[type="submit"]');
+                if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Salvando...</span>`; }
+                
+                try {
+                    const formData = new FormData(form);
+                    const sanitize = App.ui.sanitize;
+                    const reportId = sanitize(formData.get('id'));
+
+                    const newReport = {
+                        id: reportId,
+                        type: 'sopralluogo',
+                        date: sanitize(formData.get('date')),
+                        wbs: sanitize(formData.get('wbs')),
+                        activities: `Sopralluogo Area: ${sanitize(formData.get('wbs'))}`,
+                        inspector: sanitize(formData.get('inspector')),
+                        notes: sanitize(formData.get('notes')),
+                        weather: App.state.currentWeather,
+                        location: App.state.currentLocation,
+                        photos: []
+                    };
+                    
+                    for(let i = 0; i < 5; i++){
+                        const photoKey = `photo_sopralluogo_${i}`;
+                        const caption = sanitize(formData.get(`caption_${i}`));
+                        if(App.state.tempPhotos[photoKey]){
+                            newReport.photos.push({
+                                src: App.state.tempPhotos[photoKey],
+                                caption: caption
+                            });
+                        }
+                    }
+
+                    await App.store.save(newReport);
+                    App.ui.showToast('Verbale di Sopralluogo salvato!', 'success');
+                    App.state.tempPhotos = {};
+                    await App.ui.showTab('lista-pca');
+
+                } catch (error) {
+                    console.error("Errore durante il salvataggio del sopralluogo:", error);
+                    App.ui.showToast(error.message || 'Si è verificato un errore imprevisto.', 'error');
+                } finally {
+                    App.state.isSaving = false;
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<span>Salva Verbale</span>'; }
+                }
+            }
         },
         
         templates: {
@@ -861,7 +1026,7 @@
                         </li>`).join('')}</ul>`;
                 }
                 const cards = [
-                    { label: 'Controlli Totali', value: stats.totalPca, color: 'blue', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>' },
+                    { label: 'Verbali Totali', value: stats.totalPca, color: 'blue', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>' },
                     { label: 'NC Aperte', value: stats.openNc, color: 'red', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' },
                     { label: 'Check Eseguiti', value: stats.totalChecks, color: 'indigo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>' },
                     { label: 'Conformità Media', value: stats.avgCompliance, color: 'green', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' }
@@ -883,7 +1048,7 @@
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
                     <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                        <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto (Periodici)</h3>
+                        <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto (PCA Periodici)</h3>
                         <div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div>
                     </div>
                     <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
@@ -893,36 +1058,32 @@
                 </div>`;
             },
             pcaGroupedList: (groupedReports, frequencyStatuses) => {
-                const wbsOrder = Object.keys(App.config.WBS_DATA);
-                const sortedWbsKeys = Object.keys(groupedReports).sort((a, b) => {
-                    const indexA = wbsOrder.indexOf(a);
-                    const indexB = wbsOrder.indexOf(b);
-                    if (a === 'Generico') return 1;
-                    if (b === 'Generico') return -1;
-                    return indexA - indexB;
+                const groupOrder = ['Sopralluoghi', 'Ispezioni Specifiche', ...Object.keys(App.config.WBS_DATA)];
+                 const sortedGroupKeys = Object.keys(groupedReports).sort((a, b) => {
+                    return groupOrder.indexOf(a) - groupOrder.indexOf(b);
                 });
 
-                if (sortedWbsKeys.length === 0) {
+                if (sortedGroupKeys.length === 0) {
                     return `<div class="text-center p-8 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                                <h3 class="text-xl font-semibold">Nessun controllo trovato</h3>
-                                <p class="text-slate-500 dark:text-slate-400 mt-2">Inizia compilando il tuo primo verbale dalla sezione "Esegui Controllo".</p>
+                                <h3 class="text-xl font-semibold">Nessun verbale trovato</h3>
+                                <p class="text-slate-500 dark:text-slate-400 mt-2">Inizia compilando il tuo primo verbale da "Nuovo PCA" o "Verbale Sopralluogo".</p>
                             </div>`;
                 }
                 
                 return `<div class="space-y-4">
-                    ${sortedWbsKeys.map(wbsKey => {
-                        const reports = groupedReports[wbsKey] || [];
-                        const wbsInfo = App.config.WBS_DATA[wbsKey] || { descrizione: 'Controlli Generici' };
+                    ${sortedGroupKeys.map(groupKey => {
+                        const group = groupedReports[groupKey];
+                        const reports = group.reports;
                         const reportCount = reports.length;
                         
                         return `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
                             <div class="grouped-pca-header p-4 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700">
                                 <div class="flex items-center gap-4">
-                                    <span class="font-bold text-blue-600 dark:text-blue-400">${wbsKey}</span>
-                                    <h3 class="text-lg font-semibold">${wbsInfo.descrizione}</h3>
+                                    <span class="font-bold text-blue-600 dark:text-blue-400">${groupKey}</span>
+                                    <h3 class="text-lg font-semibold">${group.descrizione}</h3>
                                 </div>
                                 <div class="flex items-center gap-4">
-                                    <span class="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200">${reportCount} ${reportCount === 1 ? 'controllo' : 'controlli'}</span>
+                                    <span class="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200">${reportCount} ${reportCount === 1 ? 'verbale' : 'verbali'}</span>
                                     <svg class="grouped-pca-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
                             </div>
@@ -931,20 +1092,20 @@
                                     <table class="min-w-full bg-transparent text-sm">
                                         <thead class="bg-slate-100 dark:bg-slate-800">
                                             <tr>
-                                                ${['ID','Data','Tipo','Oggetto','Stato Frequenza', 'Prossimo Controllo', 'Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
+                                                ${['ID','Data','Tipo','Oggetto / WBS','Stato Frequenza', 'Prossimo Controllo', 'Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                                             ${reports.map(report => {
                                                 const wbsCode = report.wbs ? report.wbs.substring(0,2).toUpperCase() : null;
                                                 const freqStatus = report.type === 'periodico' && wbsCode ? frequencyStatuses[wbsCode] : null;
-                                                const typeLabels={'periodico':'Periodico','preliminare':'Preliminare','finale':'Finale'};
-                                                const typeColors={'periodico':'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300','preliminare':'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300','finale':'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'};
+                                                const typeLabels={'periodico':'PCA Periodico','preliminare':'PCA Preliminare','finale':'PCA Finale', 'sopralluogo': 'Sopralluogo'};
+                                                const typeColors={'periodico':'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300','preliminare':'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300','finale':'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', 'sopralluogo': 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300'};
                                                 return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                                     <td class="p-3 font-medium">${report.id}</td>
                                                     <td class="p-3 whitespace-nowrap">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td>
                                                     <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${typeColors[report.type] || 'bg-gray-100 text-gray-800'}">${typeLabels[report.type]||'N.D.'}</span></td>
-                                                    <td class="p-3">${report.activities||'N.A.'}</td>
+                                                    <td class="p-3">${report.activities||report.wbs||'N.A.'}</td>
                                                     <td class="p-3">
                                                         ${freqStatus ? `<span class="text-xs font-semibold px-2 py-1 rounded-full ${freqStatus.color}">${freqStatus.text}</span>` : '-'}
                                                     </td>
@@ -953,8 +1114,8 @@
                                                     </td>
                                                     <td class="p-3">
                                                         <div class="flex items-center gap-4">
-                                                            <button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600" title="Stampa"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
-                                                            <button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600" title="Elimina"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                                            <button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600" title="Stampa Verbale"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
+                                                            <button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600" title="Elimina Verbale"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                                                         </div>
                                                     </td>
                                                 </tr>`;
@@ -967,9 +1128,8 @@
                     }).join('')}
                 </div>`;
             },
-            imagePlaceholderIcon: () => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-400 dark:text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>`,
-            photoUpload(templateId) {
-                const key = `photo_${templateId}`;
+            imagePlaceholderIcon: () => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-slate-400 dark:text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>`,
+            photoUpload(key) {
                 return `<div class="photo-uploader">
                     <input type="file" accept="image/*" class="photo-input hidden" data-key="${key}">
                     <div class="photo-preview">
@@ -982,6 +1142,9 @@
             },
             renderChecklist(templates) {
                 return templates.map(t => {
+                    if (t.id === 'pca04') {
+                         return this.renderWasteTable(t);
+                    }
                     const freqInfo = App.config.FREQUENCY_MAP[t.significativita];
                     return `<div id="accordion-${t.id}" class="pca-sheet-accordion bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm">
                         <div class="accordion-header p-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-t-lg">
@@ -995,14 +1158,16 @@
                             <div class="space-y-4">
                                 ${t.items.map((item, idx) => {
                                     const baseName = `check_${t.id}_${idx}`;
+                                    const photoKey = `photo_${t.id}_${idx}`;
                                     return `<div class="check-item-wrapper border-t border-slate-200 dark:border-slate-700 py-4 first:border-t-0 first:pt-0">
-                                        <div class="check-item flex flex-col sm:flex-row justify-between sm:items-start gap-3">
+                                        <div class="check-item flex flex-col sm:flex-row justify-between sm:items-start gap-4">
                                             <label class="mr-4 text-sm flex-1 pt-1">${item}</label>
                                             <div class="flex items-center gap-x-5 text-sm flex-shrink-0">
                                                 <div class="flex items-center"><input id="${baseName}_c" name="${baseName}" type="radio" value="C" class="form-checkbox"><label for="${baseName}_c" class="ml-2 block">Sì</label></div>
                                                 <div class="flex items-center"><input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="form-checkbox"><label for="${baseName}_nc" class="ml-2 block">No</label></div>
                                                 <div class="flex items-center"><input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="form-checkbox" checked><label for="${baseName}_na" class="ml-2 block">N.A.</label></div>
                                             </div>
+                                            ${this.photoUpload(photoKey)}
                                         </div>
                                         <div class="nc-observation-wrapper conditional-section mt-3 pl-4 border-l-2 border-red-500">
                                             <label for="nc_observation_${t.id}_${idx}" class="form-label text-red-700 dark:text-red-400">Dettaglio Non Conformità / Azione Correttiva</label>
@@ -1012,24 +1177,76 @@
                                 }).join('')}
                             </div>
                             <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-                                <label class="text-sm font-medium mb-2 block">Osservazioni Generali e Rilievo Fotografico</label>
-                                <div class="flex flex-col md:flex-row gap-6">
-                                    <div class="flex-grow">
-                                        <textarea name="observation_${t.id}" class="form-textarea" rows="4" placeholder="Inserire qui eventuali osservazioni generali relative a questa checklist..."></textarea>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        ${this.photoUpload(t.id)}
-                                    </div>
-                                </div>
+                                <label for="observation_${t.id}" class="text-sm font-medium mb-2 block">Osservazioni Generali</label>
+                                <textarea id="observation_${t.id}" name="observation_${t.id}" class="form-textarea" rows="3" placeholder="Inserire qui eventuali osservazioni generali relative a questa checklist..."></textarea>
                             </div>
                         </div>
                     </div>` 
                 }).join('');
             },
+            renderWasteTable(template) {
+                const freqInfo = App.config.FREQUENCY_MAP[template.significativita];
+                return `<div id="accordion-${template.id}" class="pca-sheet-accordion bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm">
+                    <div class="accordion-header p-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-t-lg">
+                        <div>
+                            <h3 class="text-lg font-semibold flex items-center gap-3">${template.icon} ${template.title}</h3>
+                            ${freqInfo ? `<span class="text-sm font-semibold mt-1 px-2.5 py-1 rounded-full ${freqInfo.color}">${freqInfo.text}</span>` : ''}
+                        </div>
+                        <svg class="accordion-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="accordion-content p-4">
+                        <div class="cer-table-wrapper">
+                             <table class="cer-table w-full border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-100 dark:bg-slate-700">
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">CER/Produttore</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">Ubicazione</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">In Caratterizz. (Verbale N./Del)</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">Rapp. Prova (N./Del)</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">Ident.</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">Delim.</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">In Prod.</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">In Carico</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">Validità RDP</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">Note/Miglioramento</th>
+                                        <th class="p-2 border dark:border-slate-600 font-semibold"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cer-table-rows" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                </tbody>
+                             </table>
+                        </div>
+                        <button type="button" id="add-cer-row-btn" class="mt-4 px-3 py-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded-md text-sm font-semibold hover:bg-blue-200 dark:hover:bg-blue-900">+ Aggiungi Riga Rifiuto</button>
+                         <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <label for="observation_${template.id}" class="text-sm font-medium mb-2 block">Note Rilevate e NC Generali</label>
+                            <textarea id="observation_${template.id}" name="observation_${template.id}" class="form-textarea" rows="3" placeholder="Inserire qui eventuali note o non conformità generali relative alla gestione rifiuti..."></textarea>
+                        </div>
+                    </div>
+                </div>`;
+            },
+            wasteTableRow(index) {
+                return `
+                    <td class="p-1 border dark:border-slate-600"><input type="text" name="cer_produttore_${index}" class="form-input p-1 text-xs"></td>
+                    <td class="p-1 border dark:border-slate-600"><input type="text" name="cer_ubicazione_${index}" class="form-input p-1 text-xs"></td>
+                    <td class="p-1 border dark:border-slate-600"><div class="flex gap-1"><input type="text" name="cer_verbaleN_${index}" placeholder="N." class="form-input p-1 text-xs w-1/2"><input type="date" name="cer_verbaleDel_${index}" class="form-input p-1 text-xs w-1/2"></div></td>
+                    <td class="p-1 border dark:border-slate-600"><div class="flex gap-1"><input type="text" name="cer_provaN_${index}" placeholder="N." class="form-input p-1 text-xs w-1/2"><input type="date" name="cer_provaDel_${index}" class="form-input p-1 text-xs w-1/2"></div></td>
+                    <td class="p-1 border dark:border-slate-600 text-center"><select name="cer_identificato_${index}" class="form-select p-1 text-xs"><option value="si">Sì</option><option value="no" selected>No</option></select></td>
+                    <td class="p-1 border dark:border-slate-600 text-center"><select name="cer_delimitato_${index}" class="form-select p-1 text-xs"><option value="si">Sì</option><option value="no" selected>No</option></select></td>
+                    <td class="p-1 border dark:border-slate-600 text-center"><input type="checkbox" name="cer_produzione_${index}" class="form-checkbox h-4 w-4 mx-auto block"></td>
+                    <td class="p-1 border dark:border-slate-600 text-center"><input type="checkbox" name="cer_carico_${index}" class="form-checkbox h-4 w-4 mx-auto block"></td>
+                    <td class="p-1 border dark:border-slate-600 text-center"><select name="cer_validita_${index}" class="form-select p-1 text-xs"><option value="si">Sì</option><option value="no" selected>No</option></select></td>
+                    <td class="p-1 border dark:border-slate-600"><input type="text" name="cer_note_${index}" class="form-input p-1 text-xs"></td>
+                    <td class="p-1 border dark:border-slate-600 text-center">
+                        <button type="button" class="cer-delete-row-btn text-red-500 hover:text-red-700 p-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </td>
+                `;
+            },
             newPcaForm({ nextId, today }) {
                 return `<form id="new-pca-form" novalidate class="space-y-8">
                     <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali</h2>
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali PCA</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
                             <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
@@ -1064,6 +1281,55 @@
                     </div>
                 </form>`;
             },
+            newSopralluogoForm({ nextId, today }) {
+                 const location = App.state.currentLocation;
+                 const weather = App.state.currentWeather;
+                 const temp = weather ? `${weather.temperature_2m}°C` : 'N.D.';
+                 const geo = location ? `${location.latitude}, ${location.longitude}`: 'Non disponibile';
+                
+                let photoUploadersHTML = '';
+                for (let i = 0; i < 5; i++) {
+                     const photoKey = `photo_sopralluogo_${i}`;
+                     photoUploadersHTML += `<div class="flex-shrink-0">
+                        <label class="form-label">Foto ${i+1}</label>
+                        ${this.photoUpload(photoKey)}
+                        <input type="text" name="caption_${i}" class="form-input p-1 text-xs mt-1" placeholder="Didascalia...">
+                     </div>`;
+                }
+
+                return `<form id="new-sopralluogo-form" novalidate class="space-y-8">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali Verbale di Sopralluogo</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div><label for="sopralluogo-id" class="form-label">Verbale N°</label><input type="text" id="sopralluogo-id" name="id" class="form-input bg-slate-100 dark:bg-slate-700" value="${nextId}" required readonly></div>
+                            <div><label for="sopralluogo-date" class="form-label">Data</label><input type="date" id="sopralluogo-date" name="date" value="${today}" class="form-input" required></div>
+                             <div><label for="sopralluogo-inspector" class="form-label">Compilatore</label><input type="text" id="sopralluogo-inspector" name="inspector" class="form-input" placeholder="Nome e Funzione" required></div>
+                            <div><label for="sopralluogo-wbs" class="form-label">WBS / Area di Riferimento</label><input type="text" id="sopralluogo-wbs" name="wbs" class="form-input" placeholder="Es. GA03, Campo Base..." required></div>
+                            <div><label class="form-label">Geolocalizzazione (Lat, Lon)</label><input type="text" class="form-input bg-slate-100 dark:bg-slate-700" value="${geo}" readonly></div>
+                            <div><label class="form-label">Temperatura</label><input type="text" class="form-input bg-slate-100 dark:bg-slate-700" value="${temp}" readonly></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Annotazioni e Note</h2>
+                        <textarea id="sopralluogo-notes" name="notes" class="form-textarea" rows="10" placeholder="Inserire qui tutte le annotazioni, osservazioni e note rilevate durante il sopralluogo..."></textarea>
+                    </div>
+
+                     <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">3. Rilievi Fotografici</h2>
+                        <div class="flex gap-4 overflow-x-auto py-2">
+                           ${photoUploadersHTML}
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" onclick="App.ui.showTab('lista-pca')" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button>
+                        <button type="submit" class="px-6 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 font-semibold flex items-center justify-center">
+                            <span>Salva Verbale</span>
+                        </button>
+                    </div>
+                </form>`
+            },
             settings: () => `<div class="space-y-8 max-w-2xl">
                 <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
                     <h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2>
@@ -1083,24 +1349,23 @@
             printReport(report, templates) {
                 const chrysasLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp';
                 const rtiLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp';
-                const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
+                const typeLabels = { 'periodico': 'Piano di Controllo Ambientale', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
                 
                 const weatherHTML = report.weather ? `
                     <div class="no-break" style="margin-bottom: 1.5rem;">
-                        <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 4px;">Condizioni Meteo al Momento del Controllo</h3>
+                        <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 4px;">Condizioni al Momento del Controllo</h3>
                         <table style="font-size: 9pt; width: 100%;">
                             <tr>
-                                <td style="padding: 2px 5px;"><strong>Condizione:</strong> ${App.config.WEATHER_CODE_MAP[report.weather.weather_code]?.text || 'N/D'}</td>
+                                <td style="padding: 2px 5px;"><strong>Meteo:</strong> ${App.config.WEATHER_CODE_MAP[report.weather.weather_code]?.text || 'N/D'}</td>
                                 <td style="padding: 2px 5px;"><strong>Temperatura:</strong> ${report.weather.temperature_2m}°C</td>
-                                <td style="padding: 2px 5px;"><strong>Precipitazioni:</strong> ${report.weather.precipitation} mm</td>
-                                <td style="padding: 2px 5px;"><strong>Vento:</strong> ${report.weather.wind_speed_10m} km/h</td>
+                                ${report.location ? `<td style="padding: 2px 5px;"><strong>Geoloc:</strong> ${report.location.latitude}, ${report.location.longitude}</td>` : ''}
                             </tr>
                         </table>
                     </div>` : '';
 
                 const reportBody = `
                     <div id="print-content">
-                        <h1 style="text-align: center; font-size: 1.8rem; margin: 0; font-weight: bold; color: var(--print-text-primary);">PIANO DI CONTROLLO AMBIENTALE</h1>
+                        <h1 style="text-align: center; font-size: 1.8rem; margin: 0; font-weight: bold; color: var(--print-text-primary);">${typeLabels[report.type]}</h1>
                         <h2 style="text-align: center; font-size: 1.2rem; margin-bottom: 2rem; color: var(--print-text-secondary);">Verbale di Controllo N° ${report.id}</h2>
                         
                         <table class="no-break" style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 10pt;">
@@ -1110,10 +1375,6 @@
                                     <td style="padding: 8px; border: 1px solid var(--print-border-color); width: 25%;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td>
                                     <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg); width: 25%;">WBS/Area</td>
                                     <td style="padding: 8px; border: 1px solid var(--print-border-color); width: 25%;">${report.wbs || 'N.A.'}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Tipo Verbale</td>
-                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${typeLabels[report.type] || 'N.D.'}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Lavorazione/Oggetto</td>
@@ -1129,38 +1390,73 @@
                         ${weatherHTML}
                         
                         ${templates.map(t => {
-                            const checks = report.checks ? report.checks[t.id] : null;
-                            if (!checks) return '';
-                            const observationsText = report.observations ? (report.observations[t.id] || '') : '';
-                            const photoSrc = report.photos?.[t.id]?.['general'];
-
-                            const photoHtml = photoSrc ? `
-                            <div class="no-break" style="margin-top: 1rem;">
-                                <h4 style="font-weight: bold; font-size: 10pt; margin-bottom: 6px;">Rilievo Fotografico Generale:</h4>
-                                <img src="${photoSrc}" style="max-width: 400px; max-height: 300px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata">
-                            </div>` : '';
-
-                            return `<div class="no-break" style="margin-bottom: 2rem;">
-                                <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem; color: var(--print-text-primary);">
-                                    <span style="font-size: 1.5rem; vertical-align: -0.2em; margin-right: 0.5rem;">${t.icon}</span>${t.title}
-                                </h2>
-                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;"><tbody>
+                            let contentHtml = '';
+                             if (t.id === 'pca04') {
+                                // RENDER WASTE TABLE
+                                if(report.cerData && report.cerData.length > 0){
+                                    contentHtml += `<h3 class="no-break" style="font-weight:bold; font-size: 10pt; margin: 1rem 0 0.5rem 0;">Dettaglio Controllo Rifiuti</h3>
+                                    <table class="no-break" style="width:100%; font-size: 7pt; border-collapse:collapse;">
+                                        <thead><tr style="background-color:var(--print-header-bg);">
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px; text-align: left;">CER/Prod.</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px; text-align: left;">Ubic.</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px; text-align: left;">In Caratt. (N./Del)</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px; text-align: left;">R. Prova (N./Del)</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px;">Ident.</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px;">Delim.</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px;">Prod.</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px;">Carico</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px;">Val. RDP</th>
+                                            <th style="border:1px solid var(--print-border-color); padding: 4px; text-align: left;">Note</th>
+                                        </tr></thead><tbody>`;
+                                    report.cerData.forEach(row => {
+                                        contentHtml += `<tr>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px;">${row.cer || ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px;">${row.ubicazione || ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px;">${row.verbaleN || ''} ${row.verbaleDel ? 'del ' + new Date(row.verbaleDel + 'T00:00:00').toLocaleDateString('it-IT') : ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px;">${row.provaN || ''} ${row.provaDel ? 'del ' + new Date(row.provaDel + 'T00:00:00').toLocaleDateString('it-IT') : ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px; text-align:center;">${row.identificato || ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px; text-align:center;">${row.delimitato || ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px; text-align:center;">${row.produzione ? '✓' : ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px; text-align:center;">${row.carico ? '✓' : ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px; text-align:center;">${row.validita || ''}</td>
+                                            <td style="border:1px solid var(--print-border-color); padding: 4px;">${row.note || ''}</td>
+                                        </tr>`;
+                                    });
+                                    contentHtml += '</tbody></table>';
+                                }
+                            } else {
+                                const checks = report.checks ? report.checks[t.id] : null;
+                                if (!checks) return '';
+                                contentHtml += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;"><tbody>
                                 ${checks.map((check, idx) => {
                                     const ncObservationHtml = check.nc_observation ? 
                                     `<div style="font-size: 9pt; margin: 6px 0 6px 20px; padding: 8px; background-color: #FFF0F0; border-left: 2px solid #D32F2F; color: #333;">
                                         <strong>Nota NC:</strong> ${check.nc_observation}
                                     </div>` : '';
-                                    
+                                    const photoSrc = report.photos?.[t.id]?.[idx];
+                                    const photoHtml = photoSrc ? `<div style="margin-top: 8px; margin-left: 20px;"><img src="${photoSrc}" style="max-width: 200px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata"></div>` : '';
+
                                     return `<tr style="border-bottom: 1px solid #eee;">
                                         <td style="padding: 8px 0; vertical-align: top; color: var(--print-text-secondary);">
                                             ${check.item}
                                             ${ncObservationHtml}
+                                            ${photoHtml}
                                         </td>
                                         <td style="padding: 8px 0; text-align: right; font-weight: bold; width: 80px; vertical-align: top; color: ${check.result==='NC'?'#D32F2F':'var(--print-text-primary)'};">${check.result || 'N.D.'}</td>
                                     </tr>`
                                 }).join('')}
-                                </tbody></table>
-                                ${(observationsText.trim() !== '' || photoHtml) ? `<div class="no-break" style="background-color: #f8f8f8; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 1rem;"><h3 style="font-weight: bold; margin-bottom: 0.5rem; font-size: 11pt;">Osservazioni e Allegati</h3>${observationsText ? `<p style="font-size: 10pt; white-space: pre-wrap; margin: 0;">${observationsText}</p>` : ''}${photoHtml}</div>` : ''}
+                                </tbody></table>`;
+                            }
+                            
+                            const observationsText = report.observations ? (report.observations[t.id] || '') : '';
+                            const observationsHtml = observationsText.trim() !== '' ? `<div class="no-break" style="background-color: #f8f8f8; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 1rem;"><h3 style="font-weight: bold; margin-bottom: 0.5rem; font-size: 11pt;">Note e Osservazioni Generali</h3><p style="font-size: 10pt; white-space: pre-wrap; margin: 0;">${observationsText}</p></div>` : '';
+
+                            return `<div class="no-break" style="margin-bottom: 2rem;">
+                                <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem; color: var(--print-text-primary);">
+                                    <span style="font-size: 1.5rem; vertical-align: -0.2em; margin-right: 0.5rem;">${t.icon}</span>${t.title}
+                                </h2>
+                                ${contentHtml}
+                                ${observationsHtml}
                             </div>`;
                         }).join('')}
                     </div>`;
@@ -1192,7 +1488,101 @@
                     .page-number::after { content: counter(page); }
                     .total-pages::after { content: counter(pages); }
                 </style>`;
-            }
+            },
+             printSopralluogo(report) {
+                const chrysasLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp';
+                const rtiLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp';
+
+                 const weatherHTML = report.weather ? `
+                    <div class="no-break" style="margin-bottom: 1rem;">
+                        <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 4px;">Condizioni Rilevate</h3>
+                        <table style="font-size: 9pt; width: 100%;">
+                            <tr>
+                                <td style="padding: 2px 5px;"><strong>Meteo:</strong> ${App.config.WEATHER_CODE_MAP[report.weather.weather_code]?.text || 'N/D'}</td>
+                                <td style="padding: 2px 5px;"><strong>Temperatura:</strong> ${report.weather.temperature_2m}°C</td>
+                                ${report.location ? `<td style="padding: 2px 5px;"><strong>Geoloc:</strong> ${report.location.latitude}, ${report.location.longitude}</td>` : ''}
+                            </tr>
+                        </table>
+                    </div>` : '';
+                
+                const photosHTML = report.photos && report.photos.length > 0 ? `
+                    <div class="page-break" style="margin-top: 1.5rem;">
+                         <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem;">Allegati Fotografici</h2>
+                         <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                            ${report.photos.map(p => `
+                                <div class="no-break" style="width: calc(50% - 0.5rem); margin-bottom: 1rem;">
+                                    <img src="${p.src}" style="width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+                                    <p style="font-size: 9pt; text-align: center; margin-top: 0.5rem; background-color: #f8f8f8; padding: 4px;">${p.caption || 'Nessuna didascalia'}</p>
+                                </div>
+                            `).join('')}
+                         </div>
+                    </div>
+                ` : '';
+
+                const reportBody = `
+                    <div>
+                        <h1 style="text-align: center; font-size: 1.8rem; margin: 0; font-weight: bold;">VERBALE DI SOPRALLUOGO</h1>
+                        <h2 style="text-align: center; font-size: 1.2rem; margin-bottom: 2rem; color: var(--print-text-secondary);">Verbale N° ${report.id}</h2>
+
+                        <table class="no-break" style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 10pt;">
+                             <tbody>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg); width: 25%;">Data</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); width: 75%;" colspan="3">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Compilato da</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${report.inspector || 'N.D.'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">WBS / Area</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${report.wbs || 'N.A.'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        ${weatherHTML}
+
+                        <div class="no-break" style="margin-top: 1.5rem;">
+                            <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem;">Annotazioni e Note Rilevate</h2>
+                            <p style="font-size: 10pt; white-space: pre-wrap;">${report.notes || 'Nessuna annotazione.'}</p>
+                        </div>
+                        
+                        <div style="margin-top: 4rem; padding-top: 1rem; border-top: 1px solid #ccc;">
+                           <p style="font-size: 10pt;">Firma del compilatore</p>
+                        </div>
+                    </div>
+                `;
+
+                 return `<div id="print-area">
+                    <header class="print-header">
+                        <table style="width:100%; border-bottom: 2px solid var(--print-text-primary);">
+                            <tr>
+                                <td style="width:50%; text-align:left; vertical-align:middle; padding-bottom: 10px;">
+                                    <img src="${chrysasLogoUrl}" alt="Logo CHRYSAS" style="height: 40px;">
+                                </td>
+                                <td style="width:50%; text-align:right; vertical-align:middle; padding-bottom: 10px;">
+                                    <img src="${rtiLogoUrl}" alt="Logo RTI" style="height: 50px;">
+                                </td>
+                            </tr>
+                        </table>
+                    </header>
+                    
+                    ${reportBody}
+                    ${photosHTML}
+                    
+                    <footer class="print-footer">
+                       <div style="text-align: center; font-size: 8pt; color: #888; border-top: 1px solid #ccc; padding-top: 5px;">
+                            Verbale di Sopralluogo N° ${report.id} | Data: ${new Date().toLocaleDateString('it-IT')} | Pagina <span class="page-number"></span> di <span class="total-pages"></span>
+                       </div>
+                    </footer>
+                </div>
+                <style>
+                    #print-area { counter-reset: page; }
+                    .page-number::after { content: counter(page); }
+                    .total-pages::after { content: counter(pages); }
+                </style>`;
+             }
         }
     };
 
