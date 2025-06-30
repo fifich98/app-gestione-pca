@@ -2,12 +2,18 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { AISuggestion } from '../types';
 
-// The API key is expected to be set in the environment variables.
-if (!process.env.API_KEY) {
-    console.error("API_KEY environment variable not set. The AI features will not work.");
-}
+let ai: GoogleGenAI | null = null;
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+function getClient(): GoogleGenAI | null {
+    if (ai) {
+        return ai;
+    }
+    if (process.env.API_KEY) {
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        return ai;
+    }
+    return null;
+}
 
 interface AnalysisContext {
     wbsInfo: string;
@@ -18,7 +24,8 @@ interface AnalysisContext {
 }
 
 export const analyzeNonConformity = async (context: AnalysisContext): Promise<AISuggestion> => {
-    if (!process.env.API_KEY) {
+    const client = getClient();
+    if (!client) {
         throw new Error("La chiave API di Google non è configurata.");
     }
     
@@ -49,7 +56,7 @@ La struttura del JSON deve essere la seguente:
 `;
 
     try {
-        const response: GenerateContentResponse = await ai.models.generateContent({
+        const response: GenerateContentResponse = await client.models.generateContent({
             model: "gemini-2.5-flash-preview-04-17",
             contents: prompt,
             config: {
@@ -75,8 +82,8 @@ La struttura del JSON deve essere la seguente:
 
     } catch (error) {
         console.error("Errore durante la chiamata all'API Gemini:", error);
-        if (error instanceof Error && error.message.includes('API key not valid')) {
-             throw new Error("Chiave API non valida. Controlla la configurazione.");
+        if (error instanceof Error && (error.message.includes('API key not valid') || error.message.includes('permission'))) {
+             throw new Error("Chiave API non valida o non abilitata. Controlla le impostazioni.");
         }
         throw new Error("Impossibile ottenere suggerimenti dall'AI in questo momento.");
     }

@@ -67,6 +67,7 @@ interface ChecklistProps {
     handlePhotoUpload: (key: string, dataUrl: string) => void;
     handlePhotoRemove: (key: string) => void;
     // AI props
+    isAiAvailable: boolean;
     onAnalyze: (template: CheckItemTemplate, item: string, idx: number) => void;
     aiSuggestions: Record<string, AISuggestion | null>;
     aiLoading: Record<string, boolean>;
@@ -74,7 +75,7 @@ interface ChecklistProps {
     onUseSuggestion: (templateId: string, itemIdx: number, type: 'description' | 'action', content: string) => void;
 }
 
-const ChecklistAccordion: React.FC<ChecklistProps> = ({ template, formState, handleInputChange, handleRadioChange, photos, handlePhotoUpload, handlePhotoRemove, onAnalyze, aiSuggestions, aiLoading, aiError, onUseSuggestion }) => {
+const ChecklistAccordion: React.FC<ChecklistProps> = ({ template, formState, handleInputChange, handleRadioChange, photos, handlePhotoUpload, handlePhotoRemove, isAiAvailable, onAnalyze, aiSuggestions, aiLoading, aiError, onUseSuggestion }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -112,7 +113,7 @@ const ChecklistAccordion: React.FC<ChecklistProps> = ({ template, formState, han
                                             <textarea id={ncObservationName} name={ncObservationName} onChange={handleInputChange} value={formState[ncObservationName] || ''} className="mt-1 form-textarea block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm" rows={3} placeholder="Descrivere il problema o usare l'AI..."></textarea>
                                         </div>
                                         <div className="mt-2">
-                                            <button type="button" onClick={() => onAnalyze(template, item, idx)} disabled={isAiLoading} className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <button type="button" onClick={() => onAnalyze(template, item, idx)} disabled={isAiLoading || !isAiAvailable} title={!isAiAvailable ? "Funzionalità AI non disponibile: imposta la chiave API di Google." : "Analizza con AI"} className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                                 {isAiLoading 
                                                     ? <><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analizzando...</> 
                                                     : <><SparkleIcon className="w-4 h-4 mr-2" /> Analizza con AI</>
@@ -172,6 +173,7 @@ export default function NewPcaForm({ onSave, onCancel, showToast }: { onSave: (r
     const [aiSuggestions, setAiSuggestions] = useState<Record<string, AISuggestion | null>>({});
     const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
     const [aiError, setAiError] = useState<Record<string, string | null>>({});
+    const isAiAvailable = useMemo(() => !!process.env.API_KEY, []);
 
 
     useEffect(() => {
@@ -365,7 +367,7 @@ export default function NewPcaForm({ onSave, onCancel, showToast }: { onSave: (r
                 <h2 className="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2>
                 <div className="space-y-4">
                     {visibleChecklists.length > 0 ? visibleChecklists.map(template => (
-                         <ChecklistAccordion key={template.id} template={template} formState={formState} handleInputChange={handleInputChange} handleRadioChange={handleRadioChange} photos={photos} handlePhotoUpload={handlePhotoUpload} handlePhotoRemove={handlePhotoRemove} onAnalyze={handleAiAnalysis} aiSuggestions={aiSuggestions} aiLoading={aiLoading} aiError={aiError} onUseSuggestion={handleUseSuggestion} />
+                         <ChecklistAccordion key={template.id} template={template} formState={formState} handleInputChange={handleInputChange} handleRadioChange={handleRadioChange} photos={photos} handlePhotoUpload={handlePhotoUpload} handlePhotoRemove={handlePhotoRemove} isAiAvailable={isAiAvailable} onAnalyze={handleAiAnalysis} aiSuggestions={aiSuggestions} aiLoading={aiLoading} aiError={aiError} onUseSuggestion={handleUseSuggestion} />
                     )) : (
                         <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-lg text-slate-500">
                            {formState.type === 'periodico' ? 'Inserisci un codice WBS valido per caricare le checklist.' : 'Checklist caricate per il tipo di controllo.'}

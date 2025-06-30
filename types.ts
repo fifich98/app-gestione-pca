@@ -58,6 +58,8 @@ export interface ModalConfig {
     cancelText?: string;
     confirmColor?: string;
     onClose: (result: boolean) => void;
+    needsConfirmation?: boolean;
+    confirmationText?: string;
 }
 
 export interface FrequencyStatus {
