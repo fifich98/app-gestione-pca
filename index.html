@@ -1,58 +1,1245 @@
-
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>App Gestione PCA - CHRYSAS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net/npm/chart.js https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' https: data:;
+        connect-src 'self' https://api.open-meteo.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'none';
+    ">
+    <title>App Gestione PCA - CHRYSAS (Versione Migliorata)</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js" defer></script>
+    
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        :root {
+            --print-header-bg: #f2f2f2;
+            --print-border-color: #bbb;
+            --print-text-primary: #000;
+            --print-text-secondary: #333;
         }
-        .recharts-responsive-container {
-            min-height: 384px; /* 96 * 4px */
+
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .dark body { background-color: #0f172a; }
+
+        #sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 16rem; transition: transform 0.3s ease-in-out; will-change: transform; z-index: 1000; }
+        #main-container { transition: padding-left 0.3s ease-in-out; }
+
+        @media (max-width: 1023px) {
+            #sidebar { transform: translateX(-100%); }
+            .sidebar-open #sidebar { transform: translateX(0); }
+            #main-container { padding-left: 0; }
+            .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+            .sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
         }
+        @media (min-width: 1024px) {
+            #sidebar { transform: translateX(0); }
+            #main-container { padding-left: 16rem; }
+            .sidebar-collapsed #sidebar { transform: translateX(-100%); }
+            .sidebar-collapsed #main-container { padding-left: 0; }
+            .sidebar-overlay { display: none; }
+        }
+
+        .sidebar-link { transition: background-color 0.2s, color 0.2s; }
+        .sidebar-link.active { @apply bg-blue-600 text-white font-semibold; }
+        
+        .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s, transform 0.3s; z-index: 1050; }
+        .toast.show { opacity: 1; bottom: 40px; transform: translateX(-50%) scale(1); }
+        button, .sidebar-link, .dashboard-card { transition: all 0.2s ease-in-out; }
+        button:hover:not(:disabled), .sidebar-link:hover, .dashboard-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px -1px rgb(0 0 0 / 0.1), 0 2px 6px -2px rgb(0 0 0 / 0.1); }
+        button:active:not(:disabled) { transform: translateY(0px); box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .content-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1040; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+        .modal-box { background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-overlay.visible .modal-box { transform: scale(1); }
+        .dark .modal-box { background-color: #1e293b; }
+
+        #weather-widget { display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; color: #475569; }
+        .dark #weather-widget { color: #cbd5e1; }
+        #weather-widget .loader, .photo-preview .loader { width: 1.25rem; height: 1.25rem; border: 2px solid #e2e8f0; border-top-color: #64748b; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .accordion-header, .grouped-pca-header { cursor: pointer; transition: background-color 0.2s; }
+        .accordion-content, .grouped-pca-content, .conditional-section { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out, margin 0.4s ease-in-out, opacity 0.3s; opacity: 0; }
+        .accordion-content.open, .grouped-pca-content.open, .conditional-section.visible { max-height: 5000px; opacity: 1; }
+        .accordion-icon, .grouped-pca-icon { transition: transform 0.3s; }
+        .accordion-header.open .accordion-icon, .grouped-pca-header.open .grouped-pca-icon { transform: rotate(180deg); }
+        .grouped-pca-content.open { margin-top: 0.5rem; }
+
+        .form-label { font-size: 0.875rem; font-weight: 500; color: #475569; }
+        .dark .form-label { color: #d1d5db; }
+        .form-input, .form-select, .form-textarea { margin-top: 0.25rem; display: block; width: 100%; border-radius: 0.375rem; background-color: #ffffff; font-size: 0.875rem; border: 2px solid #cbd5e1; transition: border-color 0.2s, box-shadow 0.2s; padding: 0.5rem 0.75rem; }
+        .dark .form-input, .dark .form-select, .dark .form-textarea { background-color: #1f2937; border-color: #4b5563; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: 2px solid transparent; outline-offset: 2px; box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); border-color: #3b82f6; }
+        .form-input:invalid, .form-select:invalid, .form-textarea:invalid { border-color: #ef4444 !important; }
+        .form-checkbox { height: 1rem; width: 1rem; border-radius: 0.25rem; border-color: #d1d5db; color: #3b82f6; }
+        .dark .form-checkbox { border-color: #4b5563; }
+        .form-checkbox:focus { box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); }
+        
+        .hidden { display: none; }
+        
+        .photo-uploader { position: relative; width: 8rem; height: 8rem; }
+        .photo-preview { width: 100%; height: 100%; background-color: #f3f4f6; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #d1d5db; cursor: pointer; transition: border-color 0.2s; }
+        .dark .photo-preview { background-color: #374151; border-color: #4b5563; }
+        .photo-preview:hover { border-color: #3b82f6; }
+        .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .remove-photo-btn { position: absolute; top: -0.5rem; right: -0.5rem; background-color: #ef4444; color: white; border-radius: 9999px; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s; }
+        .remove-photo-btn:hover { transform: scale(1.1); }
+
         @media print {
-            body > *:not(#print-area-wrapper) {
-                display: none !important;
-            }
-            #print-area-wrapper, #print-area-wrapper > div {
-                display: block !important;
-            }
+            body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+            body > *:not(#print-area-wrapper) { display: none !important; }
+            #print-area-wrapper { display: block !important; }
             @page {
                 size: A4;
                 margin: 2.5cm 1.5cm;
+                @top-center { content: element(header); }
+                @bottom-center { content: element(footer); }
             }
-            .page-break {
-                page-break-after: always;
-            }
-            .no-break {
-                page-break-inside: avoid;
-            }
+            header.print-header { position: running(header); }
+            footer.print-footer { position: running(footer); }
+            .page-break { page-break-after: always; }
+            .no-break { page-break-inside: avoid; }
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "idb-keyval": "https://esm.sh/idb-keyval@^6.2.2",
-    "recharts": "https://esm.sh/recharts@^3.0.2",
-    "@google/genai": "https://esm.sh/@google/genai"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
+    
+    <script id="app-script" defer>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("ERRORE GLOBALE NON GESTITO:", { message, source, lineno, colno, error });
+        try {
+            App.ui?.showToast('Si è verificato un errore inatteso. L\'app continuerà a funzionare.', 'error');
+        } catch(e) {
+            const toast = document.getElementById('toast');
+            if(toast) {
+                toast.textContent = 'Errore critico. Ricaricare la pagina.';
+                toast.className = 'toast px-6 py-3 rounded-lg text-white font-medium shadow-lg bg-red-600 show';
+            }
+        }
+        return true; 
+    };
+    
+    document.addEventListener('DOMContentLoaded', () => {
+
+    const App = {
+        config: {
+            STORAGE_KEY: 'pca_app_data_idb_v15',
+            TABS: [
+                { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
+                { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
+                { id: 'nuovo-pca', label: 'Esegui Controllo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
+                { id: 'impostazioni', label: 'Impostazioni', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' }
+            ],
+            WBS_DATA: { 'GA': { descrizione: 'Gallerie Artificiali', lavorazioni: ['Scavo di sbancamento', 'Posa armature e getti CLS', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti'] }, 'GN': { descrizione: 'Gallerie Naturali', lavorazioni: ['Scavo in naturale', 'Consolidamenti (spritz-beton, centine)', 'Rivestimenti e impermeabilizzazioni'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti', 'Vibrazioni'] }, 'AS': { descrizione: 'Aree di Stoccaggio', lavorazioni: ['Scavi e rivestimenti', 'Opere di sostegno e drenaggi'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Consumi'] }, 'TR': { descrizione: 'Trincee', lavorazioni: ['Scavi di trincea', 'Opere di sostegno (pali, diaframmi)', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Beni Culturali'] }, 'RI': { descrizione: 'Rilevati', lavorazioni: ['Formazione corpo del rilevato', 'Opere di sostegno', 'Sistemazioni idrauliche'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'VI': { descrizione: 'Viadotti', lavorazioni: ['Pali di fondazione e fondazioni', 'Elevazione pile e spalle', 'Varo impalcato e soletta'], aspetti: ['Rumore', 'Vibrazioni', 'Rifiuti', 'Sostanze Pericolose'] }, 'CB': { descrizione: 'Campo Base', lavorazioni: ['Installazione e gestione uffici/dormitori/mensa', 'Manutenzione aree e servizi'], aspetti: ['Acque', 'Rifiuti', 'Rumore', 'Consumi'] }, 'CO': { descrizione: 'Cantiere Operativo', lavorazioni: ['Allestimento aree stoccaggio', 'Gestione impianto di betonaggio', 'Officina e manutenzione mezzi'], aspetti: ['Polveri', 'Rumore', 'Acque', 'Rifiuti', 'Sostanze Pericolose'] }, 'NV': { descrizione: 'Nuova Viabilità', lavorazioni: ['Scavi e rilevati per nuova viabilità', 'Formazione sottofondi e pavimentazioni', 'Opere idrauliche e finiture'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'FA': { descrizione: 'Fabbricati', lavorazioni: ['Scavi e fondazioni', 'Elevazione strutture', 'Finiture e impianti'], aspetti: ['Polveri', 'Rumore', 'Rifiuti', 'Consumi'] } },
+            CHECK_TEMPLATES_PERIODIC: [ { id: "pca01", title: "PCA 01: Scarichi Idrici ed Approvvigionamento", icon: "💧", significativita: "ALTA", items: ["Autorizzazione allo scarico acque reflue domestiche presente e valida?", "Autorizzazione allo scarico acque reflue industriali presente e valida?", "Rispetto delle prescrizioni contenute nelle autorizzazioni?", "Corretta gestione acque di lavorazione (es. scavo pali)?", "Kit di emergenza anti-sversamento presente e completo?", "Manutenzione impianti di depurazione/trattamento registrata?"] }, { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] }, { id: "pca03", title: "PCA 03: Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Autorizzazioni per impianti (es. calcestruzzo) presenti e valide?", "Copertura mezzi per trasporto materiali polverulenti?", "Bagnatura piste e/o cumuli eseguita regolarmente?", "Velocità dei mezzi in cantiere limitata a 30 km/h?", "Impianto lavaruote funzionante ed utilizzato?"] }, { id: "pca04", title: "PCA 04: Rifiuti", icon: "🗑️", significativita: "ALTA", items: ["Deposito temporaneo (DTR) ordinato e pulito?", "Rifiuti separati per CER e con corretta cartellonistica?", "Stoccaggio rifiuti pericolosi conforme (aree, bacini)?", "Registro di carico/scarico aggiornato (entro 10gg)?", "Quarta copia FIR ricevuta entro 90 giorni?"] }, { id: "pca05", title: "PCA 05: Sostanze Pericolose ed Emergenze", icon: "☣️", significativita: "MEDIA", items: ["Schede di Sicurezza (SDS) disponibili e aggiornate?", "Stoccaggio sostanze su bacini di contenimento idonei?", "Aree di stoccaggio segnalate e adeguate?", "Personale formato per la gestione delle emergenze?"] }, { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?", "Eseguita misurazione fonometrica periodica?"] }, { id: "pca07", title: "PCA 07: Suolo e Sottosuolo", icon: "🌱", significativita: "ALTA", items: ["Assenza di contaminazioni visive del suolo (macchie, sversamenti)?", "Corretto stoccaggio del terreno vegetale in cumuli separati?", "Utilizzo delle apposite vasche per lavaggio betoniere?", "Gestione corretta del calcestruzzo in esubero?"] }, { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] } ],
+            ASPETTO_TO_PCA_ID_MAP: { 'Polveri': 'pca03', 'Rumore': 'pca06', 'Vibrazioni': 'pca06', 'Acque': 'pca01', 'Suolo': 'pca07', 'Rifiuti': 'pca04', 'Terre e Rocce': 'pca02', 'Sostanze Pericolose': 'pca05', 'Rifornimenti': 'pca05', 'Consumi': 'pca05', 'Beni Culturali': 'pca08' },
+            FREQUENCY_MAP: { 'ALTA': { text: 'FREQUENZA ALTA', schedule: '(es. settimanale)', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', days: 7 }, 'MEDIA': { text: 'FREQUENZA MEDIA', schedule: '(es. quindicinale)', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300', days: 15 }, 'BASSA': { text: 'FREQUENZA BASSA', schedule: '(es. mensile)', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', days: 30 } },
+            CHECK_TEMPLATES_PRELIMINARE: [{ id: "preliminare", title: "Verifica Preliminare (Ante Operam)", icon: "📍", items: ["Eseguita analisi documentale (vincoli, servitù, prescrizioni)?", "Eseguita mappatura e documentazione dei recettori sensibili?", "Documentato stato della vegetazione con rilievo fotografico?", "Verificata e documentata assenza di rifiuti/materiali preesistenti?", "Verificata e documentata assenza di contaminazioni pregresse (macchie, odori)?"] }],
+            CHECK_TEMPLATES_FINALE: [{ id: "finale", title: "Verifica Finale (Post Operam)", icon: "✅", items: ["Confronto con verbale preliminare ha dato esito positivo?", "Verificata completa rimozione di rifiuti, attrezzature e materiali di risulta?", "Eseguite correttamente le opere di ripristino ambientale (rinverdimenti, etc)?", "Verificata assenza di impatti residui visibili (contaminazioni, erosioni)?"] }],
+            WBS_SIGNIFICANCE_MAP: {},
+            WEATHER_CODE_MAP: { 0: {text:'Sereno', icon:'☀️'}, 1: {text:'Prevalentemente sereno', icon:'🌤️'}, 2: {text:'Parzialmente nuvoloso', icon:'⛅️'}, 3: {text:'Nuvoloso', icon:'☁️'}, 45: {text:'Nebbia', icon:'🌫️'}, 48: {text:'Nebbia con brina', icon:'🌫️'}, 51: {text:'Pioggerella leggera', icon:'🌦️'}, 53: {text:'Pioggerella moderata', icon:'🌦️'}, 55: {text:'Pioggerella forte', icon:'🌦️'}, 61: {text:'Pioggia leggera', icon:'🌧️'}, 63: {text:'Pioggia moderata', icon:'🌧️'}, 65: {text:'Pioggia forte', icon:'🌧️'}, 71: {text:'Nevicata leggera', icon:'❄️'}, 73: {text:'Nevicata moderata', icon:'❄️'}, 75: {text:'Nevicata forte', icon:'❄️'}, 80: {text:'Rovescio leggero', icon:'🌧️'}, 81: {text:'Rovescio moderato', icon:'🌧️'}, 82: {text:'Rovescio violento', icon:'🌧️'}, 95: {text:'Temporale', icon:'⛈️'}, 96: {text:'Temporale con grandine', icon:'⛈️'} }
+        },
+        state: { isSaving: false, tempPhotos: {}, activeChart: null, data: [], isSidebarOpen: localStorage.getItem('sidebarOpen') !== 'false', currentWeather: null },
+        dom: {},
+        
+        async init() {
+            this.dom = {
+                appContainer: document.getElementById('app-container'),
+                sidebar: document.getElementById('sidebar'),
+                sidebarOverlay: document.getElementById('sidebar-overlay'),
+                sidebarNav: document.getElementById('sidebar-nav'),
+                mainContent: document.getElementById('main-content'),
+                pageTitle: document.getElementById('page-title'),
+                currentDate: document.getElementById('current-date'),
+                toast: document.getElementById('toast'),
+                printAreaWrapper: document.getElementById('print-area-wrapper'),
+                modal: document.getElementById('modal-overlay'),
+                theme: { toggleBtn: document.getElementById('theme-toggle'), darkIcon: document.getElementById('theme-toggle-dark-icon'), lightIcon: document.getElementById('theme-toggle-light-icon') },
+                sidebarToggleBtn: document.getElementById('sidebar-toggle-btn'),
+                weatherWidget: document.getElementById('weather-widget')
+            };
+            this.ui.renderNav();
+            this._computeWbsSignificance();
+            this.handlers.attachGlobalListeners();
+            this.ui.applyTheme(localStorage.getItem('theme') === 'dark', true);
+            this.ui.setSidebarState(this.state.isSidebarOpen);
+            try {
+                this.state.data = await this.store.getAll();
+            } catch (err) {
+                console.error("Errore critico nel caricamento da IndexedDB:", err);
+                this.ui.showToast("Errore nel caricare i dati. L'archivio potrebbe essere corrotto.", 'error');
+                this.state.data = [];
+            }
+            await this.ui.showTab('dashboard');
+            this.services.fetchWeather();
+        },
+        
+        _computeWbsSignificance() {
+            const significanceValues = { 'ALTA': 2, 'MEDIA': 1, 'BASSA': 0 };
+            for (const wbsCode in this.config.WBS_DATA) {
+                const wbsData = this.config.WBS_DATA[wbsCode];
+                let maxSignificance = -1;
+                const requiredPcaIds = new Set(wbsData.aspetti.map(a => this.config.ASPETTO_TO_PCA_ID_MAP[a]).filter(Boolean));
+                requiredPcaIds.forEach(pcaId => {
+                    const template = this.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === pcaId);
+                    if (template && template.significativita) {
+                        const sigValue = significanceValues[template.significativita];
+                        if (sigValue > maxSignificance) { maxSignificance = sigValue; }
+                    }
+                });
+                const significanceKey = Object.keys(significanceValues).find(key => significanceValues[key] === maxSignificance);
+                if (significanceKey) { this.config.WBS_SIGNIFICANCE_MAP[wbsCode] = significanceKey; }
+            }
+        },
+
+        store: {
+            dbStore: idbKeyval.createStore('pca-db', 'reports'),
+            async getAll() { return (await idbKeyval.get(App.config.STORAGE_KEY, this.dbStore)) || []; },
+            async saveAll(reports) {
+                await idbKeyval.set(App.config.STORAGE_KEY, reports, this.dbStore);
+                App.state.data = reports;
+            },
+            async getById(id) {
+                const reports = await this.getAll();
+                return reports.find(r => r && r.id === parseInt(id));
+            },
+            async save(newReport) {
+                const reports = await this.getAll();
+                const reportId = parseInt(newReport.id);
+                const existingIndex = reports.findIndex(r => r && r.id === reportId);
+                if (existingIndex !== -1) {
+                    reports[existingIndex] = newReport;
+                } else {
+                    reports.push(newReport);
+                }
+                await this.saveAll(reports);
+            },
+            async delete(id) {
+                let reports = await this.getAll();
+                reports = reports.filter(r => r && r.id !== parseInt(id));
+                await this.saveAll(reports);
+            },
+            async getNextId() {
+                const reports = await this.getAll();
+                return (reports.reduce((max, r) => Math.max(max, (r && r.id) ? parseInt(r.id) : 0), 0) + 1);
+            },
+            getDashboardStats() {
+                const reports = App.state.data; let openNc = 0; let totalChecks = 0; let compliantChecks = 0; const ncByAspect = {};
+                reports.forEach(report => {
+                    if (report && report.type === 'periodico' && report.checks) {
+                        Object.entries(report.checks).forEach(([aspectId, aspectChecks]) => {
+                            const template = App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === aspectId);
+                            if (!template || !aspectChecks) return;
+                            aspectChecks.forEach(check => {
+                                if (check && check.result && check.result !== 'NA') {
+                                    totalChecks++;
+                                    if (check.result === 'C') compliantChecks++;
+                                    if (check.result === 'NC') {
+                                        openNc++;
+                                        ncByAspect[template.title] = (ncByAspect[template.title] || 0) + 1;
+                                    }
+                                }
+                            });
+                        });
+                    }
+                });
+                const avgCompliance = totalChecks > 0 ? `${((compliantChecks / totalChecks) * 100).toFixed(0)}%` : 'N.D.';
+                return { totalPca: reports.length, openNc, totalChecks, avgCompliance, ncByAspect };
+            },
+        },
+
+        services: {
+            async fetchWeather() {
+                const widget = App.dom.weatherWidget;
+                if (!widget) return;
+                widget.innerHTML = `<div class="loader"></div><span>Carico meteo...</span>`;
+
+                if (!navigator.geolocation) {
+                    widget.innerHTML = '<span>Geolocalizzazione non supportata.</span>';
+                    App.state.currentWeather = null;
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const { latitude, longitude } = position.coords;
+                        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(2)}&longitude=${longitude.toFixed(2)}&current=temperature_2m,precipitation,weather_code,wind_speed_10m`;
+                        try {
+                            const response = await fetch(apiUrl);
+                            if (!response.ok) throw new Error('Risposta API non valida');
+                            const data = await response.json();
+                            App.state.currentWeather = data.current;
+                            App.ui.renderWeather(data.current);
+                        } catch (error) {
+                            console.error("Errore API meteo:", error);
+                            widget.textContent = 'Meteo non disponibile';
+                            App.state.currentWeather = null;
+                        }
+                    },
+                    (error) => {
+                        console.warn("Errore geolocalizzazione:", error.message);
+                        widget.innerHTML = '<span>Geolocalizzazione negata.</span>';
+                        App.state.currentWeather = null;
+                    }
+                );
+            },
+            getGreeting() {
+                const hour = new Date().getHours();
+                if (hour < 12) return 'Buongiorno';
+                if (hour < 18) return 'Buon pomeriggio';
+                return 'Buonasera';
+            }
+        },
+        
+        ui: {
+            renderMap: { 'dashboard': 'renderDashboard', 'lista-pca': 'renderListaPca', 'nuovo-pca': 'renderNuovoPca', 'impostazioni': 'renderImpostazioni' },
+            showToast(message, type = 'success') {
+                const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
+                App.dom.toast.textContent = message;
+                App.dom.toast.className = `toast px-6 py-3 rounded-lg text-white font-medium shadow-lg ${colors[type]}`;
+                setTimeout(() => { App.dom.toast.classList.add('show'); }, 10);
+                setTimeout(() => { App.dom.toast.classList.remove('show'); }, 4000);
+            },
+            showModal(config) {
+                return new Promise((resolve) => {
+                    const { title, message, confirmText = 'Conferma', cancelText = 'Annulla', confirmColor = 'bg-red-600' } = config;
+                    App.dom.modal.innerHTML = `
+                        <div class="modal-box">
+                            <h3 class="text-xl font-bold mb-4">${this.sanitize(title)}</h3>
+                            <p class="text-slate-600 dark:text-slate-300 mb-6">${this.sanitize(message)}</p>
+                            <div class="flex justify-end gap-4">
+                                <button id="modal-cancel" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">${this.sanitize(cancelText)}</button>
+                                <button id="modal-confirm" class="px-5 py-2 text-white rounded-md ${confirmColor} hover:opacity-90 font-semibold">${this.sanitize(confirmText)}</button>
+                            </div>
+                        </div>`;
+                    App.dom.modal.classList.add('visible');
+                    
+                    const confirmBtn = document.getElementById('modal-confirm');
+                    const cancelBtn = document.getElementById('modal-cancel');
+                    const closeModal = (decision) => {
+                        App.dom.modal.classList.remove('visible');
+                        resolve(decision);
+                    };
+                    confirmBtn.onclick = () => closeModal(true);
+                    cancelBtn.onclick = () => closeModal(false);
+                    App.dom.modal.onclick = (e) => { if (e.target === App.dom.modal) closeModal(false); };
+                });
+            },
+            async showTab(tabId) {
+                const tab = App.config.TABS.find(t => t.id === tabId);
+                if (!tab) return;
+                App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => link.classList.toggle('active', link.dataset.tabId === tabId));
+                App.dom.pageTitle.textContent = tab.label;
+                
+                App.dom.mainContent.classList.remove('content-fade-in');
+                void App.dom.mainContent.offsetWidth;
+
+                const renderFunctionName = this.renderMap[tabId];
+                if (this[renderFunctionName]) await this[renderFunctionName]();
+                
+                App.dom.mainContent.classList.add('content-fade-in');
+            },
+            renderNav() { App.dom.sidebarNav.innerHTML = App.config.TABS.map(t => `<a href="#" data-tab-id="${t.id}" class="sidebar-link flex items-center px-4 py-3 mt-2 text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">${t.icon} ${t.label}</a>`).join(''); },
+            renderDashboard() {
+                const stats = App.store.getDashboardStats();
+                const frequencyStatuses = this.getFrequencyStatuses();
+                const greeting = App.services.getGreeting();
+                App.dom.mainContent.innerHTML = App.templates.dashboard(stats, frequencyStatuses.dueList, greeting);
+                const ctx = document.getElementById('ncChart')?.getContext('2d');
+                if (!ctx) return;
+                if (App.state.activeChart) App.state.activeChart.destroy();
+                App.state.activeChart = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(stats.ncByAspect).map(l => l.substring(l.indexOf(':') + 1).trim()), datasets: [{ data: Object.values(stats.ncByAspect), backgroundColor: 'rgba(59, 130, 246, 0.7)', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false }, tooltip: { displayColors: false } } } });
+            },
+            renderImpostazioni() {
+                App.dom.mainContent.innerHTML = App.templates.settings();
+                App.handlers.attachSettingsListeners();
+            },
+            renderListaPca() {
+                try {
+                    const reports = [...App.state.data].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
+                    const frequencyStatuses = this.getFrequencyStatuses();
+                    
+                    const groupedReports = reports.reduce((acc, report) => {
+                        if (!report || !report.wbs) {
+                            console.warn("Saltato report corrotto o senza WBS:", report);
+                            return acc;
+                        }
+                        const wbsKey = (report.type === 'periodico' ? report.wbs.substring(0, 2).toUpperCase() : 'Generico') || 'Generico';
+                        if (!acc[wbsKey]) {
+                            acc[wbsKey] = [];
+                        }
+                        acc[wbsKey].push(report);
+                        return acc;
+                    }, {});
+
+                    App.dom.mainContent.innerHTML = App.templates.pcaGroupedList(groupedReports, frequencyStatuses.statusMap);
+                    App.handlers.attachPcaListListeners();
+                } catch(err) {
+                    console.error("Errore durante il rendering della lista PCA:", err);
+                    App.dom.mainContent.innerHTML = `<p class="text-red-500">Impossibile visualizzare la lista dei controlli.</p>`;
+                }
+            },
+            getFrequencyStatuses() {
+                const reports = App.state.data;
+                const latestReportByWbs = {};
+                [...reports].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(r => {
+                    if (r && r.type === 'periodico' && r.wbs) {
+                        const wbsCode = r.wbs.substring(0, 2).toUpperCase();
+                        if (!latestReportByWbs[wbsCode]) {
+                            latestReportByWbs[wbsCode] = r;
+                        }
+                    }
+                });
+
+                const statusMap = {};
+                const dueList = [];
+                const now = new Date();
+                
+                for (const wbsCode in App.config.WBS_SIGNIFICANCE_MAP) {
+                    const significance = App.config.WBS_SIGNIFICANCE_MAP[wbsCode];
+                    if (!significance) continue;
+
+                    const report = latestReportByWbs[wbsCode];
+                    const interval = App.config.FREQUENCY_MAP[significance].days;
+                    
+                    if(report) {
+                        const lastDate = new Date(report.date + 'T00:00:00');
+                        const dueDate = new Date(new Date(report.date + 'T00:00:00').setDate(lastDate.getDate() + interval));
+                        const daysDiff = (dueDate - now) / (1000 * 3600 * 24);
+                        
+                        let status;
+                        if (daysDiff < 0) {
+                            status = { text: 'Scaduto', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', icon: '🔥', nextDate: dueDate };
+                            dueList.push({ wbs: wbsCode, status: status, days: Math.round(daysDiff) });
+                        } else if (daysDiff <= 3) {
+                            status = { text: 'In Scadenza', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', icon: '⚠️', nextDate: dueDate };
+                            dueList.push({ wbs: wbsCode, status: status, days: Math.round(daysDiff) });
+                        } else {
+                            status = { text: 'OK', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', icon: '✅', nextDate: dueDate };
+                        }
+                        statusMap[wbsCode] = status;
+
+                    } else {
+                        const status = { text: 'Da Eseguire', color: 'bg-gray-200 text-gray-800 dark:bg-slate-700 dark:text-slate-300', icon: '➡️', nextDate: null };
+                        statusMap[wbsCode] = status;
+                        dueList.push({ wbs: wbsCode, status: status, days: -Infinity });
+                    }
+                }
+                dueList.sort((a,b) => a.days - b.days);
+                return { statusMap, dueList };
+            },
+            renderWeather(weatherData) {
+                const widget = App.dom.weatherWidget;
+                if (!widget || !weatherData) return;
+                
+                const weatherInfo = App.config.WEATHER_CODE_MAP[weatherData.weather_code] || {text: 'N/D', icon: '❓'};
+                
+                widget.innerHTML = `
+                    <span title="${weatherInfo.text}" class="text-xl">${weatherInfo.icon}</span>
+                    <span class="font-semibold">${weatherData.temperature_2m}°C</span>
+                    <span class="hidden sm:inline-flex items-center gap-1" title="Precipitazioni">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M149.33,181.33,128,202.67,106.67,181.33a40,40,0,0,1,53.33-53.33l-5.33,5.33a32,32,0,0,0-45.34,45.34L128,197.33l18.67-18.66a8,8,0,0,1,11.33,11.33Z" opacity="0.2"></path><path d="M128,24A104.11,104.11,0,0,0,24,128c0,41.94,23.31,81.34,64,98.34V241.6a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16v-15.26c40.69-17,64-56.4,64-98.34A104.11,104.11,0,0,0,128,24Zm8,199.6v-8a16,16,0,0,0-16-16H94.48c-32.32-15.53-50.48-46.72-50.48-79.6,0-48.52,39.48-88,88-88s88,39.48,88,88c0,32.88-18.16,64.07-50.48,79.6H152a16,16,0,0,0-16,16v8Z"></path></svg>
+                        ${weatherData.precipitation} mm
+                    </span>
+                    <span class="hidden sm:inline-flex items-center gap-1" title="Velocità del vento">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M148,168a12,12,0,1,1-12-12A12,12,0,0,1,148,168Z" opacity="0.2"></path><path d="M248,128a12,12,0,0,1-12,12H132v8a24,24,0,0,1-48,0v-8H24a12,12,0,0,1,0-24H84v-8a24,24,0,0,1,48,0v8h104A12,12,0,0,1,248,128ZM108,88a24,24,0,0,1,48,0v8H108Zm0,80v-8h48v8a24,24,0,0,1-48,0Zm40-48a20,20,0,1,0-20,20A20,20,0,0,0,148,120Zm-28,0a8,8,0,1,1,8,8A8,8,0,0,1,120,120Z"></path></svg>
+                        ${weatherData.wind_speed_10m.toFixed(1)} km/h
+                    </span>
+                `;
+            },
+            async renderNuovoPca() {
+                const nextId = await App.store.getNextId();
+                const today = new Date().toISOString().slice(0, 10);
+                App.dom.mainContent.innerHTML = App.templates.newPcaForm({ nextId, today });
+                App.handlers.attachNewPcaFormListeners();
+                this.updateFormRequirements('periodico');
+            },
+            updateFormRequirements(type) {
+                const isPeriodico = type === 'periodico';
+                document.getElementById('wbs-section').classList.toggle('visible', isPeriodico);
+                document.getElementById('manual-section').classList.toggle('visible', !isPeriodico);
+                
+                document.getElementById('checklist-container-periodico').style.display = isPeriodico ? 'block' : 'none';
+                document.getElementById('checklist-container-preliminare').style.display = type === 'preliminare' ? 'block' : 'none';
+                document.getElementById('checklist-container-finale').style.display = type === 'finale' ? 'block' : 'none';
+                
+                const wbsInputs = ['pca-wbs-input', 'pca-lavorazione-select', 'pca-inspector-wbs'];
+                const manualInputs = ['wbs-manual', 'inspector-manual', 'activities-manual'];
+                
+                wbsInputs.forEach(id => document.getElementById(id)?.toggleAttribute('required', isPeriodico));
+                manualInputs.forEach(id => document.getElementById(id)?.toggleAttribute('required', !isPeriodico));
+            },
+            applyTheme(isDark, isInitial = false) {
+                document.documentElement.classList.toggle('dark', isDark);
+                App.dom.theme.darkIcon.classList.toggle('hidden', !isDark);
+                App.dom.theme.lightIcon.classList.toggle('hidden', isDark);
+                if (!isInitial) localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            },
+            setSidebarState(isOpen) {
+                App.state.isSidebarOpen = isOpen;
+                localStorage.setItem('sidebarOpen', isOpen.toString());
+                
+                if (window.innerWidth < 1024) {
+                    App.dom.appContainer.classList.toggle('sidebar-open', isOpen);
+                    App.dom.sidebarOverlay.classList.toggle('visible', isOpen);
+                } else {
+                    App.dom.appContainer.classList.toggle('sidebar-collapsed', !isOpen);
+                }
+            },
+            toggleSidebar() {
+                this.setSidebarState(!App.state.isSidebarOpen);
+            },
+            resetPcaForm: () => { App.state.tempPhotos = {}; App.ui.showTab('nuovo-pca'); },
+            async prepareAndPrintReport(reportId) {
+                const report = await App.store.getById(reportId);
+                if (!report) return App.ui.showToast("Report non trovato", "error");
+                
+                let templates;
+                if (report.type === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+                else if (report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
+                else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+
+                App.dom.printAreaWrapper.innerHTML = App.templates.printReport(report, templates);
+                setTimeout(() => window.print(), 200);
+            },
+            sanitize(str) {
+                if (typeof str !== 'string') return str;
+                const temp = document.createElement('div');
+                temp.textContent = str;
+                return temp.innerHTML;
+            }
+        },
+
+        handlers: {
+            debounce(func, delay = 300) {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        func.apply(this, args);
+                    }, delay);
+                };
+            },
+            attachGlobalListeners() {
+                App.dom.sidebarNav.addEventListener('click', e => { 
+                    const link = e.target.closest('.sidebar-link');
+                    if (link) { 
+                        e.preventDefault(); 
+                        App.ui.showTab(link.dataset.tabId);
+                        if(window.innerWidth < 1024) { 
+                            App.ui.setSidebarState(false); 
+                        }
+                    } 
+                });
+                
+                App.dom.theme.toggleBtn.addEventListener('click', () => App.ui.applyTheme(!document.documentElement.classList.contains('dark')));
+                
+                App.dom.sidebarToggleBtn.addEventListener('click', () => App.ui.toggleSidebar());
+                
+                App.dom.sidebarOverlay.addEventListener('click', () => App.ui.setSidebarState(false));
+                
+                App.dom.currentDate.textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
+                window.addEventListener('resize', () => {
+                    App.ui.setSidebarState(App.state.isSidebarOpen);
+                });
+            },
+            attachPcaListListeners() {
+                const container = App.dom.mainContent;
+                container.addEventListener('click', async (e) => {
+                    const printBtn = e.target.closest('.print-pca-btn');
+                    const deleteBtn = e.target.closest('.delete-pca-btn');
+                    const header = e.target.closest('.grouped-pca-header');
+
+                    if (printBtn) {
+                        printBtn.disabled = true;
+                        await this.onPrintPca(printBtn.dataset.id);
+                        printBtn.disabled = false;
+                    }
+                    if (deleteBtn) {
+                        const id = deleteBtn.dataset.id;
+                        const confirmed = await App.ui.showModal({
+                            title: 'Conferma Eliminazione',
+                            message: `Sei sicuro di voler eliminare il Controllo N° ${id}? L'azione è irreversibile.`,
+                            confirmText: 'Elimina',
+                            confirmColor: 'bg-red-600'
+                        });
+                        if (confirmed) this.onDeletePca(id);
+                    }
+                    if(header) {
+                        const content = header.nextElementSibling;
+                        header.classList.toggle('open');
+                        content.classList.toggle('open');
+                    }
+                });
+            },
+            onPrintPca: (id) => App.ui.prepareAndPrintReport(id),
+            async onDeletePca(reportId) {
+                await App.store.delete(reportId);
+                App.ui.showToast(`Controllo N° ${reportId} eliminato.`, 'info');
+                await App.ui.showTab('lista-pca');
+            },
+            attachNewPcaFormListeners() {
+                const form = document.getElementById('new-pca-form'); if (!form) return;
+                form.addEventListener('submit', (e) => this.onNewPcaSubmit(e));
+                form.addEventListener('click', (e) => { 
+                    if (e.target.closest('.photo-preview-content')) e.target.closest('.photo-uploader').querySelector('.photo-input').click(); 
+                    if (e.target.closest('.remove-photo-btn')) this.onPhotoRemove(e);
+                    if (e.target.matches('#cancel-pca-btn')) App.ui.resetPcaForm();
+                    
+                    const accordionHeader = e.target.closest('.accordion-header');
+                    if (accordionHeader) {
+                        const content = accordionHeader.nextElementSibling;
+                        accordionHeader.classList.toggle('open');
+                        content.classList.toggle('open');
+                    }
+                });
+                form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', (e) => this.onPhotoUpload(e)));
+                form.addEventListener('change', (e) => {
+                    if (e.target.type === 'radio' && e.target.name.startsWith('check_')) {
+                        const ncObservationWrapper = e.target.closest('.check-item-wrapper').querySelector('.nc-observation-wrapper');
+                        if (ncObservationWrapper) {
+                             ncObservationWrapper.classList.toggle('visible', e.target.value === 'NC');
+                        }
+                    }
+                });
+                document.getElementById('pca-type')?.addEventListener('change', (e) => App.ui.updateFormRequirements(e.target.value));
+                document.getElementById('pca-wbs-input')?.addEventListener('input', (e) => {
+                    const wbsCodeFull = e.target.value.toUpperCase(); const wbsCode = wbsCodeFull.substring(0, 2); const wbsData = App.config.WBS_DATA[wbsCode]; const lavorazioneSelect = document.getElementById('pca-lavorazione-select');
+                    
+                    const accordionContainer = document.getElementById('checklist-container-periodico');
+                    const accordionContents = accordionContainer.querySelectorAll('.accordion-content');
+                    const accordionHeaders = accordionContainer.querySelectorAll('.accordion-header');
+                    
+                    lavorazioneSelect.innerHTML = '<option value="">-- Prima inserisci WBS --</option>';
+                    lavorazioneSelect.disabled = true;
+                    accordionContainer.querySelectorAll('.pca-sheet-accordion').forEach(el => el.style.display = 'none');
+                    accordionContents.forEach(c => c.classList.remove('open'));
+                    accordionHeaders.forEach(h => h.classList.remove('open'));
+
+                    if (wbsData && wbsCodeFull.length >= 2) {
+                        App.ui.showToast('Checklist per ' + wbsCode + ' caricate.', 'info');
+                        lavorazioneSelect.innerHTML = '<option value="">-- Seleziona Lavorazione --</option>';
+                        wbsData.lavorazioni.forEach(lav => { const option = document.createElement('option'); option.value = lav; option.textContent = lav; lavorazioneSelect.appendChild(option); });
+                        lavorazioneSelect.disabled = false;
+                        
+                        const requiredPcaIds = new Set(wbsData.aspetti.map(a => App.config.ASPETTO_TO_PCA_ID_MAP[a]).filter(Boolean));
+                        let firstAccordionEl = null;
+
+                        requiredPcaIds.forEach((sheetId, index) => { 
+                            const accordionEl = document.getElementById(`accordion-${sheetId}`);
+                            if (accordionEl) {
+                                accordionEl.style.display = 'block';
+                                if (index === 0) {
+                                    firstAccordionEl = accordionEl;
+                                }
+                            }
+                        });
+
+                        if (firstAccordionEl) {
+                            const header = firstAccordionEl.querySelector('.accordion-header');
+                            const content = firstAccordionEl.querySelector('.accordion-content');
+                            header.classList.add('open');
+                            content.classList.add('open');
+                        }
+                    }
+                });
+            },
+            async onNewPcaSubmit(e) {
+                e.preventDefault();
+                if (App.state.isSaving) return;
+                
+                const form = e.target;
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    App.ui.showToast('Compilare tutti i campi obbligatori evidenziati.', 'error');
+                    return;
+                }
+
+                App.state.isSaving = true;
+                const saveBtn = document.getElementById('save-pca-btn');
+                if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Salvando...</span>`; }
+
+                try {
+                    const formData = new FormData(form);
+                    const reportType = formData.get('type');
+                    const sanitize = App.ui.sanitize;
+                    
+                    const reportId = parseInt(formData.get('id'));
+                    if (isNaN(reportId) || reportId <= 0) {
+                        throw new Error("Il numero del verbale non è valido.");
+                    }
+                    
+                    const newReport = { 
+                        id: reportId, 
+                        type: sanitize(reportType), 
+                        date: sanitize(formData.get('date')), 
+                        inspector: sanitize(reportType === 'periodico' ? formData.get('inspector-wbs') : formData.get('inspector-manual')), 
+                        wbs: sanitize(reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual')), 
+                        activities: sanitize(reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual')), 
+                        weather: App.state.currentWeather,
+                        checks: {}, 
+                        observations: {}, 
+                        photos: {},
+                    };
+                    
+                    let templates;
+                    if (reportType === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+                    else if (reportType === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
+                    else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+
+                    templates.forEach(template => {
+                        const sheetElement = document.getElementById(`accordion-${template.id}`);
+                        if (sheetElement && window.getComputedStyle(sheetElement).display !== 'none') {
+                            newReport.checks[template.id] = template.items.map((item, idx) => {
+                                const result = sanitize(formData.get(`check_${template.id}_${idx}`));
+                                const nc_observation = result === 'NC' ? sanitize(formData.get(`nc_observation_${template.id}_${idx}`)) : null;
+                                return { item: sanitize(item), result, nc_observation };
+                            });
+                            newReport.observations[template.id] = sanitize(formData.get(`observation_${template.id}`));
+                            
+                            const photoKey = `photo_${template.id}`;
+                            if (App.state.tempPhotos[photoKey]) {
+                                if (!newReport.photos[template.id]) newReport.photos[template.id] = {};
+                                newReport.photos[template.id]['general'] = App.state.tempPhotos[photoKey];
+                            }
+                        }
+                    });
+                    
+                    await App.store.save(newReport);
+                    App.ui.showToast('Controllo salvato con successo!', 'success');
+                    App.ui.resetPcaForm();
+                    await App.ui.showTab('lista-pca');
+                } catch (error) {
+                    console.error("Errore durante il salvataggio:", error);
+                    App.ui.showToast(error.message || 'Si è verificato un errore imprevisto.', 'error');
+                } finally {
+                    App.state.isSaving = false;
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<span>Salva Controllo</span>'; }
+                }
+            },
+            onPhotoRemove(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const uploader = e.target.closest('.photo-uploader');
+                const input = uploader.querySelector('.photo-input');
+                const preview = uploader.querySelector('.photo-preview-content');
+                const key = input.dataset.key;
+
+                input.value = '';
+                preview.innerHTML = App.templates.imagePlaceholderIcon();
+                delete App.state.tempPhotos[key];
+                uploader.querySelector('.remove-photo-btn').classList.add('hidden');
+            },
+            async onPhotoUpload(e) { 
+                const input = e.target; 
+                const key = input.dataset.key; 
+                const uploader = input.closest('.photo-uploader');
+                const previewContainer = uploader.querySelector('.photo-preview-content');
+                const removeBtn = uploader.querySelector('.remove-photo-btn');
+                const file = input.files[0]; 
+                
+                if (!file || !previewContainer) return; 
+                
+                previewContainer.innerHTML = `<div class="loader"></div>`;
+                
+                try { 
+                    const dataUrl = await this.resizeImage(file, 1024); 
+                    previewContainer.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover" alt="Anteprima">`; 
+                    App.state.tempPhotos[key] = dataUrl;
+                    removeBtn.classList.remove('hidden');
+                } catch (err) { 
+                    previewContainer.innerHTML = App.templates.imagePlaceholderIcon(); 
+                    delete App.state.tempPhotos[key]; 
+                    removeBtn.classList.add('hidden');
+                    App.ui.showToast("Errore nel caricamento foto.", "error"); 
+                } 
+            },
+            resizeImage: (file, maxSize) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { const img = new Image(); img.onload = () => { let { width, height } = img; if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.8)); }; img.onerror = reject; img.src = e.target.result; }; reader.onerror = reject; reader.readAsDataURL(file); }),
+            async attachSettingsListeners() { 
+                document.getElementById('export-btn')?.addEventListener('click', this.exportData); 
+                document.getElementById('import-btn')?.addEventListener('click', () => document.getElementById('import-file').click()); 
+                document.getElementById('import-file')?.addEventListener('change', async (e) => {
+                       const confirmed = await App.ui.showModal({
+                            title: 'Conferma Importazione',
+                            message: "ATTENZIONE: i dati attuali verranno SOVRASCRITTI in modo permanente. Continuare?",
+                            confirmText: 'Sovrascrivi e Importa',
+                            confirmColor: 'bg-orange-500'
+                       });
+                       if (confirmed) this.importData(e);
+                });
+                document.getElementById('clear-all-btn')?.addEventListener('click', this.onClearAllData);
+            },
+            async onClearAllData() {
+                const modalHTML = `
+                    <div class="modal-box">
+                        <h3 class="text-xl font-bold mb-2 text-red-500">Azione Irreversibile</h3>
+                        <p class="text-slate-600 dark:text-slate-300 mb-4">Sei assolutamente sicuro di voler eliminare TUTTI i controlli salvati? Questa azione non può essere annullata.</p>
+                        <p class="text-slate-600 dark:text-slate-300 mb-4">Per confermare, digita "<b>ELIMINA</b>" nel campo sottostante.</p>
+                        <input type="text" id="delete-confirm-input" class="form-input w-full mb-6" placeholder="ELIMINA">
+                        <div class="flex justify-end gap-4">
+                            <button id="modal-cancel" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md font-semibold">Annulla</button>
+                            <button id="modal-confirm-delete" class="px-5 py-2 text-white rounded-md bg-red-600 font-semibold opacity-50 cursor-not-allowed" disabled>Elimina Tutto</button>
+                        </div>
+                    </div>`;
+
+                App.dom.modal.innerHTML = modalHTML;
+                App.dom.modal.classList.add('visible');
+
+                const confirmInput = document.getElementById('delete-confirm-input');
+                const confirmBtn = document.getElementById('modal-confirm-delete');
+                const cancelBtn = document.getElementById('modal-cancel');
+
+                confirmInput.addEventListener('input', () => {
+                    if (confirmInput.value === 'ELIMINA') {
+                        confirmBtn.disabled = false;
+                        confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        confirmBtn.disabled = true;
+                        confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+                
+                const closeModal = async (decision) => {
+                    App.dom.modal.classList.remove('visible');
+                    if (decision) {
+                        await App.store.saveAll([]);
+                        await App.ui.showTab('dashboard');
+                        App.ui.showToast("Archivio svuotato con successo.", "info");
+                    }
+                };
+                
+                confirmBtn.onclick = () => closeModal(true);
+                cancelBtn.onclick = () => closeModal(false);
+                App.dom.modal.onclick = (e) => { if (e.target === App.dom.modal) closeModal(false); };
+            },
+            async exportData() { const data = await App.store.getAll(); if (data.length === 0) return App.ui.showToast("Nessun dato da esportare.", 'info'); const dataStr = JSON.stringify(data, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pca_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); App.ui.showToast("Esportazione dati completata.", 'success'); },
+            importData(e) { 
+                const file = e.target.files[0]; if (!file) return; 
+                const reader = new FileReader(); 
+                reader.onload = async (event) => { 
+                    try { 
+                        const data = JSON.parse(event.target.result); 
+                        if (!Array.isArray(data)) throw new Error("File non valido"); 
+                        await App.store.saveAll(data); 
+                        App.ui.showToast("Dati importati con successo!", 'success'); 
+                        await App.ui.showTab('dashboard'); 
+                    } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } 
+                }; 
+                reader.readAsText(file); 
+                e.target.value = '';
+            },
+        },
+        
+        templates: {
+            dashboard: (stats, dueList, greeting) => {
+                let dueListHtml = '<p class="text-slate-500 dark:text-slate-400">Tutti i controlli periodici sono aggiornati.</p>';
+                if (dueList.length > 0) {
+                    dueListHtml = `<ul class="space-y-3">${dueList.map(item => `
+                        <li class="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50">
+                            <div>
+                                <span class="font-bold">${item.wbs}</span>
+                                <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">${App.config.WBS_DATA[item.wbs]?.descrizione || 'Sconosciuto'}</span>
+                            </div>
+                            <span class="text-sm font-semibold px-2 py-0.5 rounded-full ${item.status.color}">${item.status.text}</span>
+                        </li>`).join('')}</ul>`;
+                }
+                const cards = [
+                    { label: 'Controlli Totali', value: stats.totalPca, color: 'blue', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>' },
+                    { label: 'NC Aperte', value: stats.openNc, color: 'red', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' },
+                    { label: 'Check Eseguiti', value: stats.totalChecks, color: 'indigo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>' },
+                    { label: 'Conformità Media', value: stats.avgCompliance, color: 'green', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' }
+                ];
+                return `
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold">${greeting}!</h2>
+                    <p class="text-slate-500 dark:text-slate-400">Ecco un riepilogo della situazione attuale.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                    ${cards.map(card => `
+                    <div class="dashboard-card bg-white dark:bg-slate-800 p-5 rounded-lg shadow-sm flex items-center gap-5 border-t-4 border-${card.color}-500">
+                        <div class="p-3 rounded-full bg-slate-100 dark:bg-slate-700 text-${card.color}-500">${card.icon}</div>
+                        <div>
+                            <h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${card.label}</h3>
+                            <p class="mt-1 text-3xl font-semibold text-slate-800 dark:text-slate-100">${card.value}</p>
+                        </div>
+                    </div>`).join('')}
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto (Periodici)</h3>
+                        <div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Controlli Periodici da Eseguire</h3>
+                        <div class="max-h-96 overflow-y-auto pr-2">${dueListHtml}</div>
+                    </div>
+                </div>`;
+            },
+            pcaGroupedList: (groupedReports, frequencyStatuses) => {
+                const wbsOrder = Object.keys(App.config.WBS_DATA);
+                const sortedWbsKeys = Object.keys(groupedReports).sort((a, b) => {
+                    const indexA = wbsOrder.indexOf(a);
+                    const indexB = wbsOrder.indexOf(b);
+                    if (a === 'Generico') return 1;
+                    if (b === 'Generico') return -1;
+                    return indexA - indexB;
+                });
+
+                if (sortedWbsKeys.length === 0) {
+                    return `<div class="text-center p-8 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                                <h3 class="text-xl font-semibold">Nessun controllo trovato</h3>
+                                <p class="text-slate-500 dark:text-slate-400 mt-2">Inizia compilando il tuo primo verbale dalla sezione "Esegui Controllo".</p>
+                            </div>`;
+                }
+                
+                return `<div class="space-y-4">
+                    ${sortedWbsKeys.map(wbsKey => {
+                        const reports = groupedReports[wbsKey] || [];
+                        const wbsInfo = App.config.WBS_DATA[wbsKey] || { descrizione: 'Controlli Generici' };
+                        const reportCount = reports.length;
+                        
+                        return `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+                            <div class="grouped-pca-header p-4 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700">
+                                <div class="flex items-center gap-4">
+                                    <span class="font-bold text-blue-600 dark:text-blue-400">${wbsKey}</span>
+                                    <h3 class="text-lg font-semibold">${wbsInfo.descrizione}</h3>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <span class="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200">${reportCount} ${reportCount === 1 ? 'controllo' : 'controlli'}</span>
+                                    <svg class="grouped-pca-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                            <div class="grouped-pca-content">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full bg-transparent text-sm">
+                                        <thead class="bg-slate-100 dark:bg-slate-800">
+                                            <tr>
+                                                ${['ID','Data','Tipo','Oggetto','Stato Frequenza', 'Prossimo Controllo', 'Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                            ${reports.map(report => {
+                                                const wbsCode = report.wbs ? report.wbs.substring(0,2).toUpperCase() : null;
+                                                const freqStatus = report.type === 'periodico' && wbsCode ? frequencyStatuses[wbsCode] : null;
+                                                const typeLabels={'periodico':'Periodico','preliminare':'Preliminare','finale':'Finale'};
+                                                const typeColors={'periodico':'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300','preliminare':'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300','finale':'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'};
+                                                return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                                                    <td class="p-3 font-medium">${report.id}</td>
+                                                    <td class="p-3 whitespace-nowrap">${new Date(report.date+"T00:00:00").toLocaleDateString('it-IT')}</td>
+                                                    <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${typeColors[report.type] || 'bg-gray-100 text-gray-800'}">${typeLabels[report.type]||'N.D.'}</span></td>
+                                                    <td class="p-3">${report.activities||'N.A.'}</td>
+                                                    <td class="p-3">
+                                                        ${freqStatus ? `<span class="text-xs font-semibold px-2 py-1 rounded-full ${freqStatus.color}">${freqStatus.text}</span>` : '-'}
+                                                    </td>
+                                                    <td class="p-3 whitespace-nowrap">
+                                                        ${freqStatus && freqStatus.nextDate ? freqStatus.nextDate.toLocaleDateString('it-IT') : '-'}
+                                                    </td>
+                                                    <td class="p-3">
+                                                        <div class="flex items-center gap-4">
+                                                            <button data-id="${report.id}" class="print-pca-btn text-slate-500 hover:text-blue-600" title="Stampa"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
+                                                            <button data-id="${report.id}" class="delete-pca-btn text-slate-500 hover:text-red-600" title="Elimina"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                                        </div>
+                                                    </td>
+                                                </tr>`;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>`
+                    }).join('')}
+                </div>`;
+            },
+            imagePlaceholderIcon: () => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-400 dark:text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>`,
+            photoUpload(templateId) {
+                const key = `photo_${templateId}`;
+                return `<div class="photo-uploader">
+                    <input type="file" accept="image/*" class="photo-input hidden" data-key="${key}">
+                    <div class="photo-preview">
+                        <div class="photo-preview-content flex items-center justify-center w-full h-full">
+                           ${this.imagePlaceholderIcon()}
+                        </div>
+                    </div>
+                    <div data-key="${key}" class="remove-photo-btn hidden">&times;</div>
+                </div>`
+            },
+            renderChecklist(templates) {
+                return templates.map(t => {
+                    const freqInfo = App.config.FREQUENCY_MAP[t.significativita];
+                    return `<div id="accordion-${t.id}" class="pca-sheet-accordion bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm">
+                        <div class="accordion-header p-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-t-lg">
+                            <div>
+                                <h3 class="text-lg font-semibold flex items-center gap-3">${t.icon} ${t.title}</h3>
+                                ${freqInfo ? `<span class="text-sm font-semibold mt-1 px-2.5 py-1 rounded-full ${freqInfo.color}">${freqInfo.text}</span>` : ''}
+                            </div>
+                            <svg class="accordion-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                        <div class="accordion-content p-4">
+                            <div class="space-y-4">
+                                ${t.items.map((item, idx) => {
+                                    const baseName = `check_${t.id}_${idx}`;
+                                    return `<div class="check-item-wrapper border-t border-slate-200 dark:border-slate-700 py-4 first:border-t-0 first:pt-0">
+                                        <div class="check-item flex flex-col sm:flex-row justify-between sm:items-start gap-3">
+                                            <label class="mr-4 text-sm flex-1 pt-1">${item}</label>
+                                            <div class="flex items-center gap-x-5 text-sm flex-shrink-0">
+                                                <div class="flex items-center"><input id="${baseName}_c" name="${baseName}" type="radio" value="C" class="form-checkbox"><label for="${baseName}_c" class="ml-2 block">Sì</label></div>
+                                                <div class="flex items-center"><input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="form-checkbox"><label for="${baseName}_nc" class="ml-2 block">No</label></div>
+                                                <div class="flex items-center"><input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="form-checkbox" checked><label for="${baseName}_na" class="ml-2 block">N.A.</label></div>
+                                            </div>
+                                        </div>
+                                        <div class="nc-observation-wrapper conditional-section mt-3 pl-4 border-l-2 border-red-500">
+                                            <label for="nc_observation_${t.id}_${idx}" class="form-label text-red-700 dark:text-red-400">Dettaglio Non Conformità / Azione Correttiva</label>
+                                            <textarea id="nc_observation_${t.id}_${idx}" name="nc_observation_${t.id}_${idx}" class="form-textarea" rows="2" placeholder="Descrivere il problema e l'azione da intraprendere..."></textarea>
+                                        </div>
+                                    </div>`
+                                }).join('')}
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <label class="text-sm font-medium mb-2 block">Osservazioni Generali e Rilievo Fotografico</label>
+                                <div class="flex flex-col md:flex-row gap-6">
+                                    <div class="flex-grow">
+                                        <textarea name="observation_${t.id}" class="form-textarea" rows="4" placeholder="Inserire qui eventuali osservazioni generali relative a questa checklist..."></textarea>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        ${this.photoUpload(t.id)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>` 
+                }).join('');
+            },
+            newPcaForm({ nextId, today }) {
+                return `<form id="new-pca-form" novalidate class="space-y-8">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
+                            <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
+                            <div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
+                        </div>
+                        <div id="wbs-section" class="conditional-section mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div><label for="pca-wbs-input" class="form-label">1. Inserisci Codice WBS</label><input type="text" id="pca-wbs-input" name="wbs-input" class="form-input" placeholder="Es. RI12, GA01..."></div>
+                                <div><label for="pca-lavorazione-select" class="form-label">2. Seleziona Lavorazione</label><select id="pca-lavorazione-select" name="lavorazione" class="form-select" disabled><option value="">-- Prima inserisci WBS --</option></select></div>
+                            </div>
+                            <div><label for="pca-inspector-wbs" class="form-label">Compilatore</label><input type="text" id="pca-inspector-wbs" name="inspector-wbs" class="form-input" placeholder="Nome e Funzione"></div>
+                        </div>
+                        <div id="manual-section" class="conditional-section mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div><label for="wbs-manual" class="form-label">Area di Riferimento</label><input id="wbs-manual" name="wbs-manual" class="form-input" placeholder="Es. Campo Base, Area Stoccaggio X..."></div>
+                                <div><label for="inspector-manual" class="form-label">Compilatore</label><input id="inspector-manual" name="inspector-manual" class="form-input" placeholder="Nome e Funzione"></div>
+                            </div>
+                            <div><label for="activities-manual" class="form-label">Oggetto del controllo</label><textarea id="activities-manual" name="activities-manual" class="form-textarea" rows="2" placeholder="Es. Verifica dello stato dei luoghi prima dell'inizio delle attività..."></textarea></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2>
+                        <div id="checklist-container-periodico" class="space-y-4">${this.renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC)}</div>
+                        <div id="checklist-container-preliminare" class="space-y-4" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE)}</div>
+                        <div id="checklist-container-finale" class="space-y-4" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_FINALE)}</div>
+                    </div>
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button>
+                        <button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">
+                            <span>Salva Controllo</span>
+                        </button>
+                    </div>
+                </form>`;
+            },
+            settings: () => `<div class="space-y-8 max-w-2xl">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                    <h2 class="text-xl font-bold mb-2">Archiviazione Dati</h2>
+                    <p class="text-slate-500 dark:text-slate-400 mb-4 text-sm">Salva una copia di sicurezza dei tuoi verbali su un file, o ripristina i dati da un backup precedente.</p>
+                    <div class="flex gap-4 flex-wrap">
+                        <button id="export-btn" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold">Esporta Dati</button>
+                        <button id="import-btn" class="px-5 py-2 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Importa Dati</button>
+                        <input type="file" id="import-file" class="hidden" accept=".json">
+                    </div>
+                </div>
+                <div class="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg border border-red-200 dark:border-red-800">
+                    <h2 class="text-xl font-bold mb-2 text-red-600 dark:text-red-400">Zona Pericolo</h2>
+                    <p class="text-red-800/80 dark:text-red-300/80 mb-4 text-sm">Le azioni in questa sezione sono irreversibili. Usare con la massima cautela.</p>
+                    <button id="clear-all-btn" class="px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-semibold">Svuota Archivio Dati</button>
+                </div>
+            </div>`,
+            printReport(report, templates) {
+                const chrysasLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp';
+                const rtiLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp';
+                const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
+                
+                const weatherHTML = report.weather ? `
+                    <div class="no-break" style="margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 4px;">Condizioni Meteo al Momento del Controllo</h3>
+                        <table style="font-size: 9pt; width: 100%;">
+                            <tr>
+                                <td style="padding: 2px 5px;"><strong>Condizione:</strong> ${App.config.WEATHER_CODE_MAP[report.weather.weather_code]?.text || 'N/D'}</td>
+                                <td style="padding: 2px 5px;"><strong>Temperatura:</strong> ${report.weather.temperature_2m}°C</td>
+                                <td style="padding: 2px 5px;"><strong>Precipitazioni:</strong> ${report.weather.precipitation} mm</td>
+                                <td style="padding: 2px 5px;"><strong>Vento:</strong> ${report.weather.wind_speed_10m} km/h</td>
+                            </tr>
+                        </table>
+                    </div>` : '';
+
+                const reportBody = `
+                    <div id="print-content">
+                        <h1 style="text-align: center; font-size: 1.8rem; margin: 0; font-weight: bold; color: var(--print-text-primary);">PIANO DI CONTROLLO AMBIENTALE</h1>
+                        <h2 style="text-align: center; font-size: 1.2rem; margin-bottom: 2rem; color: var(--print-text-secondary);">Verbale di Controllo N° ${report.id}</h2>
+                        
+                        <table class="no-break" style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 10pt;">
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg); width: 25%;">Data</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); width: 25%;">${new Date(report.date + "T00:00:00").toLocaleDateString('it-IT')}</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg); width: 25%;">WBS/Area</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); width: 25%;">${report.wbs || 'N.A.'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Tipo Verbale</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${typeLabels[report.type] || 'N.D.'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Lavorazione/Oggetto</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${report.activities || 'N.A.'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Compilato da</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${report.inspector || 'N.D.'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        ${weatherHTML}
+                        
+                        ${templates.map(t => {
+                            const checks = report.checks ? report.checks[t.id] : null;
+                            if (!checks) return '';
+                            const observationsText = report.observations ? (report.observations[t.id] || '') : '';
+                            const photoSrc = report.photos?.[t.id]?.['general'];
+
+                            const photoHtml = photoSrc ? `
+                            <div class="no-break" style="margin-top: 1rem;">
+                                <h4 style="font-weight: bold; font-size: 10pt; margin-bottom: 6px;">Rilievo Fotografico Generale:</h4>
+                                <img src="${photoSrc}" style="max-width: 400px; max-height: 300px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata">
+                            </div>` : '';
+
+                            return `<div class="no-break" style="margin-bottom: 2rem;">
+                                <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem; color: var(--print-text-primary);">
+                                    <span style="font-size: 1.5rem; vertical-align: -0.2em; margin-right: 0.5rem;">${t.icon}</span>${t.title}
+                                </h2>
+                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;"><tbody>
+                                ${checks.map((check, idx) => {
+                                    const ncObservationHtml = check.nc_observation ? 
+                                    `<div style="font-size: 9pt; margin: 6px 0 6px 20px; padding: 8px; background-color: #FFF0F0; border-left: 2px solid #D32F2F; color: #333;">
+                                        <strong>Nota NC:</strong> ${check.nc_observation}
+                                    </div>` : '';
+                                    
+                                    return `<tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 8px 0; vertical-align: top; color: var(--print-text-secondary);">
+                                            ${check.item}
+                                            ${ncObservationHtml}
+                                        </td>
+                                        <td style="padding: 8px 0; text-align: right; font-weight: bold; width: 80px; vertical-align: top; color: ${check.result==='NC'?'#D32F2F':'var(--print-text-primary)'};">${check.result || 'N.D.'}</td>
+                                    </tr>`
+                                }).join('')}
+                                </tbody></table>
+                                ${(observationsText.trim() !== '' || photoHtml) ? `<div class="no-break" style="background-color: #f8f8f8; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 1rem;"><h3 style="font-weight: bold; margin-bottom: 0.5rem; font-size: 11pt;">Osservazioni e Allegati</h3>${observationsText ? `<p style="font-size: 10pt; white-space: pre-wrap; margin: 0;">${observationsText}</p>` : ''}${photoHtml}</div>` : ''}
+                            </div>`;
+                        }).join('')}
+                    </div>`;
+
+                return `<div id="print-area">
+                    <header class="print-header">
+                        <table style="width:100%; border-bottom: 2px solid var(--print-text-primary);">
+                            <tr>
+                                <td style="width:50%; text-align:left; vertical-align:middle; padding-bottom: 10px;">
+                                    <img src="${chrysasLogoUrl}" alt="Logo CHRYSAS" style="height: 40px;">
+                                </td>
+                                <td style="width:50%; text-align:right; vertical-align:middle; padding-bottom: 10px;">
+                                    <img src="${rtiLogoUrl}" alt="Logo RTI" style="height: 50px;">
+                                </td>
+                            </tr>
+                        </table>
+                    </header>
+                    
+                    ${reportBody}
+                    
+                    <footer class="print-footer">
+                       <div style="text-align: center; font-size: 8pt; color: #888; border-top: 1px solid #ccc; padding-top: 5px;">
+                            Documento generato in data ${new Date().toLocaleDateString('it-IT')} | Pagina <span class="page-number"></span> di <span class="total-pages"></span>
+                       </div>
+                    </footer>
+                </div>
+                <style>
+                    #print-area { counter-reset: page; }
+                    .page-number::after { content: counter(page); }
+                    .total-pages::after { content: counter(pages); }
+                </style>`;
+            }
+        }
+    };
+
+    App.init().catch(err => {
+        console.error("ERRORE FATALE DURANTE L'INIZIALIZZAZIONE:", err);
+        document.body.innerHTML = `<div style='padding: 2rem; text-align: center; font-family: sans-serif; color: #ef4444;'><h1>Errore Critico</h1><p>Impossibile avviare l'applicazione. Controlla la console (F12) per i dettagli.</p><p>${err.message}</p></div>`;
+    });
+});
+    </script>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+
+    <div id="app-container">
+        <aside id="sidebar" class="bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+            <div class="h-16 flex items-center justify-center px-6 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <img src="https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp" alt="Logo CHRYSAS" class="h-8">
+            </div>
+            <nav id="sidebar-nav" class="flex-grow px-4 py-6 overflow-y-auto"></nav>
+        </aside>
+        
+        <div id="sidebar-overlay"></div>
+
+        <div id="main-container" class="relative w-full">
+            <header class="h-16 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 sticky top-0 z-50">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle-btn" class="p-2 rounded-full text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700" aria-label="Toggle Menu">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <h2 id="page-title" class="text-xl font-semibold"></h2>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div id="weather-widget" class="hidden lg:flex"></div>
+
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" aria-label="Toggle dark mode">
+                        <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 7.072l.707-.707a1 1 0 10-1.414-1.414l-.707.707a1 1 0 101.414 1.414zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                    </button>
+                    <div class="text-right hidden sm:block"><span id="current-date" class="text-sm text-slate-500 dark:text-slate-400"></span></div>
+                </div>
+            </header>
+            
+            <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto p-6"></main>
+        </div>
+    </div>
+    <div id="toast" class="toast px-6 py-3 rounded-lg text-white font-medium shadow-lg" role="alert" aria-live="polite"></div>
+    <div id="print-area-wrapper" class="hidden"></div>
+    <div id="modal-overlay" class="modal-overlay"></div>
 </body>
 </html>

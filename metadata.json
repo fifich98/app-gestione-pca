@@ -1,7 +1,0 @@
-{
-  "name": "CHRYSAS PCA Management App",
-  "description": "An application to manage Environmental Control Plans (PCA) for construction sites, allowing users to perform checks, log non-conformities, manage reports, and track compliance.",
-  "requestFramePermissions": [
-    "camera"
-  ]
-}
