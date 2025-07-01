@@ -14,7 +14,7 @@
         base-uri 'self';
         form-action 'none';
     ">
-    <title>App Gestione PCA - CHRYSAS (v2.0)</title>
+    <title>App Gestione PCA - CHRYSAS (v3.1)</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,8 +77,10 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .accordion-header, .grouped-pca-header { cursor: pointer; transition: background-color 0.2s; }
-        .accordion-content, .grouped-pca-content, .conditional-section { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out, margin 0.4s ease-in-out, opacity 0.3s; opacity: 0; }
+        .accordion-content, .grouped-pca-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out, margin 0.4s ease-in-out, opacity 0.3s; opacity: 0; }
+        .conditional-section { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out, margin 0.4s ease-out, opacity 0.3s ease-out; opacity: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; }
         .accordion-content.open, .grouped-pca-content.open, .conditional-section.visible { max-height: 5000px; opacity: 1; }
+        .conditional-section.visible { padding-top: 1rem; padding-bottom: 1rem; margin-top: 1rem; }
         .accordion-icon, .grouped-pca-icon { transition: transform 0.3s; }
         .accordion-header.open .accordion-icon, .grouped-pca-header.open .grouped-pca-icon { transform: rotate(180deg); }
         .grouped-pca-content.open { margin-top: 0.5rem; }
@@ -105,7 +107,6 @@
 
         .cer-table-wrapper { overflow-x: auto; }
         .cer-table { min-width: 1200px; }
-
 
         @media print {
             body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
@@ -143,16 +144,16 @@
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v16',
+            STORAGE_KEY: 'pca_app_data_idb_v17',
             TABS: [
                 { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
-                { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
+                { id: 'lista-pca', label: 'Lista Verbali', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' },
                 { id: 'nuovo-pca', label: 'Nuovo PCA', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
                 { id: 'sopralluogo', label: 'Verbale Sopralluogo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="12" cy="15" r="2"></circle><path d="M12 10v3"></path></svg>' },
                 { id: 'impostazioni', label: 'Impostazioni', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' }
             ],
             WBS_DATA: { 'GA': { descrizione: 'Gallerie Artificiali', lavorazioni: ['Scavo di sbancamento', 'Posa armature e getti CLS', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti'] }, 'GN': { descrizione: 'Gallerie Naturali', lavorazioni: ['Scavo in naturale', 'Consolidamenti (spritz-beton, centine)', 'Rivestimenti e impermeabilizzazioni'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti', 'Vibrazioni'] }, 'AS': { descrizione: 'Aree di Stoccaggio', lavorazioni: ['Scavi e rivestimenti', 'Opere di sostegno e drenaggi'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Consumi'] }, 'TR': { descrizione: 'Trincee', lavorazioni: ['Scavi di trincea', 'Opere di sostegno (pali, diaframmi)', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Beni Culturali'] }, 'RI': { descrizione: 'Rilevati', lavorazioni: ['Formazione corpo del rilevato', 'Opere di sostegno', 'Sistemazioni idrauliche'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'VI': { descrizione: 'Viadotti', lavorazioni: ['Pali di fondazione e fondazioni', 'Elevazione pile e spalle', 'Varo impalcato e soletta'], aspetti: ['Rumore', 'Vibrazioni', 'Rifiuti', 'Sostanze Pericolose'] }, 'CB': { descrizione: 'Campo Base', lavorazioni: ['Installazione e gestione uffici/dormitori/mensa', 'Manutenzione aree e servizi'], aspetti: ['Acque', 'Rifiuti', 'Rumore', 'Consumi'] }, 'CO': { descrizione: 'Cantiere Operativo', lavorazioni: ['Allestimento aree stoccaggio', 'Gestione impianto di betonaggio', 'Officina e manutenzione mezzi'], aspetti: ['Polveri', 'Rumore', 'Acque', 'Rifiuti', 'Sostanze Pericolose'] }, 'NV': { descrizione: 'Nuova Viabilità', lavorazioni: ['Scavi e rilevati per nuova viabilità', 'Formazione sottofondi e pavimentazioni', 'Opere idrauliche e finiture'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'FA': { descrizione: 'Fabbricati', lavorazioni: ['Scavi e fondazioni', 'Elevazione strutture', 'Finiture e impianti'], aspetti: ['Polveri', 'Rumore', 'Rifiuti', 'Consumi'] } },
-            CHECK_TEMPLATES_PERIODIC: [ { id: "pca01", title: "PCA 01: Scarichi Idrici ed Approvvigionamento", icon: "💧", significativita: "ALTA", items: ["Autorizzazione allo scarico acque reflue domestiche presente e valida?", "Autorizzazione allo scarico acque reflue industriali presente e valida?", "Rispetto delle prescrizioni contenute nelle autorizzazioni?", "Corretta gestione acque di lavorazione (es. scavo pali)?", "Kit di emergenza anti-sversamento presente e completo?", "Manutenzione impianti di depurazione/trattamento registrata?"] }, { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] }, { id: "pca03", title: "PCA 03: Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Autorizzazioni per impianti (es. calcestruzzo) presenti e valide?", "Copertura mezzi per trasporto materiali polverulenti?", "Bagnatura piste e/o cumuli eseguita regolarmente?", "Velocità dei mezzi in cantiere limitata a 30 km/h?", "Impianto lavaruote funzionante ed utilizzato?"] }, { id: "pca04", title: "PCA 04: Rifiuti", icon: "🗑️", significativita: "ALTA", items: [] }, { id: "pca05", title: "PCA 05: Sostanze Pericolose ed Emergenze", icon: "☣️", significativita: "MEDIA", items: ["Schede di Sicurezza (SDS) disponibili e aggiornate?", "Stoccaggio sostanze su bacini di contenimento idonei?", "Aree di stoccaggio segnalate e adeguate?", "Personale formato per la gestione delle emergenze?"] }, { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?", "Eseguita misurazione fonometrica periodica?"] }, { id: "pca07", title: "PCA 07: Suolo e Sottosuolo", icon: "🌱", significativita: "ALTA", items: ["Assenza di contaminazioni visive del suolo (macchie, sversamenti)?", "Corretto stoccaggio del terreno vegetale in cumuli separati?", "Utilizzo delle apposite vasche per lavaggio betoniere?", "Gestione corretta del calcestruzzo in esubero?"] }, { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] } ],
+            CHECK_TEMPLATES_PERIODIC: [ { id: "pca01", title: "PCA 01: Scarichi Idrici ed Approvvigionamento", icon: "💧", significativita: "ALTA", items: ["Autorizzazione allo scarico acque reflue domestiche presente e valida?", "Autorizzazione allo scarico acque reflue industriali presente e valida?", "Rispetto delle prescrizioni contenute nelle autorizzazioni?", "Corretta gestione acque di lavorazione (es. scavo pali)?", "Kit di emergenza anti-sversamento presente e completo?", "Manutenzione impianti di depurazione/trattamento registrata?"] }, { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] }, { id: "pca03", title: "PCA 03: Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Autorizzazioni per impianti (es. calcestruzzo) presenti e valide?", "Copertura mezzi per trasporto materiali polverulenti?", "Bagnatura piste e/o cumuli eseguita regolarmente?", "Velocità dei mezzi in cantiere limitata a 30 km/h?", "Impianto lavaruote funzionante ed utilizzato?"] }, { id: "pca04", title: "PCA 04: Rifiuti", icon: "🗑️", significativita: "ALTA", items: ["Deposito temporaneo (DTR) ordinato e pulito?", "Rifiuti separati per CER e con corretta cartellonistica?", "Stoccaggio rifiuti pericolosi conforme (aree, bacini)?", "Registro di carico/scarico aggiornato (entro 10gg)?", "Quarta copia FIR ricevuta entro 90 giorni?"] }, { id: "pca05", title: "PCA 05: Sostanze Pericolose ed Emergenze", icon: "☣️", significativita: "MEDIA", items: ["Schede di Sicurezza (SDS) disponibili e aggiornate?", "Stoccaggio sostanze su bacini di contenimento idonei?", "Aree di stoccaggio segnalate e adeguate?", "Personale formato per la gestione delle emergenze?"] }, { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?", "Eseguita misurazione fonometrica periodica?"] }, { id: "pca07", title: "PCA 07: Suolo e Sottosuolo", icon: "🌱", significativita: "ALTA", items: ["Assenza di contaminazioni visive del suolo (macchie, sversamenti)?", "Corretto stoccaggio del terreno vegetale in cumuli separati?", "Utilizzo delle apposite vasche per lavaggio betoniere?", "Gestione corretta del calcestruzzo in esubero?"] }, { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] } ],
             ASPETTO_TO_PCA_ID_MAP: { 'Polveri': 'pca03', 'Rumore': 'pca06', 'Vibrazioni': 'pca06', 'Acque': 'pca01', 'Suolo': 'pca07', 'Rifiuti': 'pca04', 'Terre e Rocce': 'pca02', 'Sostanze Pericolose': 'pca05', 'Rifornimenti': 'pca05', 'Consumi': 'pca05', 'Beni Culturali': 'pca08' },
             FREQUENCY_MAP: { 'ALTA': { text: 'FREQUENZA ALTA', schedule: '(es. settimanale)', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', days: 7 }, 'MEDIA': { text: 'FREQUENZA MEDIA', schedule: '(es. quindicinale)', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300', days: 15 }, 'BASSA': { text: 'FREQUENZA BASSA', schedule: '(es. mensile)', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', days: 30 } },
             CHECK_TEMPLATES_PRELIMINARE: [{ id: "preliminare", title: "Verifica Preliminare (Ante Operam)", icon: "📍", items: ["Eseguita analisi documentale (vincoli, servitù, prescrizioni)?", "Eseguita mappatura e documentazione dei recettori sensibili?", "Documentato stato della vegetazione con rilievo fotografico?", "Verificata e documentata assenza di rifiuti/materiali preesistenti?", "Verificata e documentata assenza di contaminazioni pregresse (macchie, odori)?"] }],
@@ -222,7 +223,6 @@
             },
             async getById(id) {
                 const reports = await this.getAll();
-                // Match both numeric and string IDs
                 return reports.find(r => r && String(r.id) === String(id));
             },
             async save(newReport) {
@@ -257,8 +257,6 @@
                 reports.forEach(report => {
                     if (report && report.type === 'periodico' && report.checks) {
                         Object.entries(report.checks).forEach(([aspectId, aspectChecks]) => {
-                            // Skip waste table from stats
-                            if (aspectId === 'pca04') return;
                             const template = App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === aspectId);
                             if (!template || !aspectChecks) return;
                             aspectChecks.forEach(check => {
@@ -360,6 +358,7 @@
                 });
             },
             async showTab(tabId) {
+                App.state.tempPhotos = {}; // Reset temp photos on tab change
                 const tab = App.config.TABS.find(t => t.id === tabId);
                 if (!tab) return;
                 App.dom.sidebarNav.querySelectorAll('.sidebar-link').forEach(link => link.classList.toggle('active', link.dataset.tabId === tabId));
@@ -424,12 +423,16 @@
                            key = report.wbs ? report.wbs.substring(0, 2).toUpperCase() : 'Generico';
                         } else if (report.type === 'sopralluogo') {
                            key = 'Sopralluoghi';
+                        } else if (report.type === 'preliminare') {
+                           key = 'Ispezioni Preliminari';
+                        } else if (report.type === 'finale') {
+                           key = 'Ispezioni Finali';
                         } else {
-                           key = 'Ispezioni Specifiche';
+                           key = 'Generico';
                         }
 
                         if (!acc[key]) acc[key] = {
-                           descrizione: App.config.WBS_DATA[key]?.descrizione || key,
+                           descrizione: App.config.WBS_DATA[key]?.descrizione || key.replace(/([A-Z])/g, ' $1').trim(),
                            reports: []
                         };
                         acc[key].reports.push(report);
@@ -512,7 +515,7 @@
                 `;
             },
             async renderNuovoPca() {
-                const nextId = await App.store.getNextId();
+                const nextId = await App.store.getNextId('PCA-');
                 const today = new Date().toISOString().slice(0, 10);
                 App.dom.mainContent.innerHTML = App.templates.newPcaForm({ nextId, today });
                 App.handlers.attachNewPcaFormListeners();
@@ -559,18 +562,31 @@
             toggleSidebar() {
                 this.setSidebarState(!App.state.isSidebarOpen);
             },
-            resetPcaForm: () => { App.state.tempPhotos = {}; App.ui.showTab('nuovo-pca'); },
-            async prepareAndPrintReport(reportId) {
-                const report = await App.store.getById(reportId);
-                if (!report) return App.ui.showToast("Report non trovato", "error");
+            resetPcaForm: () => { App.ui.showTab('nuovo-pca'); },
+            async print(report) {
+                if (!report) {
+                    App.ui.showToast("Dati del verbale non validi.", "error");
+                    return;
+                }
                 
                 if (report.type === 'sopralluogo') {
                     App.dom.printAreaWrapper.innerHTML = App.templates.printSopralluogo(report);
                 } else {
                     let templates;
-                    if (report.type === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
-                    else if (report.type === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
-                    else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+                    if (report.type === 'preliminare') {
+                        templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+                    } else if (report.type === 'finale') {
+                        templates = App.config.CHECK_TEMPLATES_FINALE;
+                    } else if (report.type === 'periodico') {
+                        templates = App.config.CHECK_TEMPLATES_PERIODIC;
+                    }
+
+                    if (!templates) {
+                        console.error("Tipo di report non valido per la stampa:", report.type, report);
+                        App.ui.showToast(`Impossibile stampare: tipo di verbale non riconosciuto ('${report.type}').`, "error");
+                        return;
+                    }
+                    
                     App.dom.printAreaWrapper.innerHTML = App.templates.printReport(report, templates);
                 }
 
@@ -627,7 +643,8 @@
 
                     if (printBtn) {
                         printBtn.disabled = true;
-                        await this.onPrintPca(printBtn.dataset.id);
+                        const report = await App.store.getById(printBtn.dataset.id);
+                        await App.ui.print(report);
                         printBtn.disabled = false;
                     }
                     if (deleteBtn) {
@@ -648,7 +665,6 @@
                     }
                 });
             },
-            onPrintPca: (id) => App.ui.prepareAndPrintReport(id),
             async onDeletePca(reportId) {
                 await App.store.delete(reportId);
                 App.ui.showToast(`Verbale N° ${reportId} eliminato.`, 'info');
@@ -661,8 +677,9 @@
                     if (e.target.closest('.photo-preview-content')) e.target.closest('.photo-uploader').querySelector('.photo-input').click(); 
                     if (e.target.closest('.remove-photo-btn')) this.onPhotoRemove(e);
                     if (e.target.matches('#cancel-pca-btn')) App.ui.resetPcaForm();
+                    if (e.target.matches('#print-draft-btn')) this.onPrintDraft(form);
                     if (e.target.id === 'add-cer-row-btn') this.addCerRow();
-                    if (e.target.closest('.cer-delete-row-btn')) e.target.closest('.cer-row').remove();
+                    if (e.target.closest('.cer-delete-row-btn')) e.target.closest('tr').remove();
                     
                     const accordionHeader = e.target.closest('.accordion-header');
                     if (accordionHeader) {
@@ -674,9 +691,14 @@
                 form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', (e) => this.onPhotoUpload(e)));
                 form.addEventListener('change', (e) => {
                     if (e.target.type === 'radio' && e.target.name.startsWith('check_')) {
-                        const ncObservationWrapper = e.target.closest('.check-item-wrapper').querySelector('.nc-observation-wrapper');
+                        const wrapper = e.target.closest('.check-item-wrapper');
+                        const ncObservationWrapper = wrapper.querySelector('.nc-observation-wrapper');
                         if (ncObservationWrapper) {
                              ncObservationWrapper.classList.toggle('visible', e.target.value === 'NC');
+                        }
+                        const conditionalSection = wrapper.querySelector('.conditional-section:not(.nc-observation-wrapper)');
+                        if(conditionalSection){
+                            conditionalSection.classList.toggle('visible', e.target.value === 'C');
                         }
                     }
                 });
@@ -732,6 +754,90 @@
                 row.innerHTML = App.templates.wasteTableRow(index);
                 container.appendChild(row);
             },
+            _buildReportObjectFromForm(form) {
+                const formData = new FormData(form);
+                const reportType = formData.get('type');
+                const sanitize = App.ui.sanitize;
+                
+                const report = { 
+                    id: sanitize(formData.get('id')), 
+                    type: sanitize(reportType), 
+                    date: sanitize(formData.get('date')), 
+                    inspector: sanitize(reportType === 'periodico' ? formData.get('inspector-wbs') : formData.get('inspector-manual')), 
+                    wbs: sanitize(reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual')), 
+                    activities: sanitize(reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual')), 
+                    weather: App.state.currentWeather,
+                    location: App.state.currentLocation,
+                    checks: {}, 
+                    observations: {}, 
+                    photos: {},
+                    cerData: [],
+                    extraData: {}
+                };
+                
+                let templates;
+                if (reportType === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
+                else if (reportType === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
+                else templates = App.config.CHECK_TEMPLATES_PERIODIC;
+
+                templates.forEach(template => {
+                    const sheetElement = document.getElementById(`accordion-${template.id}`);
+                    if (sheetElement && window.getComputedStyle(sheetElement).display !== 'none') {
+                        report.checks[template.id] = template.items.map((item, idx) => {
+                            const result = sanitize(formData.get(`check_${template.id}_${idx}`));
+                            const nc_observation = result === 'NC' ? sanitize(formData.get(`nc_observation_${template.id}_${idx}`)) : null;
+                            const photoKey = `photo_${template.id}_${idx}`;
+                            if(App.state.tempPhotos[photoKey]) {
+                               if(!report.photos[template.id]) report.photos[template.id] = {};
+                               report.photos[template.id][idx] = App.state.tempPhotos[photoKey];
+                            }
+                            
+                            if (result === 'C') {
+                                const extraFields = form.querySelectorAll(`[name^="extra_${template.id}_${idx}"]`);
+                                if(extraFields.length > 0) {
+                                    if(!report.extraData[template.id]) report.extraData[template.id] = {};
+                                    if(!report.extraData[template.id][idx]) report.extraData[template.id][idx] = {};
+                                    extraFields.forEach(field => {
+                                        const fieldName = field.name.split('_').pop();
+                                        report.extraData[template.id][idx][fieldName] = sanitize(field.value);
+                                    });
+                                }
+                            }
+
+                            return { item: sanitize(item), result, nc_observation };
+                        });
+                        report.observations[template.id] = sanitize(formData.get(`observation_${template.id}`));
+                    }
+                });
+
+                const cerContainer = document.getElementById('cer-table-rows');
+                if (cerContainer) {
+                    cerContainer.querySelectorAll('.cer-row').forEach(row => {
+                        const rowData = {
+                            cer: sanitize(row.querySelector('[name^="cer_produttore"]').value),
+                            ubicazione: sanitize(row.querySelector('[name^="cer_ubicazione"]').value),
+                            verbaleN: sanitize(row.querySelector('[name^="cer_verbaleN"]').value),
+                            verbaleDel: sanitize(row.querySelector('[name^="cer_verbaleDel"]').value),
+                            provaN: sanitize(row.querySelector('[name^="cer_provaN"]').value),
+                            provaDel: sanitize(row.querySelector('[name^="cer_provaDel"]').value),
+                            identificato: sanitize(row.querySelector('[name^="cer_identificato"]').value),
+                            delimitato: sanitize(row.querySelector('[name^="cer_delimitato"]').value),
+                            produzione: row.querySelector('[name^="cer_produzione"]').checked,
+                            carico: row.querySelector('[name^="cer_carico"]').checked,
+                            validita: sanitize(row.querySelector('[name^="cer_validita"]').value),
+                            note: sanitize(row.querySelector('[name^="cer_note"]').value),
+                        };
+                        if (Object.values(rowData).some(v => (typeof v === 'string' && v.trim() !== '') || (typeof v === 'boolean' && v))) {
+                            report.cerData.push(rowData);
+                        }
+                    });
+                }
+                return report;
+            },
+            async onPrintDraft(form) {
+                const report = this._buildReportObjectFromForm(form);
+                await App.ui.print(report);
+            },
             async onNewPcaSubmit(e) {
                 e.preventDefault();
                 if (App.state.isSaving) return;
@@ -748,79 +854,7 @@
                 if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Salvando...</span>`; }
 
                 try {
-                    const formData = new FormData(form);
-                    const reportType = formData.get('type');
-                    const sanitize = App.ui.sanitize;
-                    
-                    const reportId = parseInt(formData.get('id'));
-                    if (isNaN(reportId) || reportId <= 0) {
-                        throw new Error("Il numero del verbale non è valido.");
-                    }
-                    
-                    const newReport = { 
-                        id: reportId, 
-                        type: sanitize(reportType), 
-                        date: sanitize(formData.get('date')), 
-                        inspector: sanitize(reportType === 'periodico' ? formData.get('inspector-wbs') : formData.get('inspector-manual')), 
-                        wbs: sanitize(reportType === 'periodico' ? formData.get('wbs-input') : formData.get('wbs-manual')), 
-                        activities: sanitize(reportType === 'periodico' ? formData.get('lavorazione') : formData.get('activities-manual')), 
-                        weather: App.state.currentWeather,
-                        location: App.state.currentLocation,
-                        checks: {}, 
-                        observations: {}, 
-                        photos: {},
-                        cerData: []
-                    };
-                    
-                    let templates;
-                    if (reportType === 'preliminare') templates = App.config.CHECK_TEMPLATES_PRELIMINARE;
-                    else if (reportType === 'finale') templates = App.config.CHECK_TEMPLATES_FINALE;
-                    else templates = App.config.CHECK_TEMPLATES_PERIODIC;
-
-                    templates.forEach(template => {
-                        const sheetElement = document.getElementById(`accordion-${template.id}`);
-                        if (sheetElement && window.getComputedStyle(sheetElement).display !== 'none') {
-                            // Handle standard checklists
-                            if (template.id !== 'pca04') {
-                                newReport.checks[template.id] = template.items.map((item, idx) => {
-                                    const result = sanitize(formData.get(`check_${template.id}_${idx}`));
-                                    const nc_observation = result === 'NC' ? sanitize(formData.get(`nc_observation_${template.id}_${idx}`)) : null;
-                                    const photoKey = `photo_${template.id}_${idx}`;
-                                    if(App.state.tempPhotos[photoKey]) {
-                                       if(!newReport.photos[template.id]) newReport.photos[template.id] = {};
-                                       newReport.photos[template.id][idx] = App.state.tempPhotos[photoKey];
-                                    }
-                                    return { item: sanitize(item), result, nc_observation };
-                                });
-                            }
-                            newReport.observations[template.id] = sanitize(formData.get(`observation_${template.id}`));
-                        }
-                    });
-
-                    // Handle Waste Table specifically
-                    const cerContainer = document.getElementById('cer-table-rows');
-                    if (cerContainer) {
-                        cerContainer.querySelectorAll('.cer-row').forEach(row => {
-                            const rowData = {
-                                cer: sanitize(row.querySelector('[name^="cer_produttore"]').value),
-                                ubicazione: sanitize(row.querySelector('[name^="cer_ubicazione"]').value),
-                                verbaleN: sanitize(row.querySelector('[name^="cer_verbaleN"]').value),
-                                verbaleDel: sanitize(row.querySelector('[name^="cer_verbaleDel"]').value),
-                                provaN: sanitize(row.querySelector('[name^="cer_provaN"]').value),
-                                provaDel: sanitize(row.querySelector('[name^="cer_provaDel"]').value),
-                                identificato: sanitize(row.querySelector('[name^="cer_identificato"]').value),
-                                delimitato: sanitize(row.querySelector('[name^="cer_delimitato"]').value),
-                                produzione: row.querySelector('[name^="cer_produzione"]').checked,
-                                carico: row.querySelector('[name^="cer_carico"]').checked,
-                                validita: sanitize(row.querySelector('[name^="cer_validita"]').value),
-                                note: sanitize(row.querySelector('[name^="cer_note"]').value),
-                            };
-                            if (Object.values(rowData).some(v => (typeof v === 'string' && v.trim() !== '') || (typeof v === 'boolean' && v))) {
-                                newReport.cerData.push(rowData);
-                            }
-                        });
-                    }
-                    
+                    const newReport = this._buildReportObjectFromForm(form);
                     await App.store.save(newReport);
                     App.ui.showToast('Controllo salvato con successo!', 'success');
                     App.ui.resetPcaForm();
@@ -950,8 +984,43 @@
                 form.addEventListener('click', (e) => { 
                     if (e.target.closest('.photo-preview-content')) e.target.closest('.photo-uploader').querySelector('.photo-input').click(); 
                     if (e.target.closest('.remove-photo-btn')) this.onPhotoRemove(e);
+                    if (e.target.matches('#print-draft-btn')) this.onPrintSopralluogoDraft(form);
                 });
                 form.querySelectorAll('.photo-input').forEach(i => i.addEventListener('change', (e) => this.onPhotoUpload(e)));
+             },
+             _buildSopralluogoObjectFromForm(form) {
+                const formData = new FormData(form);
+                const sanitize = App.ui.sanitize;
+                const reportId = sanitize(formData.get('id'));
+
+                const report = {
+                    id: reportId,
+                    type: 'sopralluogo',
+                    date: sanitize(formData.get('date')),
+                    wbs: sanitize(formData.get('wbs')),
+                    activities: `Sopralluogo Area: ${sanitize(formData.get('wbs'))}`,
+                    inspector: sanitize(formData.get('inspector')),
+                    notes: sanitize(formData.get('notes')),
+                    weather: App.state.currentWeather,
+                    location: App.state.currentLocation,
+                    photos: []
+                };
+                
+                for(let i = 0; i < 5; i++){
+                    const photoKey = `photo_sopralluogo_${i}`;
+                    const caption = sanitize(formData.get(`caption_${i}`));
+                    if(App.state.tempPhotos[photoKey]){
+                        report.photos.push({
+                            src: App.state.tempPhotos[photoKey],
+                            caption: caption
+                        });
+                    }
+                }
+                return report;
+             },
+             async onPrintSopralluogoDraft(form) {
+                const report = this._buildSopralluogoObjectFromForm(form);
+                await App.ui.print(report);
              },
              async onSopralluogoSubmit(e) {
                 e.preventDefault();
@@ -969,37 +1038,9 @@
                 if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Salvando...</span>`; }
                 
                 try {
-                    const formData = new FormData(form);
-                    const sanitize = App.ui.sanitize;
-                    const reportId = sanitize(formData.get('id'));
-
-                    const newReport = {
-                        id: reportId,
-                        type: 'sopralluogo',
-                        date: sanitize(formData.get('date')),
-                        wbs: sanitize(formData.get('wbs')),
-                        activities: `Sopralluogo Area: ${sanitize(formData.get('wbs'))}`,
-                        inspector: sanitize(formData.get('inspector')),
-                        notes: sanitize(formData.get('notes')),
-                        weather: App.state.currentWeather,
-                        location: App.state.currentLocation,
-                        photos: []
-                    };
-                    
-                    for(let i = 0; i < 5; i++){
-                        const photoKey = `photo_sopralluogo_${i}`;
-                        const caption = sanitize(formData.get(`caption_${i}`));
-                        if(App.state.tempPhotos[photoKey]){
-                            newReport.photos.push({
-                                src: App.state.tempPhotos[photoKey],
-                                caption: caption
-                            });
-                        }
-                    }
-
+                    const newReport = this._buildSopralluogoObjectFromForm(form);
                     await App.store.save(newReport);
                     App.ui.showToast('Verbale di Sopralluogo salvato!', 'success');
-                    App.state.tempPhotos = {};
                     await App.ui.showTab('lista-pca');
 
                 } catch (error) {
@@ -1058,9 +1099,13 @@
                 </div>`;
             },
             pcaGroupedList: (groupedReports, frequencyStatuses) => {
-                const groupOrder = ['Sopralluoghi', 'Ispezioni Specifiche', ...Object.keys(App.config.WBS_DATA)];
+                const groupOrder = ['Sopralluoghi', 'Ispezioni Preliminari', 'Ispezioni Finali', ...Object.keys(App.config.WBS_DATA)];
                  const sortedGroupKeys = Object.keys(groupedReports).sort((a, b) => {
-                    return groupOrder.indexOf(a) - groupOrder.indexOf(b);
+                    const indexA = groupOrder.indexOf(a);
+                    const indexB = groupOrder.indexOf(b);
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
                 });
 
                 if (sortedGroupKeys.length === 0) {
@@ -1142,9 +1187,7 @@
             },
             renderChecklist(templates) {
                 return templates.map(t => {
-                    if (t.id === 'pca04') {
-                         return this.renderWasteTable(t);
-                    }
+                    if (t.id === 'pca04') return ''; // Skip waste table here, rendered separately
                     const freqInfo = App.config.FREQUENCY_MAP[t.significativita];
                     return `<div id="accordion-${t.id}" class="pca-sheet-accordion bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm">
                         <div class="accordion-header p-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-t-lg">
@@ -1158,7 +1201,21 @@
                             <div class="space-y-4">
                                 ${t.items.map((item, idx) => {
                                     const baseName = `check_${t.id}_${idx}`;
+                                    const extraContentId = `extra_${t.id}_${idx}`;
+                                    let extraContentHTML = '';
+                                    
+                                    // Conditional content logic based on PDF
+                                    if (t.id === 'pca01' && (idx === 0 || idx === 1)) extraContentHTML = `<div class="w-full md:w-1/2"><label for="${extraContentId}_auth" class="form-label">N° Autorizzazione</label><input type="text" id="${extraContentId}_auth" name="${extraContentId}_auth" class="form-input"></div>`;
+                                    if (t.id === 'pca01' && idx === 5) extraContentHTML = `<div class="w-full md:w-1/2"><label for="${extraContentId}_revisione" class="form-label">Data Ultima Revisione</label><input type="date" id="${extraContentId}_revisione" name="${extraContentId}_revisione" class="form-input"></div>`;
+                                    if (t.id === 'pca02' && idx === 2) extraContentHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="${extraContentId}_ddt" class="form-label">N° DDT</label><input type="text" id="${extraContentId}_ddt" name="${extraContentId}_ddt" class="form-input"></div><div><label for="${extraContentId}_targa" class="form-label">Targa</label><input type="text" id="${extraContentId}_targa" name="${extraContentId}_targa" class="form-input"></div></div>`;
+                                    if (t.id === 'pca03' && idx === 0) extraContentHTML = `<div class="w-full md:w-1/2"><label for="${extraContentId}_auth" class="form-label">N° Autorizzazione</label><input type="text" id="${extraContentId}_auth" name="${extraContentId}_auth" class="form-input"></div>`;
+                                    
                                     const photoKey = `photo_${t.id}_${idx}`;
+                                    let photoUploaderHTML = '';
+                                    if ((t.id === 'pca01' && idx === 4) || (t.id === 'pca02' && (idx === 0 || idx === 1)) || (t.id === 'pca05' && (idx === 0 || idx === 1))) {
+                                       photoUploaderHTML = `<div class="flex-shrink-0">${this.photoUpload(photoKey)}</div>`;
+                                    }
+
                                     return `<div class="check-item-wrapper border-t border-slate-200 dark:border-slate-700 py-4 first:border-t-0 first:pt-0">
                                         <div class="check-item flex flex-col sm:flex-row justify-between sm:items-start gap-4">
                                             <label class="mr-4 text-sm flex-1 pt-1">${item}</label>
@@ -1167,11 +1224,16 @@
                                                 <div class="flex items-center"><input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="form-checkbox"><label for="${baseName}_nc" class="ml-2 block">No</label></div>
                                                 <div class="flex items-center"><input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="form-checkbox" checked><label for="${baseName}_na" class="ml-2 block">N.A.</label></div>
                                             </div>
-                                            ${this.photoUpload(photoKey)}
                                         </div>
                                         <div class="nc-observation-wrapper conditional-section mt-3 pl-4 border-l-2 border-red-500">
                                             <label for="nc_observation_${t.id}_${idx}" class="form-label text-red-700 dark:text-red-400">Dettaglio Non Conformità / Azione Correttiva</label>
                                             <textarea id="nc_observation_${t.id}_${idx}" name="nc_observation_${t.id}_${idx}" class="form-textarea" rows="2" placeholder="Descrivere il problema e l'azione da intraprendere..."></textarea>
+                                        </div>
+                                        <div class="conditional-section pl-4 border-l-2 border-blue-500">
+                                            <div class="flex items-end gap-4">
+                                                <div class="flex-grow">${extraContentHTML}</div>
+                                                ${photoUploaderHTML}
+                                            </div>
                                         </div>
                                     </div>`
                                 }).join('')}
@@ -1184,7 +1246,7 @@
                     </div>` 
                 }).join('');
             },
-            renderWasteTable(template) {
+            renderWasteSection(template) {
                 const freqInfo = App.config.FREQUENCY_MAP[template.significativita];
                 return `<div id="accordion-${template.id}" class="pca-sheet-accordion bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm">
                     <div class="accordion-header p-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-t-lg">
@@ -1195,29 +1257,57 @@
                         <svg class="accordion-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div class="accordion-content p-4">
-                        <div class="cer-table-wrapper">
-                             <table class="cer-table w-full border-collapse text-xs">
-                                <thead>
-                                    <tr class="bg-slate-100 dark:bg-slate-700">
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">CER/Produttore</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">Ubicazione</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">In Caratterizz. (Verbale N./Del)</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">Rapp. Prova (N./Del)</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">Ident.</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">Delim.</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">In Prod.</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">In Carico</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-center">Validità RDP</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold text-left">Note/Miglioramento</th>
-                                        <th class="p-2 border dark:border-slate-600 font-semibold"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cer-table-rows" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                </tbody>
-                             </table>
+                        <div class="space-y-4">
+                            ${template.items.map((item, idx) => {
+                                const baseName = `check_${template.id}_${idx}`;
+                                const photoKey = `photo_${template.id}_${idx}`;
+                                let photoUploaderHTML = '';
+                                if (idx === 0 || idx === 2) { // DTR ordinato, Stoccaggio conforme
+                                   photoUploaderHTML = `<div class="flex-shrink-0">${this.photoUpload(photoKey)}</div>`;
+                                }
+                                return `<div class="check-item-wrapper border-t border-slate-200 dark:border-slate-700 py-4 first:border-t-0 first:pt-0">
+                                    <div class="check-item flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                                        <label class="mr-4 text-sm flex-1 pt-1">${item}</label>
+                                        <div class="flex items-center gap-x-5 text-sm flex-shrink-0">
+                                            <div class="flex items-center"><input id="${baseName}_c" name="${baseName}" type="radio" value="C" class="form-checkbox"><label for="${baseName}_c" class="ml-2 block">Sì</label></div>
+                                            <div class="flex items-center"><input id="${baseName}_nc" name="${baseName}" type="radio" value="NC" class="form-checkbox"><label for="${baseName}_nc" class="ml-2 block">No</label></div>
+                                            <div class="flex items-center"><input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="form-checkbox" checked><label for="${baseName}_na" class="ml-2 block">N.A.</label></div>
+                                        </div>
+                                         ${photoUploaderHTML}
+                                    </div>
+                                    <div class="nc-observation-wrapper conditional-section mt-3 pl-4 border-l-2 border-red-500">
+                                        <label for="nc_observation_${template.id}_${idx}" class="form-label text-red-700 dark:text-red-400">Dettaglio Non Conformità / Azione Correttiva</label>
+                                        <textarea id="nc_observation_${template.id}_${idx}" name="nc_observation_${template.id}_${idx}" class="form-textarea" rows="2" placeholder="Descrivere il problema e l'azione da intraprendere..."></textarea>
+                                    </div>
+                                </div>`
+                            }).join('')}
                         </div>
-                        <button type="button" id="add-cer-row-btn" class="mt-4 px-3 py-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded-md text-sm font-semibold hover:bg-blue-200 dark:hover:bg-blue-900">+ Aggiungi Riga Rifiuto</button>
-                         <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                             <h3 class="text-md font-semibold mb-2">Dettaglio Rifiuti Presenti nell'Area</h3>
+                             <div class="cer-table-wrapper">
+                                 <table class="cer-table w-full border-collapse text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-100 dark:bg-slate-700">
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-left">CER/Produttore</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-left">Ubicazione</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-left">In Caratterizz. (Verbale N./Del)</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-left">Rapp. Prova (N./Del)</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-center">Ident.</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-center">Delim.</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-center">In Prod.</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-center">In Carico</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-center">Validità RDP</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold text-left">Note/Miglioramento</th>
+                                            <th class="p-2 border dark:border-slate-600 font-semibold"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cer-table-rows" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    </tbody>
+                                 </table>
+                            </div>
+                            <button type="button" id="add-cer-row-btn" class="mt-4 px-3 py-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded-md text-sm font-semibold hover:bg-blue-200 dark:hover:bg-blue-900">+ Aggiungi Riga Rifiuto</button>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                             <label for="observation_${template.id}" class="text-sm font-medium mb-2 block">Note Rilevate e NC Generali</label>
                             <textarea id="observation_${template.id}" name="observation_${template.id}" class="form-textarea" rows="3" placeholder="Inserire qui eventuali note o non conformità generali relative alla gestione rifiuti..."></textarea>
                         </div>
@@ -1244,11 +1334,13 @@
                 `;
             },
             newPcaForm({ nextId, today }) {
+                const periodicChecklists = this.renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC);
+                const wasteSection = this.renderWasteSection(App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === 'pca04'));
                 return `<form id="new-pca-form" novalidate class="space-y-8">
                     <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
                         <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">1. Dati Generali PCA</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label for="pca-id" class="form-label">Verbale N°</label><input type="number" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
+                            <div><label for="pca-id" class="form-label">Verbale N°</label><input type="text" id="pca-id" name="id" class="form-input" value="${nextId}" required></div>
                             <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
                             <div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
                         </div>
@@ -1269,12 +1361,13 @@
                     </div>
                     <div>
                         <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2>
-                        <div id="checklist-container-periodico" class="space-y-4">${this.renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC)}</div>
+                        <div id="checklist-container-periodico" class="space-y-4">${periodicChecklists}${wasteSection}</div>
                         <div id="checklist-container-preliminare" class="space-y-4" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE)}</div>
                         <div id="checklist-container-finale" class="space-y-4" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_FINALE)}</div>
                     </div>
                     <div class="flex justify-end gap-4 pt-4">
                         <button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button>
+                        <button type="button" id="print-draft-btn" class="px-6 py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 font-semibold flex items-center justify-center">Stampa / Esporta Bozza</button>
                         <button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">
                             <span>Salva Controllo</span>
                         </button>
@@ -1324,6 +1417,7 @@
 
                     <div class="flex justify-end gap-4 pt-4">
                         <button type="button" onclick="App.ui.showTab('lista-pca')" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button>
+                        <button type="button" id="print-draft-btn" class="px-6 py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 font-semibold flex items-center justify-center">Stampa / Esporta Bozza</button>
                         <button type="submit" class="px-6 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 font-semibold flex items-center justify-center">
                             <span>Salva Verbale</span>
                         </button>
@@ -1392,7 +1486,16 @@
                         ${templates.map(t => {
                             let contentHtml = '';
                              if (t.id === 'pca04') {
-                                // RENDER WASTE TABLE
+                                const checks = report.checks ? report.checks[t.id] : [];
+                                contentHtml += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;"><tbody>
+                                ${checks.map((check, idx) => {
+                                    const ncObservationHtml = check.nc_observation ? `<div style="font-size: 9pt; margin: 6px 0 6px 20px; padding: 8px; background-color: #FFF0F0; border-left: 2px solid #D32F2F; color: #333;"><strong>Nota NC:</strong> ${check.nc_observation}</div>` : '';
+                                    const photoSrc = report.photos?.[t.id]?.[idx];
+                                    const photoHtml = photoSrc ? `<div style="margin-top: 8px; margin-left: 20px;"><img src="${photoSrc}" style="max-width: 200px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata"></div>` : '';
+                                    return `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; vertical-align: top; color: var(--print-text-secondary);">${check.item}${ncObservationHtml}${photoHtml}</td><td style="padding: 8px 0; text-align: right; font-weight: bold; width: 80px; vertical-align: top; color: ${check.result==='NC'?'#D32F2F':'var(--print-text-primary)'};">${check.result || 'N.D.'}</td></tr>`
+                                }).join('')}
+                                </tbody></table>`;
+
                                 if(report.cerData && report.cerData.length > 0){
                                     contentHtml += `<h3 class="no-break" style="font-weight:bold; font-size: 10pt; margin: 1rem 0 0.5rem 0;">Dettaglio Controllo Rifiuti</h3>
                                     <table class="no-break" style="width:100%; font-size: 7pt; border-collapse:collapse;">
@@ -1433,12 +1536,25 @@
                                     `<div style="font-size: 9pt; margin: 6px 0 6px 20px; padding: 8px; background-color: #FFF0F0; border-left: 2px solid #D32F2F; color: #333;">
                                         <strong>Nota NC:</strong> ${check.nc_observation}
                                     </div>` : '';
+                                    
+                                    let extraDataHtml = '';
+                                    const extraData = report.extraData?.[t.id]?.[idx];
+                                    if(extraData){
+                                        extraDataHtml = '<div style="font-size: 9pt; margin: 6px 0 6px 20px; padding: 8px; background-color: #f8f8f8; border-left: 2px solid #ddd;">';
+                                        for(const [key, value] of Object.entries(extraData)){
+                                            const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+                                            extraDataHtml += `<span style="display: inline-block; min-width: 140px;"><strong>${formattedKey}:</strong></span> ${value || 'N.D.'} <br>`;
+                                        }
+                                        extraDataHtml += '</div>';
+                                    }
+
                                     const photoSrc = report.photos?.[t.id]?.[idx];
                                     const photoHtml = photoSrc ? `<div style="margin-top: 8px; margin-left: 20px;"><img src="${photoSrc}" style="max-width: 200px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata"></div>` : '';
 
                                     return `<tr style="border-bottom: 1px solid #eee;">
                                         <td style="padding: 8px 0; vertical-align: top; color: var(--print-text-secondary);">
                                             ${check.item}
+                                            ${extraDataHtml}
                                             ${ncObservationHtml}
                                             ${photoHtml}
                                         </td>
