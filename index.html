@@ -10,9 +10,7 @@
         font-src 'self' https://fonts.gstatic.com;
         img-src 'self' https: data:;
         connect-src 'self' https://api.open-meteo.com;
-        object-src 'none';
-        base-uri 'self';
-        form-action 'none';
+        object-src 'none'; base-uri 'self'; form-action 'none';
     ">
     <title>App Gestione PCA - CHRYSAS (Versione Produzione)</title>
     
@@ -26,23 +24,21 @@
     
     <style>
         :root {
-            --print-header-bg: #f2f2f2;
-            --print-border-color: #bbb;
-            --print-text-primary: #000;
-            --print-text-secondary: #333;
+            --print-header-bg: #f2f2f2; --print-border-color: #bbb;
+            --print-text-primary: #000; --print-text-secondary: #333;
         }
-
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        /* --- UI --- Stili base e tema scuro migliorati */
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         .dark body { background-color: #0f172a; }
 
+        /* Layout & Sidebar */
         #sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 16rem; transition: transform 0.3s ease-in-out; will-change: transform; z-index: 1000; }
         #main-container { transition: padding-left 0.3s ease-in-out; }
-
         @media (max-width: 1023px) {
             #sidebar { transform: translateX(-100%); }
             .sidebar-open #sidebar { transform: translateX(0); }
             #main-container { padding-left: 0; }
-            .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+            .sidebar-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.6); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
             .sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
         }
         @media (min-width: 1024px) {
@@ -52,45 +48,42 @@
             .sidebar-collapsed #main-container { padding-left: 0; }
             .sidebar-overlay { display: none; }
         }
-
-        .sidebar-link { transition: background-color 0.2s, color 0.2s; }
+        .sidebar-link { transition: background-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s; }
         .sidebar-link.active { @apply bg-blue-600 text-white font-semibold; }
         
-        /* General UI & Inputs */
-        .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s, transform 0.3s; z-index: 1050; }
-        .toast.show { opacity: 1; bottom: 40px; transform: translateX(-50%) scale(1); }
-        button, .sidebar-link { transition: all 0.2s ease-in-out; }
-        button:hover:not(:disabled), .sidebar-link:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        /* Componenti UI Generali */
+        .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1); z-index: 1050; }
+        .toast.show { opacity: 1; bottom: 40px; }
+        button { transition: all 0.2s ease-in-out; }
+        button:hover:not(:disabled), .sidebar-link:hover:not(.active) { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
         button:active:not(:disabled) { transform: translateY(0px); box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
+        
         .content-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1040; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.6); display: flex; align-items: center; justify-content: center; z-index: 1040; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .modal-overlay.visible { opacity: 1; pointer-events: auto; }
-        .modal-box { background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-box { background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s; }
         .modal-overlay.visible .modal-box { transform: scale(1); }
         .dark .modal-box { background-color: #1e293b; }
 
-        #weather-widget { display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; color: #475569; }
-        .dark #weather-widget { color: #cbd5e1; }
-        #weather-widget .loader { width: 1.25rem; height: 1.25rem; border: 2px solid #e2e8f0; border-top-color: #64748b; border-radius: 50%; animation: spin 1s linear infinite; }
+        .loader { width: 1.25rem; height: 1.25rem; border: 2px solid #e2e8f0; border-top-color: #64748b; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Stili Accordion */
         .accordion-header, .grouped-pca-header { cursor: pointer; transition: background-color 0.2s; }
-        .accordion-content, .grouped-pca-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out, margin 0.4s ease-in-out; }
-        .accordion-content.open, .grouped-pca-content.open { max-height: 5000px; }
+        .accordion-content, .grouped-pca-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out; }
+        .accordion-header.open + .accordion-content, .grouped-pca-header.open + .grouped-pca-content { max-height: 5000px; /* Valore alto per contenere tutto */ }
         .accordion-icon, .grouped-pca-icon { transition: transform 0.3s; }
         .accordion-header.open .accordion-icon, .grouped-pca-header.open .grouped-pca-icon { transform: rotate(180deg); }
-        .grouped-pca-content.open { margin-top: 0.5rem; }
-
-        /* Stili dei form consolidati e migliorati per visibilità */
-        .form-label { font-size: 0.875rem; font-weight: 500; color: #475569; }
+        
+        /* Stili Form Consolidati */
+        .form-label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
         .dark .form-label { color: #d1d5db; }
         .form-input, .form-select, .form-textarea {
-            margin-top: 0.25rem; display: block; width: 100%; border-radius: 0.375rem; 
-            background-color: #ffffff; font-size: 0.875rem; border: 2px solid #cbd5e1; 
-            transition: border-color 0.2s, box-shadow 0.2s; padding: 0.5rem 0.75rem;
+            display: block; width: 100%; border-radius: 0.375rem; background-color: #ffffff; 
+            font-size: 0.875rem; border: 1px solid #cbd5e1; transition: border-color 0.2s, box-shadow 0.2s; padding: 0.6rem 0.75rem;
         }
         .dark .form-input, .dark .form-select, .dark .form-textarea { background-color: #1f2937; border-color: #4b5563; }
         .form-input:focus, .form-select:focus, .form-textarea:focus {
@@ -98,33 +91,38 @@
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); border-color: #3b82f6; 
         }
         .form-input:invalid, .form-select:invalid, .form-textarea:invalid { border-color: #ef4444 !important; }
-        .form-checkbox { height: 1rem; width: 1rem; border-radius: 0.25rem; border-color: #d1d5db; color: #3b82f6; }
-        .dark .form-checkbox { border-color: #4b5563; }
+        .form-checkbox { height: 1.1rem; width: 1.1rem; border-radius: 0.25rem; border-color: #94a3b8; color: #3b82f6; }
+        .dark .form-checkbox { border-color: #64748b; }
         .form-checkbox:focus { box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); }
         
+        .extra-content-wrapper { transition: all 0.4s ease-in-out; max-height: 0; overflow: hidden; opacity: 0; }
+        .extra-content-wrapper.visible { max-height: 1000px; opacity: 1; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid #e2e8f0; }
+        .dark .extra-content-wrapper.visible { border-top-color: #334155; }
+
         .hidden { display: none; }
 
-        /* Print Styles */
         @media print {
-            body, #print-area { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
-            body > *:not(#print-area-wrapper) { display: none !important; }
-            #print-area-wrapper { display: block !important; }
-            @page {
-                size: A4; margin: 2cm 1.5cm;
-                @top-center { content: element(header); }
-                @bottom-center { content: element(footer); }
-            }
-            header.print-header { position: running(header); }
-            footer.print-footer { position: running(footer); }
-            .page-break { page-break-after: always; }
+            body { background-color: #fff; font-family: 'Times New Roman', serif; }
+            #app-container, #toast, #modal-overlay { display: none; }
+            #print-area-wrapper { display: block; }
+            #print-area { margin: 0; padding: 0; }
+            @page { size: A4; margin: 2cm; }
+            .print-header, .print-footer { position: fixed; width: 100%; left: 0; right: 0; padding: 0 2cm; }
+            .print-header { top: 0; }
+            .print-footer { bottom: 0; }
+            #print-content { margin-top: 60px; margin-bottom: 40px; }
+            table { border-collapse: collapse; width: 100%; page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
             .no-break { page-break-inside: avoid; }
+            .page-number::before { content: counter(page); }
+            .total-pages::before { content: counter(pages); }
         }
     </style>
-    
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
     <div id="app-container">
-        <aside id="sidebar" class="bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+        <!-- Sidebar (Menu Laterale) -->
+        <aside id="sidebar" class="bg-white dark:bg-slate-800/95 backdrop-blur-sm border-r border-slate-200 dark:border-slate-700 flex flex-col">
             <div class="h-16 flex items-center justify-center px-6 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                 <img src="https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/LOGOCHRYSAS.bmp" alt="Logo CHRYSAS" class="h-8">
             </div>
@@ -133,17 +131,17 @@
         
         <div id="sidebar-overlay"></div>
 
+        <!-- Contenitore Principale -->
         <div id="main-container" class="relative w-full">
-            <header class="h-16 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 sticky top-0 z-50">
+            <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 sticky top-0 z-50">
                 <div class="flex items-center gap-4">
                     <button id="sidebar-toggle-btn" class="p-2 rounded-full text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700" aria-label="Toggle Menu">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                     </button>
                     <h2 id="page-title" class="text-xl font-semibold"></h2>
                 </div>
-
                 <div class="flex items-center gap-6">
-                    <div id="weather-widget" class="hidden lg:flex"></div>
+                    <div id="weather-widget" class="hidden lg:flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"></div>
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" aria-label="Toggle dark mode">
                         <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 7.072l.707-.707a1 1 0 10-1.414-1.414l-.707.707a1 1 0 101.414 1.414zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
@@ -164,12 +162,13 @@
 
     const App = {
         config: {
-            STORAGE_KEY: 'pca_app_data_idb_v14', // Versione aggiornata
+            STORAGE_KEY: 'pca_app_data_idb_v17',
+            // --- TEXT --- Nomi delle sezioni aggiornati come richiesto
             TABS: [
-                { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
-                { id: 'lista-pca', label: 'Lista Controlli', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>' },
-                { id: 'nuovo-pca', label: 'Esegui Controllo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
-                { id: 'impostazioni', label: 'Impostazioni', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' }
+                { id: 'dashboard', label: 'Dashboard', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>' },
+                { id: 'lista-pca', label: 'Lista PCA', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>' },
+                { id: 'nuovo-pca', label: 'Nuovo PCA', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' },
+                { id: 'impostazioni', label: 'Impostazioni', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' }
             ],
             WBS_DATA: { 'GA': { descrizione: 'Gallerie Artificiali', lavorazioni: ['Scavo di sbancamento', 'Posa armature e getti CLS', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti'] }, 'GN': { descrizione: 'Gallerie Naturali', lavorazioni: ['Scavo in naturale', 'Consolidamenti (spritz-beton, centine)', 'Rivestimenti e impermeabilizzazioni'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Rifornimenti', 'Acque', 'Rifiuti', 'Vibrazioni'] }, 'AS': { descrizione: 'Aree di Stoccaggio', lavorazioni: ['Scavi e rivestimenti', 'Opere di sostegno e drenaggi'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Consumi'] }, 'TR': { descrizione: 'Trincee', lavorazioni: ['Scavi di trincea', 'Opere di sostegno (pali, diaframmi)', 'Impermeabilizzazioni e rinterri'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Acque', 'Beni Culturali'] }, 'RI': { descrizione: 'Rilevati', lavorazioni: ['Formazione corpo del rilevato', 'Opere di sostegno', 'Sistemazioni idrauliche'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'VI': { descrizione: 'Viadotti', lavorazioni: ['Pali di fondazione e fondazioni', 'Elevazione pile e spalle', 'Varo impalcato e soletta'], aspetti: ['Rumore', 'Vibrazioni', 'Rifiuti', 'Sostanze Pericolose'] }, 'CB': { descrizione: 'Campo Base', lavorazioni: ['Installazione e gestione uffici/dormitori/mensa', 'Manutenzione aree e servizi'], aspetti: ['Acque', 'Rifiuti', 'Rumore', 'Consumi'] }, 'CO': { descrizione: 'Cantiere Operativo', lavorazioni: ['Allestimento aree stoccaggio', 'Gestione impianto di betonaggio', 'Officina e manutenzione mezzi'], aspetti: ['Polveri', 'Rumore', 'Acque', 'Rifiuti', 'Sostanze Pericolose'] }, 'NV': { descrizione: 'Nuova Viabilità', lavorazioni: ['Scavi e rilevati per nuova viabilità', 'Formazione sottofondi e pavimentazioni', 'Opere idrauliche e finiture'], aspetti: ['Polveri', 'Rumore', 'Terre e Rocce', 'Consumi'] }, 'FA': { descrizione: 'Fabbricati', lavorazioni: ['Scavi e fondazioni', 'Elevazione strutture', 'Finiture e impianti'], aspetti: ['Polveri', 'Rumore', 'Rifiuti', 'Consumi'] } },
             CHECK_TEMPLATES_PERIODIC: [ { id: "pca01", title: "PCA 01: Scarichi Idrici ed Approvvigionamento", icon: "💧", significativita: "ALTA", items: ["Autorizzazione allo scarico acque reflue domestiche presente e valida?", "Autorizzazione allo scarico acque reflue industriali presente e valida?", "Rispetto delle prescrizioni contenute nelle autorizzazioni?", "Corretta gestione acque di lavorazione (es. scavo pali)?", "Kit di emergenza anti-sversamento presente e completo?", "Manutenzione impianti di depurazione/trattamento registrata?"] }, { id: "pca02", title: "PCA 02: Terre e Rocce da Scavo", icon: "⛰️", significativita: "ALTA", items: ["Aree di stoccaggio temporaneo identificate e conformi al PUT?", "Separazione dei cumuli per categorie omogenee?", "Documento di Trasporto (DDT) per le terre conforme e presente?", "Copertura dei cassoni dei mezzi in transito?"] }, { id: "pca03", title: "PCA 03: Emissioni in Atmosfera", icon: "💨", significativita: "ALTA", items: ["Autorizzazioni per impianti (es. calcestruzzo) presenti e valide?", "Copertura mezzi per trasporto materiali polverulenti?", "Bagnatura piste e/o cumuli eseguita regolarmente?", "Velocità dei mezzi in cantiere limitata a 30 km/h?", "Impianto lavaruote funzionante ed utilizzato?"] }, { id: "pca04", title: "PCA 04: Rifiuti", icon: "🗑️", significativita: "ALTA", items: ["Deposito temporaneo (DTR) ordinato e pulito?", "Rifiuti separati per CER e con corretta cartellonistica?", "Stoccaggio rifiuti pericolosi conforme (aree, bacini)?", "Registro di carico/scarico aggiornato (entro 10gg)?", "Quarta copia FIR ricevuta entro 90 giorni?"] }, { id: "pca05", title: "PCA 05: Sostanze Pericolose ed Emergenze", icon: "☣️", significativita: "MEDIA", items: ["Schede di Sicurezza (SDS) disponibili e aggiornate?", "Stoccaggio sostanze su bacini di contenimento idonei?", "Aree di stoccaggio segnalate e adeguate?", "Personale formato per la gestione delle emergenze?"] }, { id: "pca06", title: "PCA 06: Rumore e Vibrazioni", icon: "🔊", significativita: "MEDIA", items: ["Autorizzazione in deroga per rumore presente (se necessaria)?", "Rispetto degli orari di lavoro previsti?", "Barriere acustiche (se previste) integre ed efficaci?", "Manutenzione ordinaria dei mezzi per ridurre il rumore?", "Eseguita misurazione fonometrica periodica?"] }, { id: "pca07", title: "PCA 07: Suolo e Sottosuolo", icon: "🌱", significativita: "ALTA", items: ["Assenza di contaminazioni visive del suolo (macchie, sversamenti)?", "Corretto stoccaggio del terreno vegetale in cumuli separati?", "Utilizzo delle apposite vasche per lavaggio betoniere?", "Gestione corretta del calcestruzzo in esubero?"] }, { id: "pca08", title: "PCA 08: Beni Culturali e Archeologici", icon: "🏺", significativita: "ALTA", items: ["Presenza di archeologo durante le attività di scavo?", "Notifica agli enti competenti in caso di ritrovamento?", "Corretta gestione e inventario dei reperti?", "Disboscamento limitato alle aree strettamente necessarie?"] } ],
@@ -253,7 +252,7 @@
             async save(newReport) {
                 const reports = await this.getAll();
                 const reportId = parseInt(newReport.id);
-                const existingIndex = reports.findIndex(r => parseInt(r.id) === reportId);
+                const existingIndex = reports.findIndex(r => r.id === reportId);
                 if (existingIndex !== -1) {
                     reports[existingIndex] = newReport;
                 } else {
@@ -268,17 +267,17 @@
             },
             async getNextId() {
                 const reports = await this.getAll();
-                return (reports.reduce((max, r) => Math.max(max, parseInt(r.id) || 0), 0) + 1);
+                return (reports.reduce((max, r) => Math.max(max, r.id || 0), 0) + 1);
             },
             getDashboardStats() {
                 const reports = App.state.data; let openNc = 0; let totalChecks = 0; let compliantChecks = 0; const ncByAspect = {};
                 reports.forEach(report => {
-                    if (report && report.type === 'periodico' && report.checks) {
+                    if (report?.type === 'periodico' && report.checks) {
                         Object.entries(report.checks).forEach(([aspectId, aspectChecks]) => {
                             const template = App.config.CHECK_TEMPLATES_PERIODIC.find(t => t.id === aspectId);
                             if (!template || !aspectChecks) return;
                             aspectChecks.forEach(check => {
-                                if (check && check.result && check.result !== 'NA') {
+                                if (check?.result && check.result !== 'NA') {
                                     totalChecks++;
                                     if (check.result === 'C') compliantChecks++;
                                     if (check.result === 'NC') {
@@ -299,15 +298,15 @@
             async fetchWeather() {
                 const widget = App.dom.weatherWidget;
                 if (!widget) return;
-                widget.innerHTML = `<div class="loader"></div><span>Carico meteo...</span>`;
+                widget.innerHTML = `<div class="loader"></div><span>Carico...</span>`;
                 if (!navigator.geolocation) {
-                    widget.textContent = 'Geolocalizzazione non supportata.';
+                    widget.textContent = 'Geoloc. non supportata.';
                     return;
                 }
                 navigator.geolocation.getCurrentPosition(
                     async (position) => {
                         const { latitude, longitude } = position.coords;
-                        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(2)}&longitude=${longitude.toFixed(2)}&current=temperature_2m,weather_code,wind_speed_10m`;
+                        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(2)}&longitude=${longitude.toFixed(2)}¤t=temperature_2m,weather_code,wind_speed_10m`;
                         try {
                             const response = await fetch(apiUrl);
                             if (!response.ok) throw new Error('Risposta API non valida');
@@ -315,12 +314,12 @@
                             App.ui.renderWeather(data.current);
                         } catch (error) {
                             console.error("Errore API meteo:", error);
-                            widget.textContent = 'Meteo non disponibile';
+                            widget.textContent = 'Meteo N/D';
                         }
                     },
                     (error) => {
                         console.warn("Errore geolocalizzazione:", error.message);
-                        widget.textContent = 'Impossibile recuperare la posizione.';
+                        widget.textContent = 'Posizione N/D';
                     }
                 );
             },
@@ -331,7 +330,6 @@
                 if (hour < 18) return 'Buon pomeriggio';
                 return 'Buonasera';
             },
-            // --- NUOVO --- Funzione per ridimensionare le immagini
             resizeImage(file, maxSize = 1280) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -339,17 +337,13 @@
                         const img = new Image();
                         img.onload = () => {
                             let { width, height } = img;
-                            if (width > height) {
-                                if (width > maxSize) { height = Math.round(height * maxSize / width); width = maxSize; }
-                            } else {
-                                if (height > maxSize) { width = Math.round(width * maxSize / height); height = maxSize; }
-                            }
+                            if (width > height) { if (width > maxSize) { height = Math.round(height * maxSize / width); width = maxSize; }
+                            } else { if (height > maxSize) { width = Math.round(width * maxSize / height); height = maxSize; } }
                             const canvas = document.createElement('canvas');
-                            canvas.width = width;
-                            canvas.height = height;
+                            canvas.width = width; canvas.height = height;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
-                            resolve(canvas.toDataURL('image/jpeg', 0.8)); // Comprime in JPEG
+                            resolve(canvas.toDataURL('image/jpeg', 0.8));
                         };
                         img.onerror = reject;
                         img.src = e.target.result;
@@ -461,7 +455,7 @@
             async renderListaPca() {
                 const reports = [...App.state.data].sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
                 const groupedReports = reports.reduce((acc, report) => {
-                    if (!report || !report.wbs) {
+                    if (!report?.wbs) {
                         console.warn("Saltato report corrotto o senza WBS:", report);
                         return acc;
                     }
@@ -473,16 +467,13 @@
                 return App.templates.pcaGroupedList(groupedReports);
             },
             async renderNuovoPca({ editId }) {
-                App.state.tempPhotos = {}; // Reset delle foto temporanee
-                const nextId = await App.store.getNextId();
+                App.state.tempPhotos = {};
                 const today = new Date().toISOString().slice(0, 10);
-                
                 if(editId) {
                     const reportToEdit = await App.store.getById(editId);
                     if(reportToEdit) {
-                        const formHtml = App.templates.newPcaForm({ nextId, today, report: reportToEdit });
-                        // Usiamo un timeout per assicurarci che il DOM sia renderizzato prima di popolarlo
-                        setTimeout(() => this.populateFormWithData(reportToEdit), 0);
+                        const formHtml = App.templates.newPcaForm({ today, report: reportToEdit });
+                        setTimeout(() => this.populateFormWithData(reportToEdit), 50);
                         return formHtml;
                     } else {
                         App.ui.showToast(`Report con ID ${editId} non trovato.`, 'error');
@@ -490,9 +481,9 @@
                         return '';
                     }
                 }
+                const nextId = await App.store.getNextId();
                 return App.templates.newPcaForm({ nextId, today });
             },
-            // --- NUOVO --- Funzione per popolare il form in modalità modifica
             populateFormWithData(report) {
                 const form = document.getElementById('new-pca-form');
                 if (!form) return;
@@ -501,37 +492,40 @@
                 form.elements['date'].value = report.date;
                 form.elements['type'].value = report.type;
 
+                const typeChangeEvent = new Event('change', { bubbles: true });
+                form.elements['type'].dispatchEvent(typeChangeEvent);
+
                 if (report.type === 'periodico') {
                     form.elements['wbs-input'].value = report.wbs;
-                    form.elements['lavorazione'].value = report.activities;
                     form.elements['inspector-wbs'].value = report.inspector;
-                    // Simula un input per triggerare l'aggiornamento delle checklist
-                    form.elements['wbs-input'].dispatchEvent(new Event('input'));
+                    const wbsInputEvent = new Event('input', { bubbles: true });
+                    form.elements['wbs-input'].dispatchEvent(wbsInputEvent);
+                    setTimeout(() => { 
+                      if(form.elements['lavorazione']) { // Check if the element exists
+                        form.elements['lavorazione'].value = report.activities;
+                      } 
+                    }, 50);
                 } else {
-                    // Gestione per tipi manuali (preliminare/finale)
-                    form.elements['pca-type'].dispatchEvent(new Event('change')); // Simula cambio per mostrare la sezione giusta
                     form.elements['wbs-manual'].value = report.wbs;
                     form.elements['inspector-manual'].value = report.inspector;
                     form.elements['activities-manual'].value = report.activities;
                 }
 
-                // Popola le checklist
                 if(report.checks) {
                     Object.entries(report.checks).forEach(([templateId, items]) => {
                         items.forEach((item, index) => {
                             const radio = form.querySelector(`input[name="check_${templateId}_${index}"][value="${item.result}"]`);
-                            if(radio) radio.checked = true;
+                            if(radio) {
+                                radio.checked = true;
+                                const checkChangeEvent = new Event('change', { bubbles: true });
+                                radio.dispatchEvent(checkChangeEvent);
+                            }
                             const notes = form.querySelector(`textarea[name="notes_${templateId}_${index}"]`);
                             if(notes && item.notes) notes.value = item.notes;
-                            // Se era una non conformità, mostra i campi extra
-                            if(item.result === 'NC') {
-                                radio.closest('.check-item').querySelector('.extra-content-wrapper')?.classList.add('visible');
-                            }
                         });
                     });
                 }
                 
-                // Popola le foto
                 if(report.photos) {
                     App.state.tempPhotos = { ...report.photos };
                     Object.entries(report.photos).forEach(([key, base64]) => {
@@ -550,29 +544,17 @@
                 App.dom.sidebarToggleBtn.addEventListener('click', () => App.ui.setSidebarState(!App.state.isSidebarOpen));
                 App.dom.sidebarOverlay.addEventListener('click', () => App.ui.setSidebarState(false));
                 
-                // --- MODIFICATO --- Event Delegation per i bottoni nella lista
                 App.dom.mainContent.addEventListener('click', e => {
                     const target = e.target;
                     const deleteBtn = target.closest('.delete-btn');
                     const editBtn = target.closest('.edit-btn');
                     const printBtn = target.closest('.print-btn');
+                    const accordionHeader = target.closest('.accordion-header, .grouped-pca-header');
                     
-                    if (deleteBtn) {
-                        e.preventDefault();
-                        const id = deleteBtn.dataset.id;
-                        this.deleteReport(id);
-                    }
-                    // --- NUOVO --- Gestione modifica
-                    if (editBtn) {
-                        e.preventDefault();
-                        const id = editBtn.dataset.id;
-                        window.location.hash = `#nuovo-pca?edit=${id}`;
-                    }
-                    if (printBtn) {
-                        e.preventDefault();
-                        const id = printBtn.dataset.id;
-                        this.printReport(id);
-                    }
+                    if (accordionHeader) accordionHeader.classList.toggle('open');
+                    if (deleteBtn) { e.preventDefault(); this.deleteReport(deleteBtn.dataset.id); }
+                    if (editBtn) { e.preventDefault(); window.location.hash = `#nuovo-pca?edit=${editBtn.dataset.id}`; }
+                    if (printBtn) { e.preventDefault(); this.printReport(printBtn.dataset.id); }
                     if(target.id === 'export-btn') this.exportData();
                     if(target.id === 'import-btn') document.getElementById('import-file').click();
                     if(target.id === 'clear-all-btn') this.confirmDeleteAll();
@@ -582,34 +564,44 @@
                     if(e.target.id === 'import-file') this.importData(e);
                 });
             },
-            // --- NUOVO --- Logica di gestione del Form centralizzata
             attachFormListeners() {
                 const form = document.getElementById('new-pca-form');
                 if (!form) return;
-
                 form.addEventListener('submit', this.onFormSubmit);
                 form.querySelector('#cancel-pca-btn')?.addEventListener('click', () => window.location.hash = '#lista-pca');
                 form.querySelector('#pca-type')?.addEventListener('change', this.onPcaTypeChange);
                 form.querySelector('#pca-wbs-input')?.addEventListener('input', this.onWbsInputChange);
                 form.addEventListener('change', this.onCheckChange);
-                form.addEventListener('change', e => {
-                    if(e.target.matches('input[type="file"]')) this.handlePhotoUpload(e);
-                });
                 form.addEventListener('click', e => {
-                    if(e.target.closest('.remove-photo-btn')) {
-                        const container = e.target.closest('.photo-upload-container');
+                    const addBtn = e.target.closest('.add-photo-btn');
+                    const removeBtn = e.target.closest('.remove-photo-btn');
+                    if (addBtn) addBtn.closest('.photo-upload-container').querySelector('input[type="file"]').click();
+                    if (removeBtn) {
+                        const container = removeBtn.closest('.photo-upload-container');
                         const key = container.dataset.photoKey;
                         delete App.state.tempPhotos[key];
                         this.updatePhotoPreview(container, key, null);
                     }
                 });
+                form.querySelectorAll('input[type="file"]').forEach(input => {
+                    input.addEventListener('change', e => this.handlePhotoUpload(e));
+                });
+                 // Trigger change on init for editing
+                const typeSelect = form.querySelector('#pca-type');
+                if (typeSelect.value) {
+                    typeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             },
-            // --- NUOVO --- Handler per la sottomissione del form
             async onFormSubmit(e) {
                 e.preventDefault();
                 if (App.state.isSaving) return;
                 
                 const form = e.target;
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return App.ui.showToast('Compila tutti i campi obbligatori.', 'error');
+                }
+
                 const saveBtn = form.querySelector('#save-pca-btn');
                 const originalBtnHtml = saveBtn.innerHTML;
                 
@@ -639,6 +631,7 @@
                         const items = [];
                         header.nextElementSibling.querySelectorAll('.check-item').forEach((itemEl, index) => {
                             items.push({
+                                item: itemEl.querySelector('label').textContent.trim(),
                                 result: formData.get(`check_${templateId}_${index}`),
                                 notes: formData.get(`notes_${templateId}_${index}`) || null
                             });
@@ -659,7 +652,6 @@
                     saveBtn.innerHTML = originalBtnHtml;
                 }
             },
-            // --- NUOVO --- Logica per gestire il caricamento foto
             async handlePhotoUpload(e) {
                 const input = e.target;
                 const file = input.files[0];
@@ -669,7 +661,7 @@
                 if (!file) return;
 
                 const placeholder = container.querySelector('.photo-preview');
-                placeholder.innerHTML = `<div class="loader"></div>`;
+                placeholder.innerHTML = `<div class="w-full h-24 flex items-center justify-center"><div class="loader"></div></div>`;
 
                 try {
                     const resizedBase64 = await App.services.resizeImage(file);
@@ -681,7 +673,6 @@
                     this.updatePhotoPreview(container, key, null);
                 }
             },
-            // --- NUOVO --- Funzione helper per aggiornare l'anteprima della foto
             updatePhotoPreview(container, key, base64) {
                  const previewEl = container.querySelector('.photo-preview');
                  if (base64) {
@@ -689,48 +680,71 @@
                         <div class="relative group">
                            <img src="${base64}" class="w-full h-24 object-cover rounded-md" alt="Anteprima">
                            <button type="button" class="remove-photo-btn absolute top-1 right-1 bg-red-600/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Rimuovi foto">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                              <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                            </button>
                         </div>`;
                  } else {
                      previewEl.innerHTML = `<button type="button" class="add-photo-btn w-full h-24 bg-slate-100 dark:bg-slate-700 rounded-md flex flex-col items-center justify-center text-slate-400 border-2 border-dashed dark:border-slate-600 hover:border-blue-500 hover:text-blue-500">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"></path></svg>
-                        <span class="text-xs mt-1">Aggiungi Foto</span>
+                        <svg class="w-8 h-8 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"></path></svg>
+                        <span class="text-xs mt-1 pointer-events-none">Aggiungi Foto</span>
                     </button>`;
                     container.querySelector('input[type="file"]').value = '';
                  }
             },
             onPcaTypeChange(e) {
+                const form = e.target.form;
                 const type = e.target.value;
-                const wbsSection = document.getElementById('wbs-section');
-                const manualSection = document.getElementById('manual-section');
-                const checklistPeriodico = document.getElementById('checklist-container-periodico');
-                const checklistPreliminare = document.getElementById('checklist-container-preliminare');
-                const checklistFinale = document.getElementById('checklist-container-finale');
-
+                
+                const wbsSection = form.querySelector('#wbs-section');
+                const manualSection = form.querySelector('#manual-section');
+                const periodicoChecklist = form.querySelector('#checklist-container-periodico');
+                const preliminareChecklist = form.querySelector('#checklist-container-preliminare');
+                const finaleChecklist = form.querySelector('#checklist-container-finale');
+                
+                // Toggle sections visibility
                 wbsSection.style.display = type === 'periodico' ? 'block' : 'none';
                 manualSection.style.display = type !== 'periodico' ? 'block' : 'none';
-                checklistPeriodico.style.display = type === 'periodico' ? 'block' : 'none';
-                checklistPreliminare.style.display = type === 'preliminare' ? 'block' : 'none';
-                checklistFinale.style.display = type === 'finale' ? 'block' : 'none';
+
+                // Toggle checklists visibility
+                periodicoChecklist.style.display = type === 'periodico' ? 'block' : 'none';
+                preliminareChecklist.style.display = type === 'preliminare' ? 'block' : 'none';
+                finaleChecklist.style.display = type === 'finale' ? 'block' : 'none';
+                
+                // Toggle 'required' attribute for validation
+                wbsSection.querySelectorAll('input, select').forEach(el => el.required = (type === 'periodico'));
+                manualSection.querySelectorAll('input, textarea').forEach(el => el.required = (type !== 'periodico'));
+
+                // Open first relevant accordion
+                document.querySelectorAll('.accordion-header').forEach(h => h.classList.remove('open'));
+                if (type === 'preliminare') {
+                   preliminareChecklist.querySelector('.accordion-header')?.classList.add('open');
+                } else if (type === 'finale') {
+                   finaleChecklist.querySelector('.accordion-header')?.classList.add('open');
+                }
             },
             onWbsInputChange(e) {
+                const form = e.target.form;
                 const wbsCode = e.target.value.substring(0, 2).toUpperCase();
                 const wbsData = App.config.WBS_DATA[wbsCode];
-                const lavorazioneSelect = document.getElementById('pca-lavorazione-select');
+                const lavorazioneSelect = form.querySelector('#pca-lavorazione-select');
                 lavorazioneSelect.innerHTML = '<option value="">-- Seleziona Lavorazione --</option>';
                 lavorazioneSelect.disabled = true;
 
-                document.querySelectorAll('#checklist-container-periodico .accordion-header').forEach(el => el.parentElement.style.display = 'none');
+                form.querySelectorAll('#checklist-container-periodico > div').forEach(el => {
+                    el.style.display = 'none';
+                    el.querySelector('.accordion-header').classList.remove('open');
+                });
                 
                 if (wbsData) {
                     wbsData.lavorazioni.forEach(lav => lavorazioneSelect.add(new Option(lav, lav)));
                     lavorazioneSelect.disabled = false;
                     const requiredPcaIds = new Set(wbsData.aspetti.map(a => App.config.ASPETTO_TO_PCA_ID_MAP[a]).filter(Boolean));
                     requiredPcaIds.forEach(sheetId => {
-                        const accordionEl = document.querySelector(`#checklist-container-periodico [data-template-id="${sheetId}"]`);
-                        if (accordionEl) accordionEl.parentElement.style.display = 'block';
+                        const accordionEl = form.querySelector(`#checklist-container-periodico > div[data-template-id="${sheetId}"]`);
+                        if (accordionEl) accordionEl.style.display = 'block';
                     });
+                    const firstVisibleAccordion = form.querySelector('#checklist-container-periodico > div[style*="display: block"]');
+                    if (firstVisibleAccordion) firstVisibleAccordion.querySelector('.accordion-header').classList.add('open');
                 }
             },
             onCheckChange(e) {
@@ -743,7 +757,7 @@
                 const reports = App.state.data;
                 const latestReportByWbs = {};
                 [...reports].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(r => {
-                    if (r && r.type === 'periodico' && r.wbs) {
+                    if (r?.type === 'periodico' && r.wbs) {
                         const wbsCode = r.wbs.substring(0, 2).toUpperCase();
                         if (!latestReportByWbs[wbsCode]) {
                             latestReportByWbs[wbsCode] = r;
@@ -768,14 +782,14 @@
                          dueList.push({ wbs: wbsCode, status: { text: `DA ESEGUIRE`, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' } });
                     }
                 }
-                return dueList;
+                return dueList.sort((a,b) => (a.status.text === 'SCADUTO' ? -1 : 1));
             },
             async deleteReport(id) {
                 const report = await App.store.getById(id);
                 if (!report) return;
                 const confirmed = await this.showConfirmationModal({
                     title: 'Conferma Eliminazione',
-                    message: `Sei sicuro di voler eliminare il controllo N° ${report.id} del ${report.date}? L'azione è irreversibile.`,
+                    message: `Sei sicuro di voler eliminare il controllo N° ${report.id} del ${new Date(report.date).toLocaleDateString('it-IT')}? L'azione è irreversibile.`,
                     confirmText: 'Elimina',
                     confirmClass: 'bg-red-600'
                 });
@@ -788,12 +802,10 @@
             async printReport(id) {
                 const report = await App.store.getById(id);
                 if (!report) return App.ui.showToast('Report non trovato', 'error');
-
                 let templatesToUse;
                 if(report.type === 'preliminare') templatesToUse = App.config.CHECK_TEMPLATES_PRELIMINARE;
                 else if(report.type === 'finale') templatesToUse = App.config.CHECK_TEMPLATES_FINALE;
                 else templatesToUse = App.config.CHECK_TEMPLATES_PERIODIC;
-
                 App.dom.printAreaWrapper.innerHTML = App.templates.printReport(report, templatesToUse);
                 setTimeout(() => window.print(), 200);
             },
@@ -831,20 +843,16 @@
                             <button id="modal-confirm-delete" class="px-5 py-2 text-white rounded-md bg-red-600 font-semibold opacity-50 cursor-not-allowed" disabled>Elimina Tutto</button>
                         </div>
                     </div>`;
-
                 App.dom.modal.innerHTML = modalHTML;
                 App.dom.modal.classList.add('visible');
-
                 const confirmInput = document.getElementById('delete-confirm-input');
                 const confirmBtn = document.getElementById('modal-confirm-delete');
-                
                 confirmInput.addEventListener('input', () => {
                     const isConfirmed = confirmInput.value === 'ELIMINA';
                     confirmBtn.disabled = !isConfirmed;
                     confirmBtn.classList.toggle('opacity-50', !isConfirmed);
                     confirmBtn.classList.toggle('cursor-not-allowed', !isConfirmed);
                 });
-                
                 const closeModal = async (decision) => {
                     App.dom.modal.classList.remove('visible');
                     if (decision) {
@@ -853,7 +861,6 @@
                         App.ui.showToast("Archivio svuotato con successo.", "info");
                     }
                 };
-                
                 confirmBtn.onclick = () => closeModal(true);
                 App.dom.modal.querySelector('#modal-cancel').onclick = () => closeModal(false);
                 App.dom.modal.onclick = (e) => { if (e.target === App.dom.modal) closeModal(false); };
@@ -874,8 +881,8 @@
                         const data = JSON.parse(event.target.result); 
                         if (!Array.isArray(data)) throw new Error("File non valido"); 
                         await App.store.saveAll(data); 
+                        await App.ui.showTabFromUrl();
                         App.ui.showToast("Dati importati con successo!", 'success'); 
-                        await App.ui.showTab('dashboard'); 
                     } catch (err) { App.ui.showToast("Errore: il file di backup non è valido.", 'error'); } 
                 }; 
                 reader.readAsText(file); 
@@ -885,115 +892,115 @@
         
         templates: {
             dashboard: (stats, dueList, greeting) => {
-                let dueListHtml = '<p class="text-slate-500 dark:text-slate-400">Tutti i controlli sono aggiornati.</p>';
-                if (dueList.length > 0) {
-                    dueListHtml = `<ul class="space-y-3">${dueList.map(item => `
-                        <li class="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50">
-                            <div>
-                                <span class="font-bold">${item.wbs}</span>
-                                <span class="text-sm text-slate-500 dark:text-slate-400 ml-2">${App.config.WBS_DATA[item.wbs]?.descrizione || 'Sconosciuto'}</span>
-                            </div>
-                            <span class="text-sm font-semibold px-2 py-0.5 rounded-full ${item.status.color}">${item.status.text}</span>
-                        </li>`).join('')}</ul>`;
-                }
-                const cards = [
-                    { label: 'Controlli Totali', value: stats.totalPca, color: 'blue', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>' },
-                    { label: 'NC Aperte', value: stats.openNc, color: 'red', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' },
-                    { label: 'Controlli Periodici', value: stats.totalChecks, color: 'indigo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>' },
-                    { label: 'Conformità Media', value: stats.avgCompliance, color: 'green', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' }
+                const statCards = [
+                    { label: 'PCA totali in archivio', value: stats.totalPca, icon: '📂' },
+                    { label: 'Non Conformità aperte', value: stats.openNc, icon: '⚠️' },
+                    { label: 'Conformità media', value: stats.avgCompliance, icon: '📊' }
                 ];
+                
                 return `
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold">${greeting}!</h2>
-                    <p class="text-slate-500 dark:text-slate-400">Ecco un riepilogo della situazione attuale.</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                    ${cards.map(card => `
-                    <div class="bg-white dark:bg-slate-800 p-5 rounded-lg shadow-sm flex items-center gap-5 border-t-4 border-${card.color}-500">
-                        <div class="p-3 rounded-full bg-slate-100 dark:bg-slate-700 text-${card.color}-500">${card.icon}</div>
+                    <div class="space-y-8">
                         <div>
-                            <h3 class="text-sm font-medium text-slate-500 dark:text-slate-400">${card.label}</h3>
-                            <p class="mt-1 text-3xl font-semibold text-slate-800 dark:text-slate-100">${card.value}</p>
+                            <h2 class="text-2xl font-bold">${greeting}!</h2>
+                            <p class="text-slate-500 dark:text-slate-400">Ecco il riepilogo delle attività di controllo ambientale.</p>
                         </div>
-                    </div>`).join('')}
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                        <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto</h3>
-                        <div class="relative h-96 w-full"><canvas id="ncChart"></canvas></div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${statCards.map(card => `
+                                <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm flex items-start gap-4">
+                                    <div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-full text-2xl">${card.icon}</div>
+                                    <div>
+                                        <p class="text-slate-500 dark:text-slate-400">${card.label}</p>
+                                        <p class="text-3xl font-bold">${card.value}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                            <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm xl:col-span-2">
+                                <h3 class="text-lg font-semibold mb-4">Non Conformità per Aspetto Ambientale</h3>
+                                <div class="h-80 relative">
+                                    <canvas id="ncChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
+                                <h3 class="text-lg font-semibold mb-4">Scadenze Controlli</h3>
+                                <div class="space-y-3">
+                                    ${dueList.length > 0 ? dueList.map(item => `
+                                        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md">
+                                            <div>
+                                                <p class="font-semibold">${item.wbs} - ${App.config.WBS_DATA[item.wbs]?.descrizione || 'Generico'}</p>
+                                                <p class="text-xs ${App.config.FREQUENCY_MAP[App.config.WBS_SIGNIFICANCE_MAP[item.wbs]]?.color || ''} px-2 py-1 rounded-full inline-block mt-1">
+                                                    ${App.config.FREQUENCY_MAP[App.config.WBS_SIGNIFICANCE_MAP[item.wbs]]?.text || ''}
+                                                </p>
+                                            </div>
+                                            <span class="text-sm font-bold px-2 py-1 rounded-full ${item.status.color}">${item.status.text}</span>
+                                        </div>
+                                    `).join('') : `
+                                        <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                            <p>Nessun controllo periodico<br>scaduto o da programmare.</p>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                        <h3 class="text-lg font-semibold mb-4">Controlli da Eseguire</h3>
-                        <div class="max-h-96 overflow-y-auto pr-2">${dueListHtml}</div>
-                    </div>
-                </div>`;
+                `;
             },
             pcaGroupedList: (groupedReports) => {
-                const wbsOrder = Object.keys(App.config.WBS_DATA);
-                const sortedWbsKeys = Object.keys(groupedReports).sort((a, b) => {
-                    const indexA = wbsOrder.indexOf(a);
-                    const indexB = wbsOrder.indexOf(b);
-                    if (a === 'Generico') return 1;
-                    if (b === 'Generico') return -1;
-                    return indexA - indexB;
-                });
-
-                if (sortedWbsKeys.length === 0) {
-                    return `<div class="text-center p-8 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                                <h3 class="text-xl font-semibold">Nessun controllo trovato</h3>
-                                <p class="text-slate-500 dark:text-slate-400 mt-2">Inizia compilando il tuo primo verbale dalla sezione "Esegui Controllo".</p>
-                            </div>`;
+                if (Object.keys(groupedReports).length === 0) {
+                    return `
+                        <div class="text-center bg-white dark:bg-slate-800 p-12 rounded-lg shadow-sm">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-slate-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                             <h3 class="text-xl font-semibold mb-2">Nessun Controllo Trovato</h3>
+                             <p class="text-slate-500 dark:text-slate-400 mb-6">L'archivio è vuoto. Inizia aggiungendo un nuovo Piano di Controllo Ambientale.</p>
+                             <a href="#nuovo-pca" class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-md inline-block">Crea il primo PCA</a>
+                        </div>`;
                 }
-                
-                return `<div class="space-y-4">
-                    ${sortedWbsKeys.map(wbsKey => {
-                        const reports = groupedReports[wbsKey] || [];
-                        const wbsInfo = App.config.WBS_DATA[wbsKey] || { descrizione: 'Controlli Generici' };
-                        const reportCount = reports.length;
-                        
-                        return `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+
+                return `
+                    <div class="space-y-4">
+                    ${Object.entries(groupedReports).map(([wbsKey, reports]) => {
+                        const wbsInfo = App.config.WBS_DATA[wbsKey];
+                        const headerTitle = wbsInfo ? `${wbsKey} - ${wbsInfo.descrizione}` : `Gruppo: ${wbsKey}`;
+                        return `
+                        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
                             <div class="grouped-pca-header p-4 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700">
-                                <div class="flex items-center gap-4">
-                                    <span class="font-bold text-blue-600 dark:text-blue-400">${wbsKey}</span>
-                                    <h3 class="text-lg font-semibold">${wbsInfo.descrizione}</h3>
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <span class="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200">${reportCount} ${reportCount === 1 ? 'controllo' : 'controlli'}</span>
-                                    <svg class="grouped-pca-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </div>
+                                <h3 class="font-semibold text-lg">${headerTitle} <span class="text-sm font-normal text-slate-500 dark:text-slate-400">(${reports.length} verbali)</span></h3>
+                                <svg class="grouped-pca-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                             <div class="grouped-pca-content">
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full bg-transparent text-sm">
-                                        <thead class="bg-slate-100 dark:bg-slate-800">
-                                            <tr>
-                                                ${['ID','Data','Tipo','Lavorazione','Stato NC', 'Azioni'].map(h=>`<th class="p-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">${h}</th>`).join('')}
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                                            ${reports.map(report => {
-                                                const hasNc = report.checks && Object.values(report.checks).flat().some(c => c.result === 'NC');
-                                                const typeLabels = { 'periodico': 'Periodico', 'preliminare': 'Preliminare', 'finale': 'Finale' };
-                                                return `
-                                                <tr>
-                                                    <td class="p-3 font-medium">${report.id}</td>
-                                                    <td class="p-3">${new Date(report.date).toLocaleDateString('it-IT')}</td>
-                                                    <td class="p-3">${typeLabels[report.type] || 'N.D.'}</td>
-                                                    <td class="p-3 max-w-xs truncate" title="${report.activities}">${report.activities || 'N.D.'}</td>
-                                                    <td class="p-3 text-center">${hasNc ? '<span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full dark:bg-red-900 dark:text-red-200">APERTA</span>' : '<span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200">OK</span>'}</td>
-                                                    <td class="p-3">
-                                                        <div class="flex items-center gap-4">
-                                                            <button class="edit-btn text-slate-500 hover:text-blue-600" title="Modifica" data-id="${report.id}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                                                            <button class="print-btn text-slate-500 hover:text-green-600" title="Stampa" data-id="${report.id}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></button>
-                                                            <button class="delete-btn text-slate-500 hover:text-red-600" title="Elimina" data-id="${report.id}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                                                        </div>
-                                                    </td>
-                                                </tr>`;
-                                            }).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                                <ul class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    ${reports.map(report => `
+                                        <li class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                            <div class="flex flex-wrap items-center justify-between gap-4">
+                                                <div class="flex-grow">
+                                                    <p class="font-bold text-base">
+                                                        Controllo N° ${report.id}
+                                                        <span class="ml-2 text-xs font-normal text-slate-500 dark:text-slate-400">${new Date(report.date).toLocaleDateString('it-IT', {day: '2-digit', month: '2-digit', year: 'numeric'})}</span>
+                                                    </p>
+                                                    <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">${report.activities}</p>
+                                                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Compilatore: ${report.inspector}</p>
+                                                </div>
+                                                <div class="flex items-center gap-2 flex-shrink-0">
+                                                    <button title="Modifica" data-id="${report.id}" class="edit-btn p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                    </button>
+                                                    <button title="Stampa" data-id="${report.id}" class="print-btn p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                                    </button>
+                                                    <button title="Elimina" data-id="${report.id}" class="delete-btn p-2 rounded-md hover:bg-red-100 dark:hover:bg-red-900/50 text-red-500">
+                                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                           </div>
                         </div>`;
                     }).join('')}
                 </div>`;
@@ -1006,8 +1013,8 @@
                         <div class="photo-upload-container mt-2" data-photo-key="photo_${t.id}_{{index}}">
                            <div class="photo-preview">
                                 <button type="button" class="add-photo-btn w-full h-24 bg-slate-100 dark:bg-slate-700 rounded-md flex flex-col items-center justify-center text-slate-400 border-2 border-dashed dark:border-slate-600 hover:border-blue-500 hover:text-blue-500">
-                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"></path></svg>
-                                    <span class="text-xs mt-1">Aggiungi Foto</span>
+                                    <svg class="w-8 h-8 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"></path></svg>
+                                    <span class="text-xs mt-1 pointer-events-none">Aggiungi Foto</span>
                                 </button>
                            </div>
                            <input type="file" class="hidden" accept="image/*">
@@ -1015,12 +1022,13 @@
                     `;
 
                     return `
-                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden" style="display: none;">
-                        <div class="accordion-header p-4 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700" data-template-id="${t.id}">
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden" data-template-id="${t.id}" style="display: none;">
+                        <div class="accordion-header p-4 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700">
                             <div class="flex items-center gap-3"><span class="text-xl">${t.icon}</span><h3 class="font-semibold">${t.title}</h3></div>
                             <svg class="accordion-icon w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
-                        <div class="accordion-content p-4 space-y-3 divide-y divide-slate-200 dark:divide-slate-700">
+                        <div class="accordion-content">
+                          <div class="p-4 space-y-3 divide-y divide-slate-200 dark:divide-slate-700">
                             ${t.items.map((item, index) => {
                                 const baseName = `check_${t.id}_${index}`;
                                 return `
@@ -1033,13 +1041,14 @@
                                             <div class="flex items-center"><input id="${baseName}_na" name="${baseName}" type="radio" value="NA" class="form-checkbox" checked><label for="${baseName}_na" class="ml-2 block">N.A.</label></div>
                                         </div>
                                     </div>
-                                    <div class="extra-content-wrapper mt-4 pl-4 border-l-2 border-slate-200 dark:border-slate-700" style="display:none;">
+                                    <div class="extra-content-wrapper mt-4 pl-4 border-l-2 border-slate-200 dark:border-slate-700">
                                         <div class="extra-content-inner pt-2 pb-2">
                                             ${extraContentHTML.replaceAll('{{index}}', index)}
                                         </div>
                                     </div>
                                 </div>`
                             }).join('')}
+                          </div>
                         </div>
                     </div>` 
                 }).join('');
@@ -1049,19 +1058,19 @@
                 return `<form id="new-pca-form" novalidate class="space-y-8">
                     <input type="hidden" name="id" value="${isEditing ? report.id : nextId}">
                     <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
-                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">${isEditing ? `Modifica Controllo N° ${report.id}` : '1. Dati Generali'}</h2>
+                        <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">${isEditing ? `Modifica PCA N° ${report.id}` : '1. Dati Generali'}</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${today}" class="form-input" required></div>
-                            <div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico" selected>Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
+                            <div><label for="pca-date" class="form-label">Data</label><input type="date" id="pca-date" name="date" value="${isEditing ? report.date : today}" class="form-input" required></div>
+                            <div class="md:col-span-2"><label for="pca-type" class="form-label">Tipo di Controllo</label><select id="pca-type" name="type" class="form-select" required><option value="periodico">Periodico (da WBS)</option><option value="preliminare">Preliminare (Ante Operam)</option><option value="finale">Finale (Post Operam)</option></select></div>
                         </div>
                         <div id="wbs-section" class="mt-6 space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><label for="pca-wbs-input" class="form-label">1. Inserisci Codice WBS</label><input type="text" id="pca-wbs-input" name="wbs-input" class="form-input" placeholder="Es. RI12, GA01..." required></div>
-                                <div><label for="pca-lavorazione-select" class="form-label">2. Seleziona Lavorazione</label><select id="pca-lavorazione-select" name="lavorazione" class="form-select" required disabled><option value="">-- Prima inserisci WBS --</option></select></div>
+                                <div><label for="pca-wbs-input" class="form-label">1. Inserisci Codice WBS</label><input type="text" id="pca-wbs-input" name="wbs-input" class="form-input" placeholder="Es. RI12, GA01..."></div>
+                                <div><label for="pca-lavorazione-select" class="form-label">2. Seleziona Lavorazione</label><select id="pca-lavorazione-select" name="lavorazione" class="form-select" disabled><option value="">-- Prima inserisci WBS --</option></select></div>
                             </div>
-                            <div><label for="pca-inspector-wbs" class="form-label">Compilatore</label><input type="text" id="pca-inspector-wbs" name="inspector-wbs" class="form-input" placeholder="Nome e Funzione" required></div>
+                            <div><label for="pca-inspector-wbs" class="form-label">Compilatore</label><input type="text" id="pca-inspector-wbs" name="inspector-wbs" class="form-input" placeholder="Nome e Funzione"></div>
                         </div>
-                        <div id="manual-section" class="mt-6 space-y-4" style="display: none;">
+                        <div id="manual-section" class="mt-6 space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div><label for="wbs-manual" class="form-label">Area di Riferimento</label><input id="wbs-manual" name="wbs-manual" class="form-input" placeholder="Es. Campo Base, Area X..."></div>
                                 <div><label for="inspector-manual" class="form-label">Compilatore</label><input id="inspector-manual" name="inspector-manual" class="form-input" placeholder="Nome e Funzione"></div>
@@ -1072,12 +1081,12 @@
                     <div>
                         <h2 class="text-xl font-bold mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">2. Checklist di Controllo</h2>
                         <div id="checklist-container-periodico" class="space-y-4">${this.renderChecklist(App.config.CHECK_TEMPLATES_PERIODIC)}</div>
-                        <div id="checklist-container-preliminare" class="space-y-4" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE)}</div>
-                        <div id="checklist-container-finale" class="space-y-4" style="display: none;">${this.renderChecklist(App.config.CHECK_TEMPLATES_FINALE)}</div>
+                        <div id="checklist-container-preliminare" class="space-y-4">${this.renderChecklist(App.config.CHECK_TEMPLATES_PRELIMINARE)}</div>
+                        <div id="checklist-container-finale" class="space-y-4">${this.renderChecklist(App.config.CHECK_TEMPLATES_FINALE)}</div>
                     </div>
                     <div class="flex justify-end gap-4 pt-4">
                         <button type="button" id="cancel-pca-btn" class="px-6 py-3 bg-slate-200 dark:bg-slate-600 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 font-semibold">Annulla</button>
-                        <button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">${isEditing ? 'Aggiorna Controllo' : 'Salva Controllo'}</button>
+                        <button type="submit" id="save-pca-btn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold flex items-center justify-center">${isEditing ? 'Aggiorna PCA' : 'Salva PCA'}</button>
                     </div>
                 </form>`;
             },
@@ -1102,25 +1111,100 @@
                 const rtiLogoUrl = 'https://raw.githubusercontent.com/fifich98/app-gestione-pca/main/RTI.bmp';
                 const typeLabels = { 'periodico': 'Controllo Periodico', 'preliminare': 'Ispezione Preliminare (Ante Operam)', 'finale': 'Ispezione Finale (Post Operam)' };
                 
-                const renderExtras = (templateId, itemIndex) => {
-                    const check = report.checks?.[templateId]?.[itemIndex];
-                    if (!check || check.result !== 'NC') return '';
-                    const photo = report.photos?.[`photo_${templateId}_${itemIndex}`];
-                    return `
-                        <div style="margin-top: 8px; padding-left: 16px; border-left: 2px solid #eee;">
-                            ${check.notes ? `<p style="margin: 0; font-size: 11px;"><strong>Note:</strong> ${check.notes}</p>` : ''}
-                            ${photo ? `<div style="margin-top: 5px;"><strong style="font-size: 11px;">Foto:</strong><br><img src="${photo}" style="max-width: 200px; max-height: 150px; margin-top: 4px; border-radius: 4px;"></div>` : ''}
-                        </div>`;
+                const renderPhoto = (photoSrc) => {
+                    if (!photoSrc) return '';
+                    return `<div style="margin-top: 8px; margin-left: 20px;"><h4 style="font-weight: bold; font-size: 9pt; margin-bottom: 4px;">Rilievo Fotografico:</h4><img src="${photoSrc}" style="max-width: 350px; border-radius: 4px; display: block; border: 1px solid #ddd;" alt="Foto allegata"></div>`;
                 };
 
-                return `...`; // La logica di stampa è complessa e la lascio invariata per brevità
+                const reportBody = `
+                    <div id="print-content">
+                        <h1 style="text-align: center; font-size: 1.6rem; margin-bottom: 2rem; font-weight: bold; color: var(--print-text-primary);">Verbale di Controllo Ambientale N° ${report.id}</h1>
+                        <table class="no-break" style="width: 100%; border-collapse: collapse; margin-bottom: 2.5rem; font-size: 10pt;">
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg); width: 25%;">Data</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); width: 25%;">${new Date(report.date).toLocaleDateString('it-IT')}</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg); width: 25%;">WBS/Area</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); width: 25%;">${report.wbs || 'N.A.'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Tipo Verbale</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${typeLabels[report.type] || 'N.D.'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Lavorazione/Oggetto</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${report.activities || 'N.A.'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color); font-weight: bold; background-color: var(--print-header-bg);">Compilato da</td>
+                                    <td style="padding: 8px; border: 1px solid var(--print-border-color);" colspan="3">${report.inspector || 'N.D.'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        ${templates.map(t => {
+                            const checks = report.checks ? report.checks[t.id] : null;
+                            const relevantChecks = checks ? checks.filter(c => c.result !== 'NA') : [];
+                            if (!relevantChecks || relevantChecks.length === 0) return '';
+                            
+                            return `<div class="no-break" style="margin-bottom: 2rem;">
+                                <h2 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid #666; padding-bottom: 0.5rem; color: var(--print-text-primary);">
+                                    <span style="font-size: 1.5rem; vertical-align: -0.2em; margin-right: 0.5rem;">${t.icon}</span>${t.title}
+                                </h2>
+                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 10pt;"><tbody>
+                                ${relevantChecks.map((item, idx) => `
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 8px 0; vertical-align: top; color: var(--print-text-secondary);">
+                                            ${item.item}
+                                            ${(item.notes || report.photos?.[`photo_${t.id}_${idx}`]) ? `
+                                            <div style="margin-top: 8px; padding-left: 16px; border-left: 2px solid #eee;">
+                                                ${item.notes ? `<p style="margin: 0; font-size: 9pt; font-style: italic;"><strong>Note:</strong> ${item.notes}</p>` : ''}
+                                                ${renderPhoto(report.photos?.[`photo_${t.id}_${idx}`])}
+                                            </div>` : ''}
+                                        </td>
+                                        <td style="padding: 8px 0; text-align: right; font-weight: bold; width: 80px; vertical-align: top; color: ${item.result==='NC'?'#D32F2F':'var(--print-text-primary)'};">${item.result || 'N.D.'}</td>
+                                    </tr>`).join('')}
+                                </tbody></table>
+                            </div>`;
+                        }).join('')}
+                    </div>`;
+
+                return `<div id="print-area">
+                    <header class="print-header">
+                        <table style="width:100%; border-bottom: 2px solid var(--print-text-primary);">
+                            <tr>
+                                <td style="width:50%; text-align:left; vertical-align:middle; padding-bottom: 10px;">
+                                    <img src="${chrysasLogoUrl}" alt="Logo CHRYSAS" style="height: 40px;">
+                                </td>
+                                <td style="width:50%; text-align:right; vertical-align:middle; padding-bottom: 10px;">
+                                    <img src="${rtiLogoUrl}" alt="Logo RTI" style="height: 50px;">
+                                </td>
+                            </tr>
+                        </table>
+                    </header>
+                    ${reportBody}
+                    <footer class="print-footer">
+                       <div style="text-align: center; font-size: 8pt; color: #888; border-top: 1px solid #ccc; padding-top: 5px;">
+                           Documento generato in data ${new Date().toLocaleDateString('it-IT')} | Pagina <span class="page-number"></span> di <span class="total-pages"></span>
+                       </div>
+                    </footer>
+                </div>`;
             }
         }
     };
     
-    App.init();
+    // --- Global Error Catcher ---
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("ERRORE GLOBALE NON GESTITO:", { message, source, lineno, colno, error });
+        App.ui?.showToast('Si è verificato un errore inatteso.', 'error');
+        return true;
+    };
 
+    App.init().catch(err => {
+        console.error("ERRORE FATALE DURANTE L'INIZIALIZZAZIONE:", err);
+        document.body.innerHTML = `<div style='padding: 2rem; text-align: center; font-family: sans-serif; color: #ef4444;'><h1>Errore Critico</h1><p>Impossibile avviare l'applicazione. Controlla la console (F12) per i dettagli.</p><p>${err.message}</p></div>`;
     });
+});
     </script>
 </body>
 </html>
